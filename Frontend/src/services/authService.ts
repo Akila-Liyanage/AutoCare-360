@@ -44,6 +44,32 @@ export interface MeResponse {
   };
 }
 
+export interface ForgotPasswordResponse {
+  success: boolean;
+  message: string;
+  devCode?: string;
+}
+
+export interface VerifyCodeResponse {
+  success: boolean;
+  message: string;
+  data: {
+    resetToken: string;
+  };
+}
+
+export interface ResetPasswordPayload {
+  email: string;
+  resetToken: string;
+  newPassword: string;
+}
+
+export interface GeneralMessageResponse {
+  success: boolean;
+  message: string;
+  devCode?: string;
+}
+
 export const authService = {
   async register(payload: RegisterPayload): Promise<AuthResponse> {
     const response = await api.post<AuthResponse>('/auth/register', payload);
@@ -57,6 +83,26 @@ export const authService = {
 
   async getMe(): Promise<MeResponse> {
     const response = await api.get<MeResponse>('/auth/me');
+    return response.data;
+  },
+
+  async forgotPassword(email: string): Promise<ForgotPasswordResponse> {
+    const response = await api.post<ForgotPasswordResponse>('/auth/forgot-password', { email });
+    return response.data;
+  },
+
+  async verifyCode(email: string, code: string): Promise<VerifyCodeResponse> {
+    const response = await api.post<VerifyCodeResponse>('/auth/verify-code', { email, code });
+    return response.data;
+  },
+
+  async resendCode(email: string): Promise<GeneralMessageResponse> {
+    const response = await api.post<GeneralMessageResponse>('/auth/resend-code', { email });
+    return response.data;
+  },
+
+  async resetPassword(payload: ResetPasswordPayload): Promise<GeneralMessageResponse> {
+    const response = await api.post<GeneralMessageResponse>('/auth/reset-password', payload);
     return response.data;
   },
 
