@@ -1,5 +1,6 @@
 @import './styles/variables.css';
 @import './styles/auth.css';
+@import './styles/home.css';
 
 * {
   margin: 0;
