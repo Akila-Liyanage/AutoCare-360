@@ -82,6 +82,14 @@ const createVehicle = async (req, res, next) => {
       });
     }
 
+    // Reject direct base64 / data URLs or oversized imageUrl strings
+    if (imageUrl && (String(imageUrl).startsWith('data:') || String(imageUrl).length > 2048)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Direct base64/data URL image persistence is not supported. Please provide a valid image URL.',
+      });
+    }
+
     // Persist vehicle tied strictly to the authenticated owner
     const vehicle = await Vehicle.create({
       ownerId: req.user._id,

@@ -25,10 +25,15 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    const message =
+    let message =
       error.response?.data?.message ||
       error.message ||
       'An unexpected network error occurred. Please try again.';
+
+    if (error.response?.status === 413 || message.toLowerCase().includes('entity too large')) {
+      message = 'The selected image is too large. Please choose another image.';
+    }
+
     return Promise.reject(new Error(message));
   }
 );

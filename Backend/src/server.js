@@ -84,6 +84,14 @@ app.use((err, req, res, next) => {
     });
   }
 
+  // Graceful handling of oversized payloads (413 Payload Too Large)
+  if (err.type === 'entity.too.large' || err.status === 413) {
+    return res.status(413).json({
+      success: false,
+      message: 'The submitted request payload is too large. Please reduce the size or choose another file.',
+    });
+  }
+
   const statusCode = err.statusCode || (res.statusCode >= 400 ? res.statusCode : 500);
   res.status(statusCode).json({
     success: false,
