@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { 
-  PlusCircle, 
-  Trash2, 
-  Edit3, 
-  Car, 
-  AlertCircle, 
-  RefreshCw, 
-  Info, 
-  X 
+import {
+  PlusCircle,
+  Trash2,
+  Edit3,
+  Car,
+  AlertCircle,
+  RefreshCw,
+  Info,
+  X
 } from 'lucide-react';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
@@ -98,8 +98,8 @@ export const MyVehiclesPage: React.FC = () => {
           {/* Header Row: "My Vehicles" and "View All" */}
           <div className="autocare-my-vehicles-header">
             <h1 className="autocare-my-vehicles-title">My Vehicles</h1>
-            <button 
-              type="button" 
+            <button
+              type="button"
               className="autocare-my-vehicles-view-all"
               onClick={handleReload}
               title="Refresh vehicle list"
@@ -115,9 +115,9 @@ export const MyVehiclesPage: React.FC = () => {
                 <Info size={18} className="autocare-notice-icon" />
                 <span>{infoNotice}</span>
               </div>
-              <button 
-                type="button" 
-                className="autocare-notice-close" 
+              <button
+                type="button"
+                className="autocare-notice-close"
                 onClick={() => setInfoNotice(null)}
                 aria-label="Dismiss notice"
               >
@@ -152,9 +152,9 @@ export const MyVehiclesPage: React.FC = () => {
               <p className="autocare-error-desc">
                 {error}
               </p>
-              <button 
-                type="button" 
-                className="autocare-btn-primary" 
+              <button
+                type="button"
+                className="autocare-btn-primary"
                 onClick={handleReload}
               >
                 <RefreshCw size={16} />
@@ -189,11 +189,24 @@ export const MyVehiclesPage: React.FC = () => {
                   const vehicleImg = vehicle.imageUrl?.trim() || fallbackVehicleImg;
 
                   return (
-                    <div key={vehicle._id} className="autocare-vehicle-card">
+                    <div
+                      key={vehicle._id}
+                      className="autocare-vehicle-card"
+                      onClick={() => navigate(`/vehicles/${vehicle._id}`)}
+                      style={{ cursor: 'pointer' }}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          navigate(`/vehicles/${vehicle._id}`);
+                        }
+                      }}
+                      aria-label={`View passport for ${vehicle.manufacturer} ${vehicle.model}`}
+                    >
                       {/* Top: Image Area with Red Remove Button */}
                       <div className="autocare-card-image-wrapper">
-                        <img 
-                          src={vehicleImg} 
+                        <img
+                          src={vehicleImg}
                           alt={`${vehicle.manufacturer} ${vehicle.model}`}
                           className="autocare-card-img"
                           onError={(e) => {
@@ -221,10 +234,9 @@ export const MyVehiclesPage: React.FC = () => {
                           <h2 className="autocare-card-title">
                             {vehicle.manufacturer} {vehicle.model} {vehicle.manufacturingYear}
                           </h2>
-                          <span 
-                            className={`autocare-trust-score-badge ${
-                              trust.isHigh ? 'is-high' : 'is-mid'
-                            }`}
+                          <span
+                            className={`autocare-trust-score-badge ${trust.isHigh ? 'is-high' : 'is-mid'
+                              }`}
                           >
                             {trust.score}%
                           </span>
@@ -241,11 +253,14 @@ export const MyVehiclesPage: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Bottom: Blue Full-Width Edit Action Bar */}
+                      {/* Bottom: Blue Full-Width Edit Action Bar navigating to /vehicles/:id */}
                       <button
                         type="button"
                         className="autocare-card-edit-btn"
-                        onClick={() => navigate(`/vehicles/${vehicle._id}`)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/vehicles/${vehicle._id}`);
+                        }}
                         aria-label={`Edit ${vehicle.manufacturer} ${vehicle.model}`}
                       >
                         <Edit3 size={16} />
