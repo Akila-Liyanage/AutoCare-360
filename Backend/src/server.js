@@ -1,8 +1,10 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const mongoose = require('mongoose');
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
+const vehicleRoutes = require('./routes/vehicleRoutes');
 
 const app = express();
 
@@ -34,15 +36,33 @@ app.use(express.urlencoded({ extended: true }));
 
 // Basic Health Check Route
 app.get('/', (req, res) => {
+  const isConnected = mongoose.connection.readyState === 1;
   res.json({
     status: 'ok',
     service: 'AutoCare 360 Backend API',
-    database: req.app.locals.dbConnected ? 'connected' : 'disconnected',
+    database: isConnected ? 'connected' : 'disconnected',
+    readyState: mongoose.connection.readyState,
+    host: isConnected ? mongoose.connection.host : null,
+    name: isConnected ? mongoose.connection.name : null,
   });
+});
+
+// Fail-fast guard for database-dependent API routes
+app.use('/api', (req, res, next) => {
+  if (mongoose.connection.readyState !== 1) {
+    return res.status(503).json({
+      success: false,
+      message: 'Database service is temporarily unavailable. Please try again.',
+    });
+  }
+  next();
 });
 
 // Mount Authentication Routes
 app.use('/api/auth', authRoutes);
+
+// Mount Vehicle Digital Passport Routes
+app.use('/api/vehicles', vehicleRoutes);
 
 // 404 JSON Handler for unmatched routes
 app.use((req, res) => {
@@ -55,6 +75,14 @@ app.use((req, res) => {
 // Global Error Handler
 app.use((err, req, res, next) => {
   console.error('[Unhandled Error]:', err.message);
+
+  // Fail-safe protection against Mongoose buffering timeout leaks
+  if (err.name === 'MongooseError' && err.message.includes('buffering timed out')) {
+    return res.status(503).json({
+      success: false,
+      message: 'Database service is temporarily unavailable. Please try again.',
+    });
+  }
 
   const statusCode = err.statusCode || (res.statusCode >= 400 ? res.statusCode : 500);
   res.status(statusCode).json({
@@ -87,8 +115,16 @@ const startServer = async () => {
     }
   }
 
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+  });
+
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`[AutoCare 360 Fatal]: Port ${PORT} is already in use by another process.`);
+    } else {
+      console.error(`[AutoCare 360 Server Error]:`, err.message);
+    }
   });
 };
 
