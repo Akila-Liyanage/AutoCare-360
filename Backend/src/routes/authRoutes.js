@@ -4,6 +4,7 @@ const {
   register,
   login,
   getMe,
+  updateProfile,
   forgotPassword,
   verifyCode,
   resendCode,
@@ -15,6 +16,7 @@ const { protect } = require('../middlewares/authMiddleware');
 router.post('/register', register);
 router.post('/login', login);
 router.get('/me', protect, getMe);
+router.patch('/profile', protect, updateProfile);
 
 // Password Recovery Flow
 router.post('/forgot-password', forgotPassword);

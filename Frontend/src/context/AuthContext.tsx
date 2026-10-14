@@ -5,6 +5,7 @@ import authService, {
   type LoginPayload,
   type RegisterPayload,
   type AuthResponse,
+  type UpdateProfilePayload,
 } from '../services/authService';
 
 export interface AuthContextType {
@@ -15,6 +16,8 @@ export interface AuthContextType {
   login: (payload: LoginPayload) => Promise<AuthResponse>;
   register: (payload: RegisterPayload) => Promise<AuthResponse>;
   logout: () => void;
+  refreshUser: () => Promise<UserProfile | null>;
+  updateUserProfile: (payload: UpdateProfilePayload) => Promise<UserProfile>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -93,8 +96,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = useCallback(() => {
     authService.logout();
+    localStorage.removeItem('autocare_token');
+    localStorage.removeItem('autocare_user');
     setUser(null);
     setToken(null);
+  }, []);
+
+  const refreshUser = useCallback(async (): Promise<UserProfile | null> => {
+    try {
+      const { data } = await authService.getMe();
+      setUser(data.user);
+      localStorage.setItem('autocare_user', JSON.stringify(data.user));
+      return data.user;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const updateUserProfile = useCallback(async (payload: UpdateProfilePayload): Promise<UserProfile> => {
+    const response = await authService.updateProfile(payload);
+    const updatedUser = response.data.user;
+    setUser(updatedUser);
+    localStorage.setItem('autocare_user', JSON.stringify(updatedUser));
+    return updatedUser;
   }, []);
 
   const value: AuthContextType = {
@@ -105,6 +129,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     login,
     register,
     logout,
+    refreshUser,
+    updateUserProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

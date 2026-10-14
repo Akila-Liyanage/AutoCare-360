@@ -42,6 +42,31 @@ const userSchema = new mongoose.Schema(
         return this.role === 'garage' ? 'pending' : 'active';
       },
     },
+    displayName: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    preferredLanguage: {
+      type: String,
+      trim: true,
+      default: 'English',
+    },
+    timezone: {
+      type: String,
+      trim: true,
+      default: 'Sri Lanka Standard Time (UTC+05:30)',
+    },
+    city: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    country: {
+      type: String,
+      trim: true,
+      default: 'Sri Lanka',
+    },
   },
   {
     timestamps: true,

@@ -9,8 +9,33 @@ export interface UserProfile {
   phone: string;
   role: UserRole;
   status: 'active' | 'pending' | 'suspended';
+  displayName?: string;
+  preferredLanguage?: string;
+  timezone?: string;
+  city?: string;
+  country?: string;
+  profileImage?: string;
+  avatar?: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface UpdateProfilePayload {
+  fullName?: string;
+  phone?: string;
+  displayName?: string;
+  preferredLanguage?: string;
+  timezone?: string;
+  city?: string;
+  country?: string;
+}
+
+export interface UpdateProfileResponse {
+  success: boolean;
+  message: string;
+  data: {
+    user: UserProfile;
+  };
 }
 
 export interface RegisterPayload {
@@ -83,6 +108,11 @@ export const authService = {
 
   async getMe(): Promise<MeResponse> {
     const response = await api.get<MeResponse>('/auth/me');
+    return response.data;
+  },
+
+  async updateProfile(payload: UpdateProfilePayload): Promise<UpdateProfileResponse> {
+    const response = await api.patch<UpdateProfileResponse>('/auth/profile', payload);
     return response.data;
   },
 

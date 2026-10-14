@@ -13,6 +13,8 @@ import Footer from './components/layout/Footer';
 import MyVehiclesPage from './pages/vehicles/MyVehiclesPage';
 import AddVehiclePage from './pages/vehicles/AddVehiclePage';
 import ViewVehiclePage from './pages/vehicles/ViewVehiclePage';
+import ProfilePage from './pages/profile/ProfilePage';
+import EditProfilePage from './pages/profile/EditProfilePage';
 import './App.css';
 
 // Lightweight Shell Component for Upcoming Phase Routes
@@ -115,16 +117,8 @@ export const App: React.FC = () => {
               />
             }
           />
-          <Route
-            path="/profile"
-            element={
-              <RoutePlaceholder
-                title="User Profile & Settings"
-                subtitle="Owner and garage credentials management will be integrated in subsequent phases."
-                phase="Phase 2B Route Shell"
-              />
-            }
-          />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/profile/edit" element={<EditProfilePage />} />
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />

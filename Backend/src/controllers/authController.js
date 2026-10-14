@@ -380,12 +380,95 @@ const resetPassword = async (req, res, next) => {
   }
 };
 
+// @desc    Update current authenticated user's profile
+// @route   PATCH /api/auth/profile
+// @access  Private (Bearer JWT)
+const updateProfile = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Account not found.',
+      });
+    }
+
+    const {
+      fullName,
+      phone,
+      displayName,
+      preferredLanguage,
+      timezone,
+      city,
+      country,
+    } = req.body;
+
+    // Strict validation and whitelisting of mutable profile fields only
+    if (fullName !== undefined) {
+      const trimmedName = String(fullName).trim();
+      if (trimmedName.length < 2) {
+        return res.status(400).json({
+          success: false,
+          message: 'Full name must be at least 2 characters long.',
+        });
+      }
+      user.fullName = trimmedName;
+    }
+
+    if (phone !== undefined) {
+      const trimmedPhone = String(phone).trim();
+      if (!trimmedPhone) {
+        return res.status(400).json({
+          success: false,
+          message: 'Phone number cannot be empty.',
+        });
+      }
+      user.phone = trimmedPhone;
+    }
+
+    if (displayName !== undefined) {
+      user.displayName = String(displayName).trim();
+    }
+
+    if (preferredLanguage !== undefined) {
+      user.preferredLanguage = String(preferredLanguage).trim();
+    }
+
+    if (timezone !== undefined) {
+      user.timezone = String(timezone).trim();
+    }
+
+    if (city !== undefined) {
+      user.city = String(city).trim();
+    }
+
+    if (country !== undefined) {
+      user.country = String(country).trim();
+    }
+
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Owner profile updated successfully.',
+      data: {
+        user,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   register,
   login,
   getMe,
+  updateProfile,
   forgotPassword,
   verifyCode,
   resendCode,
   resetPassword,
 };
+
