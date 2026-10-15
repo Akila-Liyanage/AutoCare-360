@@ -68,25 +68,40 @@
   z-index: 10;
   display: flex;
   align-items: center;
-  background: rgba(255, 255, 255, 0.98);
-  padding: 8px 18px;
-  border-radius: 9999px;
-  box-shadow: 0 4px 16px rgba(0, 86, 162, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.9);
+  justify-content: center;
+  background: #ffffff;
+  padding: 10px 18px;
+  border-radius: 22px;
+  box-shadow: 0 4px 20px rgba(0, 86, 162, 0.12), 0 1px 4px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.95);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .autocare-auth-logo:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(0, 86, 162, 0.16);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 86, 162, 0.18);
+}
+
+.autocare-auth-logo-wrap {
+  position: relative;
+  width: 82px;
+  height: 84px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .autocare-auth-logo-img {
-  height: 44px;
+  position: absolute;
+  top: 46.8%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 112px;
   width: auto;
-  max-width: 170px;
+  max-width: none;
   display: block;
-  object-fit: contain;
+  pointer-events: none;
 }
 
 /* Content Pane containing the card */

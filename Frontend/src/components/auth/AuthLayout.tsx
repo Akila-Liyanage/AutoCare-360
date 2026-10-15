@@ -38,11 +38,13 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
 
       {/* Official AutoCare 360 Logo Placement - Top Left */}
       <div className="autocare-auth-logo" aria-label="AutoCare 360 Logo">
-        <img 
-          src={logoImg} 
-          alt="AutoCare 360 - Universal Vehicle Maintenance Record System" 
-          className="autocare-auth-logo-img" 
-        />
+        <div className="autocare-auth-logo-wrap">
+          <img 
+            src={logoImg} 
+            alt="AutoCare 360 - Universal Vehicle Maintenance Record System" 
+            className="autocare-auth-logo-img" 
+          />
+        </div>
       </div>
 
       {/* Content Card Container */}
