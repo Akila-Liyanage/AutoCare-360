@@ -375,16 +375,15 @@ export const ViewVehiclePage: React.FC = () => {
                       <span>Edit vehicle</span>
                     </button>
 
-                    <button
-                      type="button"
+                    <Link
+                      to={`/vehicles/${vehicle?._id || id || 'default'}/transfer`}
                       className="autocare-btn-transfer-ownership"
-                      onClick={() =>
-                        showToast('Decentralized ownership transfer module will be available in Phase 4.')
-                      }
+                      style={{ textDecoration: 'none' }}
+                      title="Transfer ownership and vehicle records"
                     >
                       <ArrowRightLeft size={15} />
                       <span>Transfer ownership</span>
-                    </button>
+                    </Link>
                   </div>
                 </div>
               </section>
@@ -430,7 +429,12 @@ export const ViewVehiclePage: React.FC = () => {
                 </div>
 
                 {/* Metric 4: Lifetime Service Cost */}
-                <div className="autocare-view-metric-card">
+                <Link
+                  to="/expenses"
+                  className="autocare-view-metric-card"
+                  style={{ textDecoration: 'none', color: 'inherit' }}
+                  title="View detailed expense tracking"
+                >
                   <div className="autocare-view-metric-header">
                     <span className="autocare-view-metric-label">Lifetime service cost</span>
                     <Receipt size={20} className="autocare-view-metric-icon" color="#0056A2" />
@@ -439,7 +443,7 @@ export const ViewVehiclePage: React.FC = () => {
                   <p className="autocare-view-metric-subtext is-blue">
                     5 cryptographically verified invoices
                   </p>
-                </div>
+                </Link>
               </section>
 
               {/* SECTION: Middle Row (Ownership & Cryptographic Integrity + Trust Score) */}
@@ -558,15 +562,12 @@ export const ViewVehiclePage: React.FC = () => {
                         Certified records appended by verified garages.
                       </p>
                     </div>
-                    <button
-                      type="button"
+                    <Link
+                      to="/service-history"
                       className="autocare-view-card-link"
-                      onClick={() =>
-                        showToast('Full telemetry & audit log inspector will be enabled in Phase 3.')
-                      }
                     >
                       View complete history
-                    </button>
+                    </Link>
                   </div>
 
                   <div className="autocare-view-service-list">

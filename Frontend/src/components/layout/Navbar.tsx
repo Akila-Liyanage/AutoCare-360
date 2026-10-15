@@ -96,15 +96,15 @@ export const Navbar: React.FC = () => {
           {isAuthenticated && user ? (
             <>
               {/* Notification Bell */}
-              <button 
-                type="button" 
+              <Link 
+                to="/notifications" 
                 className="autocare-nav-icon-btn" 
                 aria-label="System Notifications"
                 title="Notifications"
               >
                 <Bell size={19} />
                 <span className="autocare-nav-badge-dot" aria-hidden="true" />
-              </button>
+              </Link>
 
               {/* User Avatar Dropdown */}
               <div className="autocare-nav-user-dropdown" ref={dropdownRef}>

@@ -13,8 +13,13 @@ import Footer from './components/layout/Footer';
 import MyVehiclesPage from './pages/vehicles/MyVehiclesPage';
 import AddVehiclePage from './pages/vehicles/AddVehiclePage';
 import ViewVehiclePage from './pages/vehicles/ViewVehiclePage';
+import TransferVehiclePage from './pages/vehicles/TransferVehiclePage';
 import ProfilePage from './pages/profile/ProfilePage';
 import EditProfilePage from './pages/profile/EditProfilePage';
+import ServiceHistoryPage from './pages/services/ServiceHistoryPage';
+import NotificationsPage from './pages/notifications/NotificationsPage';
+import CreateNotificationPage from './pages/notifications/CreateNotificationPage';
+import ExpenseTrackingPage from './pages/expenses/ExpenseTrackingPage';
 import './App.css';
 
 // Lightweight Shell Component for Upcoming Phase Routes
@@ -105,7 +110,19 @@ export const App: React.FC = () => {
           {/* Vehicle Digital Passport — Phase 2E View Flow */}
           <Route path="/vehicles" element={<MyVehiclesPage />} />
           <Route path="/vehicles/:id" element={<ViewVehiclePage />} />
+          <Route path="/vehicles/:id/transfer" element={<TransferVehiclePage />} />
           <Route path="/vehicles/add" element={<AddVehiclePage />} />
+
+          {/* Maintenance & Service Records History */}
+          <Route path="/service-history" element={<ServiceHistoryPage />} />
+          <Route path="/services" element={<ServiceHistoryPage />} />
+
+          {/* Notifications */}
+          <Route path="/notifications" element={<NotificationsPage />} />
+          <Route path="/notifications/create" element={<CreateNotificationPage />} />
+
+          {/* Expense Tracking */}
+          <Route path="/expenses" element={<ExpenseTrackingPage />} />
 
           <Route
             path="/buyer-qr"
