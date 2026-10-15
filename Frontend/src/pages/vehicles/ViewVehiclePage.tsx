@@ -188,16 +188,15 @@ export const ViewVehiclePage: React.FC = () => {
             </div>
 
             <div className="autocare-view-header-actions">
-              <button
-                type="button"
+              <Link
+                to="/sharing/secure-link"
                 className="autocare-btn-share-records"
-                onClick={() =>
-                  showToast('Cryptographic record sharing link generated. Feature will be enabled in Phase 3.')
-                }
+                style={{ textDecoration: 'none' }}
+                title="Create a controlled, auditable secure link to share vehicle records"
               >
                 <Share2 size={16} />
                 <span>Share records</span>
-              </button>
+              </Link>
 
               <button
                 type="button"

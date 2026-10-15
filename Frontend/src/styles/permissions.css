@@ -1,0 +1,560 @@
+/* AutoCare 360 - permissions.css
+   Dedicated Stylesheet for Access Permission Management
+   Aligned strictly with Figma: Access permission management.png
+*/
+
+@import './variables.css';
+@import './home.css';
+
+/* --------------------------------------------------------------------------
+   Page Layout & Container
+   -------------------------------------------------------------------------- */
+.autocare-perms-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f8fafc;
+}
+
+.autocare-perms-main {
+  flex: 1;
+  padding: 32px 0 72px 0;
+}
+
+.autocare-perms-container {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* --------------------------------------------------------------------------
+   Breadcrumb / Back Navigation
+   -------------------------------------------------------------------------- */
+.autocare-perms-back-nav {
+  margin-bottom: 20px;
+}
+
+.autocare-perms-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  color: #0056A2;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.autocare-perms-back-btn:hover {
+  background: #eff6ff;
+  color: #004684;
+}
+
+/* --------------------------------------------------------------------------
+   Top Header Row (Title, Subtitle, Grant Access Button)
+   -------------------------------------------------------------------------- */
+.autocare-perms-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 26px;
+}
+
+.autocare-perms-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.autocare-perms-title {
+  font-size: 30px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.autocare-perms-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
+
+.autocare-perms-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.autocare-perms-btn-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.autocare-perms-btn-nav:hover {
+  background-color: #f8fafc;
+  border-color: #94a3b8;
+  transform: translateY(-1px);
+}
+
+.autocare-perms-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #0056A2;
+  color: #ffffff;
+  border: none;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 10px 22px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 86, 162, 0.25);
+  transition: all 0.2s ease;
+}
+
+.autocare-perms-btn-primary:hover {
+  background-color: #004684;
+  transform: translateY(-1px);
+}
+
+/* --------------------------------------------------------------------------
+   Recipient Context Card
+   -------------------------------------------------------------------------- */
+.autocare-perms-recipient-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 22px 26px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+  margin-bottom: 24px;
+}
+
+.autocare-perms-card-label {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 12px 0;
+  letter-spacing: -0.2px;
+}
+
+.autocare-perms-recipient-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.autocare-perms-recipient-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.autocare-perms-recipient-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.autocare-perms-recipient-sub {
+  font-size: 13.5px;
+  color: #64748b;
+}
+
+.autocare-perms-badge-verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #effcf0;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+  font-size: 11.5px;
+  font-weight: 800;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+/* --------------------------------------------------------------------------
+   3-Column Permission Options Grid
+   -------------------------------------------------------------------------- */
+.autocare-perms-options-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.autocare-perms-option-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px 22px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+}
+
+.autocare-perms-option-card:hover {
+  border-color: #cbd5e1;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+}
+
+.autocare-perms-option-card.is-selected {
+  border: 2px solid #0056A2;
+  box-shadow: 0 6px 20px rgba(0, 86, 162, 0.12);
+  transform: translateY(-2px);
+}
+
+.autocare-perms-option-header {
+  margin-bottom: 18px;
+}
+
+.autocare-perms-option-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 6px 0;
+}
+
+.autocare-perms-option-desc {
+  font-size: 13.5px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.autocare-perms-option-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.autocare-perms-option-item {
+  font-size: 13.5px;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.autocare-perms-option-item.is-allowed {
+  color: #15803d;
+  font-weight: 600;
+}
+
+.autocare-perms-option-item.is-hidden {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.autocare-perms-option-item.is-dark {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+/* Badge for Selection State */
+.autocare-perms-badge-state {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 16px;
+  border-radius: 9999px;
+  width: fit-content;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.autocare-perms-badge-state.is-unselected {
+  background-color: #f1f5f9;
+  color: #64748b;
+}
+
+.autocare-perms-badge-state.is-active {
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #0056A2;
+  font-weight: 800;
+}
+
+/* --------------------------------------------------------------------------
+   Bottom 2-Column Section (Summary Left + Review Panel Right)
+   -------------------------------------------------------------------------- */
+.autocare-perms-bottom-grid {
+  display: grid;
+  grid-template-columns: 1.8fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+/* Summary Card */
+.autocare-perms-summary-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px 26px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+}
+
+.autocare-perms-summary-title {
+  font-size: 16.5px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 18px 0;
+  letter-spacing: -0.2px;
+}
+
+.autocare-perms-summary-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.autocare-perms-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 13px 0;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 14px;
+}
+
+.autocare-perms-summary-row:last-child {
+  border-bottom: none;
+  padding-bottom: 4px;
+}
+
+.autocare-perms-summary-label {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.autocare-perms-summary-value {
+  color: #0f172a;
+  font-weight: 700;
+  text-align: right;
+}
+
+/* Review Panel Right (Tinted Sky Blue) */
+.autocare-perms-review-card {
+  background-color: #f0f7ff;
+  border: 1px solid #dbeafe;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 86, 162, 0.04);
+  display: flex;
+  flex-direction: column;
+}
+
+.autocare-perms-review-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.autocare-perms-review-title {
+  font-size: 16.5px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+.autocare-perms-badge-ready {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #eaf7ec;
+  border: 1px solid #d1f2d4;
+  color: #15803d;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.autocare-perms-review-headline {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 8px 0;
+}
+
+.autocare-perms-review-desc {
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0 0 18px 0;
+}
+
+.autocare-perms-expiration-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.autocare-perms-expiration-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.autocare-perms-expiration-input {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #0f172a;
+  background-color: #ffffff;
+  outline: none;
+  transition: all 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.autocare-perms-expiration-input:focus {
+  border-color: #0056A2;
+  box-shadow: 0 0 0 3px rgba(0, 86, 162, 0.12);
+}
+
+.autocare-perms-btn-grant-bottom {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: #0056A2;
+  color: #ffffff;
+  border: none;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 11px 22px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 86, 162, 0.25);
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.autocare-perms-btn-grant-bottom:hover {
+  background-color: #004684;
+}
+
+/* --------------------------------------------------------------------------
+   Toast Banner
+   -------------------------------------------------------------------------- */
+.autocare-perms-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  font-weight: 600;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  animation: slideToast 0.3s ease;
+}
+
+@keyframes slideToast {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.autocare-perms-toast.is-success {
+  background-color: #0f172a;
+  color: #ffffff;
+  border-left: 4px solid #16a34a;
+}
+
+.autocare-perms-toast.is-info {
+  background-color: #0f172a;
+  color: #ffffff;
+  border-left: 4px solid #0284c7;
+}
+
+.autocare-perms-toast-close {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.autocare-perms-toast-close:hover {
+  color: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive Breakpoints
+   -------------------------------------------------------------------------- */
+@media (max-width: 992px) {
+  .autocare-perms-options-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .autocare-perms-bottom-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .autocare-perms-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .autocare-perms-header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .autocare-perms-recipient-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

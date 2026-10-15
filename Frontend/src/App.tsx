@@ -20,6 +20,9 @@ import ServiceHistoryPage from './pages/services/ServiceHistoryPage';
 import NotificationsPage from './pages/notifications/NotificationsPage';
 import CreateNotificationPage from './pages/notifications/CreateNotificationPage';
 import ExpenseTrackingPage from './pages/expenses/ExpenseTrackingPage';
+import SecureLinkSharingPage from './pages/sharing/SecureLinkSharingPage';
+import QRCodeSharingPage from './pages/sharing/QRCodeSharingPage';
+import AccessPermissionManagementPage from './pages/sharing/AccessPermissionManagementPage';
 import './App.css';
 
 // Lightweight Shell Component for Upcoming Phase Routes
@@ -123,6 +126,15 @@ export const App: React.FC = () => {
 
           {/* Expense Tracking */}
           <Route path="/expenses" element={<ExpenseTrackingPage />} />
+
+          {/* Secure Link Sharing — BR-05 */}
+          <Route path="/sharing/secure-link" element={<SecureLinkSharingPage />} />
+
+          {/* QR Code Sharing — BR-06 */}
+          <Route path="/sharing/qr" element={<QRCodeSharingPage />} />
+
+          {/* Access Permission Management — BR-06 */}
+          <Route path="/sharing/permissions" element={<AccessPermissionManagementPage />} />
 
           <Route
             path="/buyer-qr"
