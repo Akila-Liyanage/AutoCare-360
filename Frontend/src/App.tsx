@@ -23,6 +23,7 @@ import ExpenseTrackingPage from './pages/expenses/ExpenseTrackingPage';
 import SecureLinkSharingPage from './pages/sharing/SecureLinkSharingPage';
 import QRCodeSharingPage from './pages/sharing/QRCodeSharingPage';
 import AccessPermissionManagementPage from './pages/sharing/AccessPermissionManagementPage';
+import ConfigureAccessPermissionsPage from './pages/sharing/ConfigureAccessPermissionsPage';
 import './App.css';
 
 // Lightweight Shell Component for Upcoming Phase Routes
@@ -135,6 +136,9 @@ export const App: React.FC = () => {
 
           {/* Access Permission Management — BR-06 */}
           <Route path="/sharing/permissions" element={<AccessPermissionManagementPage />} />
+
+          {/* Data Protection / Configure Access Permissions */}
+          <Route path="/sharing/protection" element={<ConfigureAccessPermissionsPage />} />
 
           <Route
             path="/buyer-qr"

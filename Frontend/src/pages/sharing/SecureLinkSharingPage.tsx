@@ -140,10 +140,10 @@ export const SecureLinkSharingPage: React.FC = () => {
                 to="/sharing/permissions"
                 className="autocare-sharing-btn-draft"
                 style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                title="Manage Access Permissions"
+                title="Manage access permissions"
               >
                 <ShieldCheck size={15} />
-                <span>Manage permissions</span>
+                <span>Access permissions</span>
               </Link>
 
               <Link

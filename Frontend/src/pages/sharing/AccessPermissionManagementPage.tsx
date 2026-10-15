@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
-  ShieldCheck,
-  CheckCircle2,
   Check,
+  CheckCircle2,
   X,
-  AlertCircle
+  ShieldCheck,
+  Calendar,
+  AlertCircle,
+  Sliders
 } from 'lucide-react';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
@@ -15,66 +17,62 @@ import '../../styles/permissions.css';
 type PermissionMode = 'Full Access' | 'Limited Access' | 'Selected Records';
 
 interface ToastState {
+  show: boolean;
   message: string;
   type: 'success' | 'info';
 }
 
-export const AccessPermissionManagementPage: React.FC = () => {
+const AccessPermissionManagementPage: React.FC = () => {
   const navigate = useNavigate();
 
-  // Permission selection state - default to Figma visual target ('Selected Records')
+  // Active permission tier/mode
   const [selectedMode, setSelectedMode] = useState<PermissionMode>('Selected Records');
 
-  // Expiration field state matching Figma ('30 Sep 2026 · 6:00 PM')
-  const [expiration, setExpiration] = useState('30 Sep 2026 · 6:00 PM');
+  // Editable expiration datetime string matching Figma target
+  const [expiration, setExpiration] = useState<string>('30 Sep 2026 · 6:00 PM');
 
-  // Confirmation toast state
-  const [toast, setToast] = useState<ToastState | null>(null);
+  // Toast notification state
+  const [toast, setToast] = useState<ToastState>({
+    show: false,
+    message: '',
+    type: 'success'
+  });
 
   const showToast = (message: string, type: 'success' | 'info' = 'success') => {
-    setToast({ message, type });
+    setToast({ show: true, message, type });
     setTimeout(() => {
-      setToast(null);
+      setToast((prev) => ({ ...prev, show: false }));
     }, 4500);
   };
 
   const handleGrantAccess = () => {
     showToast(
-      `Access permissions (${selectedMode}) granted to N. Fernando (Ceylinco Insurance). Logged in BR-08 Audit Trail.`,
+      `Access granted under "${selectedMode}" to N. Fernando (Ceylinco Insurance) until ${expiration}. Event logged in BR-08 Audit Trail.`,
       'success'
     );
   };
 
-  // Dynamic summary mappings based on selected mode
+  // Dynamic summary metadata based on selected permission mode
   const getSummaryData = () => {
     switch (selectedMode) {
       case 'Full Access':
         return {
-          modeLabel: 'Full access',
-          allowed: 'All maintenance, invoices, telemetry & documents',
-          hidden: 'None (unredacted)',
-          reviewHeadline: 'All record categories visible',
-          reviewDesc:
-            'The recipient will be granted unredacted read-only access to all historical maintenance and claim records. An audit log entry will record this grant.'
+          allowed: 'Complete service history, Costs and invoices, Documents and images',
+          hidden: 'None (Full visibility granted)',
+          categoriesCount: 'All record categories visible'
         };
       case 'Limited Access':
         return {
-          modeLabel: 'Limited access',
-          allowed: 'Periodic service milestones, odometer, battery health',
-          hidden: 'Costs, invoices, documents, owner contact',
-          reviewHeadline: '4 operational categories visible',
-          reviewDesc:
-            'The recipient will be granted read-only access to operational logs only. Financial and owner contact data are strictly redacted.'
+          allowed: 'Service dates, Mileage readings, Garage details',
+          hidden: 'Costs, Invoices, Documents and images',
+          categoriesCount: '1 record category visible'
         };
       case 'Selected Records':
       default:
         return {
-          modeLabel: 'Selected records',
-          allowed: 'Engine repair history · periodic service',
-          hidden: 'Insurance documents · owner contact',
-          reviewHeadline: '2 record categories visible',
-          reviewDesc:
-            'The recipient will be granted read-only access to the allowed categories. An audit log entry will record this grant.'
+          allowed: 'Engine repair history, Periodic service records',
+          hidden: 'Insurance documents, Costs and invoices',
+          categoriesCount: '2 record categories visible'
         };
     }
   };
@@ -82,117 +80,121 @@ export const AccessPermissionManagementPage: React.FC = () => {
   const summary = getSummaryData();
 
   return (
-    <div className="autocare-perms-page">
+    <div className="autocare-perm-page">
       <Navbar />
 
-      <main className="autocare-perms-main">
-        <div className="autocare-perms-container">
+      <main className="autocare-perm-main">
+        <div className="autocare-perm-container">
           {/* Breadcrumb / Back Navigation */}
-          <div className="autocare-perms-back-nav">
+          <div className="autocare-perm-back-nav">
             <button
               type="button"
-              className="autocare-perms-back-btn"
+              className="autocare-perm-back-btn"
               onClick={() => navigate(-1)}
               title="Return to previous screen"
             >
               <ArrowLeft size={16} />
-              <span>Back to sharing</span>
+              <span>Back to sharing options</span>
             </button>
           </div>
 
-          {/* Top Header Row matching Figma */}
-          <header className="autocare-perms-header-row">
-            <div className="autocare-perms-title-group">
-              <h1 className="autocare-perms-title">Access Permission Management</h1>
-              <p className="autocare-perms-subtitle">
-                BR-06 · Grant the minimum record access needed. Selected permissions are logged in the
-                audit trail.
+          {/* Top Header Row matching Figma target */}
+          <header className="autocare-perm-header-row">
+            <div className="autocare-perm-title-group">
+              <h1 className="autocare-perm-title">Access Permission Management</h1>
+              <p className="autocare-perm-subtitle">
+                BR-06 · Grant the minimum record access needed.
               </p>
             </div>
 
-            <div className="autocare-perms-header-actions">
+            <div className="autocare-perm-header-actions">
               <Link
-                to="/sharing/secure-link"
-                className="autocare-perms-btn-nav"
-                title="View Secure Link Sharing"
+                to="/sharing/protection"
+                className="autocare-perm-back-btn"
+                style={{
+                  border: '1px solid #cbd5e1',
+                  background: '#ffffff',
+                  color: '#0056A2',
+                  padding: '9px 18px',
+                  borderRadius: '8px'
+                }}
+                title="Configure advanced protection"
               >
-                <span>Secure Link</span>
+                <Sliders size={15} />
+                <span>Configure protection</span>
               </Link>
-              <Link
-                to="/sharing/qr"
-                className="autocare-perms-btn-nav"
-                title="View QR Code Sharing"
-              >
-                <span>QR Sharing</span>
-              </Link>
+
               <button
                 type="button"
-                className="autocare-perms-btn-primary"
+                className="autocare-perm-btn-grant"
                 onClick={handleGrantAccess}
               >
-                <ShieldCheck size={16} />
+                <Check size={16} />
                 <span>Grant access</span>
               </button>
             </div>
           </header>
 
-          {/* Recipient Context Card matching Figma */}
-          <section className="autocare-perms-recipient-card" aria-label="Recipient context">
-            <h2 className="autocare-perms-card-label">Recipient context</h2>
-            <div className="autocare-perms-recipient-content">
-              <div className="autocare-perms-recipient-info">
-                <span className="autocare-perms-recipient-name">
+          {/* Card 1: Recipient Context Card */}
+          <section className="autocare-perm-recipient-card" aria-label="Recipient Context">
+            <h2 className="autocare-perm-recipient-title">Recipient context</h2>
+            <div className="autocare-perm-recipient-row">
+              <div className="autocare-perm-recipient-info">
+                <span className="autocare-perm-recipient-name">
                   N. Fernando · Ceylinco Insurance
                 </span>
-                <span className="autocare-perms-recipient-sub">
+                <span className="autocare-perm-recipient-role">
                   Inspection officer · inspection@ceylinco.lk
                 </span>
               </div>
-              <div className="autocare-perms-badge-verified">
-                <CheckCircle2 size={13} />
+
+              <div className="autocare-perm-badge-verified">
+                <CheckCircle2 size={14} />
                 <span>IDENTITY VERIFIED</span>
               </div>
             </div>
           </section>
 
-          {/* 3-Column Permission Options Grid */}
-          <section className="autocare-perms-options-grid" aria-label="Permission options">
-            {/* 1. Full Access Card */}
+          {/* Card Stack 2: 3 Permission Option Cards */}
+          <section className="autocare-perm-options-grid" aria-label="Permission Options">
+            {/* Card Option 1: Full Access */}
             <div
-              className={`autocare-perms-option-card ${
+              className={`autocare-perm-option-card ${
                 selectedMode === 'Full Access' ? 'is-selected' : ''
               }`}
               onClick={() => setSelectedMode('Full Access')}
               role="button"
               tabIndex={0}
-              onKeyDown={(e) => e.key === 'Enter' && setSelectedMode('Full Access')}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') setSelectedMode('Full Access');
+              }}
             >
-              <div>
-                <div className="autocare-perms-option-header">
-                  <h3 className="autocare-perms-option-title">Full Access</h3>
-                  <p className="autocare-perms-option-desc">
-                    Complete service history, costs and documents
-                  </p>
+              <div className="autocare-perm-option-header">
+                <h3 className="autocare-perm-option-title">Full Access</h3>
+                <p className="autocare-perm-option-desc">
+                  Complete service history, costs and documents
+                </p>
+              </div>
+
+              <div className="autocare-perm-option-list">
+                <div className="autocare-perm-list-bullet">
+                  <span>•</span>
+                  <span>Complete service history</span>
                 </div>
-                <div className="autocare-perms-option-list">
-                  <div className="autocare-perms-option-item is-dark">
-                    • Maintenance and repair records
-                  </div>
-                  <div className="autocare-perms-option-item is-dark">
-                    • Parts and labor invoices
-                  </div>
-                  <div className="autocare-perms-option-item is-dark">
-                    • Accident history and reports
-                  </div>
-                  <div className="autocare-perms-option-item is-dark">
-                    • Insurance claim documents
-                  </div>
+                <div className="autocare-perm-list-bullet">
+                  <span>•</span>
+                  <span>Costs and invoices</span>
+                </div>
+                <div className="autocare-perm-list-bullet">
+                  <span>•</span>
+                  <span>Documents and images</span>
                 </div>
               </div>
-              <div>
+
+              <div className="autocare-perm-option-footer">
                 <span
-                  className={`autocare-perms-badge-state ${
-                    selectedMode === 'Full Access' ? 'is-active' : 'is-unselected'
+                  className={`autocare-perm-pill-status ${
+                    selectedMode === 'Full Access' ? 'selected' : 'not-selected'
                   }`}
                 >
                   {selectedMode === 'Full Access' ? 'SELECTED' : 'NOT SELECTED'}
@@ -200,42 +202,44 @@ export const AccessPermissionManagementPage: React.FC = () => {
               </div>
             </div>
 
-            {/* 2. Limited Access Card */}
+            {/* Card Option 2: Limited Access */}
             <div
-              className={`autocare-perms-option-card ${
+              className={`autocare-perm-option-card ${
                 selectedMode === 'Limited Access' ? 'is-selected' : ''
               }`}
               onClick={() => setSelectedMode('Limited Access')}
               role="button"
               tabIndex={0}
-              onKeyDown={(e) => e.key === 'Enter' && setSelectedMode('Limited Access')}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') setSelectedMode('Limited Access');
+              }}
             >
-              <div>
-                <div className="autocare-perms-option-header">
-                  <h3 className="autocare-perms-option-title">Limited Access</h3>
-                  <p className="autocare-perms-option-desc">
-                    Essential operational history only
-                  </p>
+              <div className="autocare-perm-option-header">
+                <h3 className="autocare-perm-option-title">Limited Access</h3>
+                <p className="autocare-perm-option-desc">
+                  Essential operational history only
+                </p>
+              </div>
+
+              <div className="autocare-perm-option-list">
+                <div className="autocare-perm-list-bullet">
+                  <span>•</span>
+                  <span>Service dates</span>
                 </div>
-                <div className="autocare-perms-option-list">
-                  <div className="autocare-perms-option-item is-dark">
-                    • Periodic service milestones
-                  </div>
-                  <div className="autocare-perms-option-item is-dark">
-                    • Odometer reading log
-                  </div>
-                  <div className="autocare-perms-option-item is-dark">
-                    • Battery health status
-                  </div>
-                  <div className="autocare-perms-option-item is-dark">
-                    • Active warning indicators
-                  </div>
+                <div className="autocare-perm-list-bullet">
+                  <span>•</span>
+                  <span>Mileage readings</span>
+                </div>
+                <div className="autocare-perm-list-bullet">
+                  <span>•</span>
+                  <span>Garage details</span>
                 </div>
               </div>
-              <div>
+
+              <div className="autocare-perm-option-footer">
                 <span
-                  className={`autocare-perms-badge-state ${
-                    selectedMode === 'Limited Access' ? 'is-active' : 'is-unselected'
+                  className={`autocare-perm-pill-status ${
+                    selectedMode === 'Limited Access' ? 'selected' : 'not-selected'
                   }`}
                 >
                   {selectedMode === 'Limited Access' ? 'SELECTED' : 'NOT SELECTED'}
@@ -243,42 +247,44 @@ export const AccessPermissionManagementPage: React.FC = () => {
               </div>
             </div>
 
-            {/* 3. Selected Records Card (Default in Figma) */}
+            {/* Card Option 3: Selected Records (Default Active in Figma) */}
             <div
-              className={`autocare-perms-option-card ${
+              className={`autocare-perm-option-card ${
                 selectedMode === 'Selected Records' ? 'is-selected' : ''
               }`}
               onClick={() => setSelectedMode('Selected Records')}
               role="button"
               tabIndex={0}
-              onKeyDown={(e) => e.key === 'Enter' && setSelectedMode('Selected Records')}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') setSelectedMode('Selected Records');
+              }}
             >
-              <div>
-                <div className="autocare-perms-option-header">
-                  <h3 className="autocare-perms-option-title">Selected Records</h3>
-                  <p className="autocare-perms-option-desc">
-                    Custom record-level grant
-                  </p>
+              <div className="autocare-perm-option-header">
+                <h3 className="autocare-perm-option-title">Selected Records</h3>
+                <p className="autocare-perm-option-desc">
+                  Precisely control individual categories
+                </p>
+              </div>
+
+              <div className="autocare-perm-option-list">
+                <div className="autocare-perm-list-allowed">
+                  <Check size={15} />
+                  <span>Engine repair history — allowed</span>
                 </div>
-                <div className="autocare-perms-option-list">
-                  <div className="autocare-perms-option-item is-allowed">
-                    <Check size={15} strokeWidth={2.5} />
-                    <span>Engine repair history — allowed</span>
-                  </div>
-                  <div className="autocare-perms-option-item is-hidden">
-                    <X size={15} strokeWidth={2.5} />
-                    <span>Insurance documents — hidden</span>
-                  </div>
-                  <div className="autocare-perms-option-item is-allowed">
-                    <Check size={15} strokeWidth={2.5} />
-                    <span>Periodic service records</span>
-                  </div>
+                <div className="autocare-perm-list-hidden">
+                  <X size={15} />
+                  <span>Insurance documents — hidden</span>
+                </div>
+                <div className="autocare-perm-list-bullet">
+                  <Check size={15} style={{ color: '#10b981' }} />
+                  <span>Periodic service records</span>
                 </div>
               </div>
-              <div>
+
+              <div className="autocare-perm-option-footer">
                 <span
-                  className={`autocare-perms-badge-state ${
-                    selectedMode === 'Selected Records' ? 'is-active' : 'is-unselected'
+                  className={`autocare-perm-pill-status ${
+                    selectedMode === 'Selected Records' ? 'selected' : 'not-selected'
                   }`}
                 >
                   {selectedMode === 'Selected Records' ? 'SELECTED' : 'NOT SELECTED'}
@@ -287,89 +293,138 @@ export const AccessPermissionManagementPage: React.FC = () => {
             </div>
           </section>
 
-          {/* Bottom 2-Column Grid matching Figma */}
-          <div className="autocare-perms-bottom-grid">
-            {/* Left Column: Permission summary card */}
-            <section className="autocare-perms-summary-card" aria-label="Permission summary">
-              <h2 className="autocare-perms-summary-title">Permission summary</h2>
-              <div className="autocare-perms-summary-list">
-                <div className="autocare-perms-summary-row">
-                  <span className="autocare-perms-summary-label">Vehicle</span>
-                  <span className="autocare-perms-summary-value">
-                    WP CAB-1234 · Toyota Aqua 2018
-                  </span>
+          {/* Bottom Split Section: Permission Summary (Left) + Review Panel (Right) */}
+          <div className="autocare-perm-bottom-grid">
+            {/* Left: Permission Summary Card */}
+            <section className="autocare-perm-summary-card" aria-label="Permission Summary">
+              <h2 className="autocare-perm-summary-title">Permission summary</h2>
+
+              <div className="autocare-perm-summary-table">
+                <div className="autocare-perm-summary-row">
+                  <span className="autocare-perm-summary-label">Vehicle</span>
+                  <span className="autocare-perm-summary-val">WP ABC-1234 · Toyota Aqua</span>
                 </div>
-                <div className="autocare-perms-summary-row">
-                  <span className="autocare-perms-summary-label">Access mode</span>
-                  <span className="autocare-perms-summary-value">{summary.modeLabel}</span>
+
+                <div className="autocare-perm-summary-row">
+                  <span className="autocare-perm-summary-label">Access</span>
+                  <span className="autocare-perm-summary-val">{selectedMode}</span>
                 </div>
-                <div className="autocare-perms-summary-row">
-                  <span className="autocare-perms-summary-label">Allowed items</span>
-                  <span className="autocare-perms-summary-value">{summary.allowed}</span>
+
+                <div className="autocare-perm-summary-row">
+                  <span className="autocare-perm-summary-label">Allowed</span>
+                  <span className="autocare-perm-summary-val">{summary.allowed}</span>
                 </div>
-                <div className="autocare-perms-summary-row">
-                  <span className="autocare-perms-summary-label">Hidden items</span>
-                  <span className="autocare-perms-summary-value">{summary.hidden}</span>
+
+                <div className="autocare-perm-summary-row">
+                  <span className="autocare-perm-summary-label">Hidden</span>
+                  <span className="autocare-perm-summary-val">{summary.hidden}</span>
                 </div>
-                <div className="autocare-perms-summary-row">
-                  <span className="autocare-perms-summary-label">Expiration</span>
-                  <span className="autocare-perms-summary-value">{expiration}</span>
+
+                <div className="autocare-perm-summary-row">
+                  <span className="autocare-perm-summary-label">Expiration</span>
+                  <span className="autocare-perm-summary-val">{expiration}</span>
                 </div>
               </div>
             </section>
 
-            {/* Right Column: Review panel card */}
-            <section className="autocare-perms-review-card" aria-label="Review panel">
-              <div className="autocare-perms-review-header">
-                <h2 className="autocare-perms-review-title">Review panel</h2>
-                <div className="autocare-perms-badge-ready">
-                  <CheckCircle2 size={12} />
-                  <span>READY TO GRANT</span>
-                </div>
+            {/* Right: Review Panel Card */}
+            <section className="autocare-perm-review-card" aria-label="Review Panel">
+              <h2 className="autocare-perm-review-title">Review panel</h2>
+
+              <div className="autocare-perm-badge-ready">
+                READY TO GRANT
               </div>
 
-              <div className="autocare-perms-review-headline">{summary.reviewHeadline}</div>
-              <p className="autocare-perms-review-desc">{summary.reviewDesc}</p>
+              <div className="autocare-perm-review-headline">
+                {summary.categoriesCount}
+              </div>
 
-              <div className="autocare-perms-expiration-group">
-                <label htmlFor="perms-expiration" className="autocare-perms-expiration-label">
+              <p className="autocare-perm-review-desc">
+                Recipient can view but cannot download or reshare. Every access event appears in BR-08 Audit Trail.
+              </p>
+
+              <div className="autocare-perm-form-group">
+                <label htmlFor="perm-expiration-input" className="autocare-perm-label">
                   Expiration
                 </label>
-                <input
-                  id="perms-expiration"
-                  type="text"
-                  className="autocare-perms-expiration-input"
-                  value={expiration}
-                  onChange={(e) => setExpiration(e.target.value)}
-                  placeholder="30 Sep 2026 · 6:00 PM"
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    id="perm-expiration-input"
+                    type="text"
+                    className="autocare-perm-input"
+                    value={expiration}
+                    onChange={(e) => setExpiration(e.target.value)}
+                    placeholder="e.g. 30 Sep 2026 · 6:00 PM"
+                  />
+                  <Calendar
+                    size={16}
+                    style={{
+                      position: 'absolute',
+                      right: '12px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: '#94a3b8',
+                      pointerEvents: 'none'
+                    }}
+                  />
+                </div>
               </div>
 
               <button
                 type="button"
-                className="autocare-perms-btn-grant-bottom"
+                className="autocare-perm-btn-panel-grant"
                 onClick={handleGrantAccess}
               >
                 <ShieldCheck size={16} />
                 <span>Grant access</span>
               </button>
+
+              <Link
+                to="/sharing/protection"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  marginTop: '10px',
+                  background: '#f8fafc',
+                  border: '1px solid #cbd5e1',
+                  color: '#0056A2',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  padding: '9px 16px',
+                  borderRadius: '8px',
+                  textDecoration: 'none',
+                  transition: 'all 0.2s ease',
+                  width: '100%',
+                  boxSizing: 'border-box'
+                }}
+                title="Configure advanced data protection"
+              >
+                <Sliders size={14} />
+                <span>Configure protection</span>
+              </Link>
             </section>
           </div>
         </div>
       </main>
 
-      {/* Floating Action Confirmation Toast */}
-      {toast && (
-        <div className={`autocare-perms-toast is-${toast.type}`} role="alert">
-          {toast.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+      {/* Floating Toast Notification */}
+      {toast.show && (
+        <div className={`autocare-perm-toast is-${toast.type}`} role="alert">
+          {toast.type === 'success' ? (
+            <CheckCircle2 size={18} style={{ color: '#22c55e', flexShrink: 0 }} />
+          ) : (
+            <AlertCircle size={18} style={{ color: '#38bdf8', flexShrink: 0 }} />
+          )}
           <span>{toast.message}</span>
           <button
             type="button"
-            className="autocare-perms-toast-close"
-            onClick={() => setToast(null)}
-            aria-label="Dismiss toast"
+            className="autocare-perm-toast-close"
+            onClick={() => setToast((prev) => ({ ...prev, show: false }))}
+            aria-label="Close notification"
           >
-            <X size={15} />
+            <X size={16} />
           </button>
         </div>
       )}

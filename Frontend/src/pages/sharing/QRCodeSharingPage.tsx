@@ -198,7 +198,7 @@ export const QRCodeSharingPage: React.FC = () => {
                 to="/sharing/permissions"
                 className="autocare-qr-btn-draft"
                 style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                title="Manage Access Permissions"
+                title="Manage access permissions"
               >
                 <ShieldCheck size={14} />
                 <span>Access permissions</span>
