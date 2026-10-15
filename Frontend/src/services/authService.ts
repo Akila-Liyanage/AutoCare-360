@@ -28,6 +28,7 @@ export interface UpdateProfilePayload {
   timezone?: string;
   city?: string;
   country?: string;
+  profileImage?: string;
 }
 
 export interface UpdateProfileResponse {
@@ -113,6 +114,17 @@ export const authService = {
 
   async updateProfile(payload: UpdateProfilePayload): Promise<UpdateProfileResponse> {
     const response = await api.patch<UpdateProfileResponse>('/auth/profile', payload);
+    return response.data;
+  },
+
+  async uploadProfileImage(file: File): Promise<UpdateProfileResponse> {
+    const formData = new FormData();
+    formData.append('profileImage', file);
+    const response = await api.post<UpdateProfileResponse>('/auth/profile/image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   },
 

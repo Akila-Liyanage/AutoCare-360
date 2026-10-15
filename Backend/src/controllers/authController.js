@@ -1,3 +1,5 @@
+const path = require('path');
+const fs = require('fs');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
@@ -402,6 +404,7 @@ const updateProfile = async (req, res, next) => {
       timezone,
       city,
       country,
+      profileImage,
     } = req.body;
 
     // Strict validation and whitelisting of mutable profile fields only
@@ -447,6 +450,10 @@ const updateProfile = async (req, res, next) => {
       user.country = String(country).trim();
     }
 
+    if (profileImage !== undefined) {
+      user.profileImage = String(profileImage).trim();
+    }
+
     await user.save();
 
     return res.status(200).json({
@@ -461,11 +468,61 @@ const updateProfile = async (req, res, next) => {
   }
 };
 
+// @desc    Upload profile image (multipart/form-data)
+// @route   POST /api/auth/profile/image
+// @access  Private (Bearer JWT)
+const uploadProfileImage = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No image file was provided. Please choose a JPG or PNG image.',
+      });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Account not found.',
+      });
+    }
+
+    // Clean up previous uploaded image from disk if one existed
+    if (user.profileImage && user.profileImage.includes('/uploads/profile/')) {
+      try {
+        const oldFilename = path.basename(user.profileImage);
+        const oldFilePath = path.join(__dirname, '../../uploads/profile', oldFilename);
+        if (fs.existsSync(oldFilePath)) {
+          fs.unlinkSync(oldFilePath);
+        }
+      } catch (cleanErr) {
+        console.warn('[Profile Image Cleanup Notice]:', cleanErr.message);
+      }
+    }
+
+    const imageUrl = `${req.protocol}://${req.get('host')}/api/auth/uploads/profile/${req.file.filename}`;
+    user.profileImage = imageUrl;
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Profile image uploaded and updated successfully.',
+      data: {
+        user,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   register,
   login,
   getMe,
   updateProfile,
+  uploadProfileImage,
   forgotPassword,
   verifyCode,
   resendCode,

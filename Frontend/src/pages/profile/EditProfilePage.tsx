@@ -28,9 +28,16 @@ interface FormState {
   country: string;
 }
 
+const resolveImageUrl = (img?: string): string | undefined => {
+  if (!img) return undefined;
+  if (img.startsWith('http://') || img.startsWith('https://') || img.startsWith('blob:')) return img;
+  const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '');
+  return `${base}${img.startsWith('/') ? '' : '/'}${img}`;
+};
+
 const EditProfileForm: React.FC<{ user: UserProfile }> = ({ user }) => {
   const navigate = useNavigate();
-  const { updateUserProfile } = useAuth();
+  const { updateUserProfile, uploadProfileImage } = useAuth();
 
   const [formData, setFormData] = useState<FormState>(() => ({
     fullName: user.fullName || '',
@@ -42,6 +49,7 @@ const EditProfileForm: React.FC<{ user: UserProfile }> = ({ user }) => {
     country: user.country || 'Sri Lanka',
   }));
 
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   const [errors, setErrors] = useState<{ fullName?: string; phone?: string; general?: string }>({});
@@ -100,6 +108,7 @@ const EditProfileForm: React.FC<{ user: UserProfile }> = ({ user }) => {
       URL.revokeObjectURL(previewUrl);
     }
 
+    setSelectedFile(file);
     const objectUrl = URL.createObjectURL(file);
     setPreviewUrl(objectUrl);
   };
@@ -109,6 +118,7 @@ const EditProfileForm: React.FC<{ user: UserProfile }> = ({ user }) => {
       URL.revokeObjectURL(previewUrl);
       setPreviewUrl(null);
     }
+    setSelectedFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -158,6 +168,10 @@ const EditProfileForm: React.FC<{ user: UserProfile }> = ({ user }) => {
         city: formData.city.trim() || undefined,
         country: formData.country,
       });
+
+      if (selectedFile) {
+        await uploadProfileImage(selectedFile);
+      }
 
       // Navigate to /profile with success feedback
       navigate('/profile', {
@@ -271,6 +285,12 @@ const EditProfileForm: React.FC<{ user: UserProfile }> = ({ user }) => {
                     <img
                       src={previewUrl}
                       alt="Avatar Preview"
+                      className="autocare-profile-avatar-img"
+                    />
+                  ) : resolveImageUrl(user.profileImage || user.avatar) ? (
+                    <img
+                      src={resolveImageUrl(user.profileImage || user.avatar)}
+                      alt="Avatar"
                       className="autocare-profile-avatar-img"
                     />
                   ) : (

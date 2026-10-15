@@ -18,6 +18,7 @@ export interface AuthContextType {
   logout: () => void;
   refreshUser: () => Promise<UserProfile | null>;
   updateUserProfile: (payload: UpdateProfilePayload) => Promise<UserProfile>;
+  uploadProfileImage: (file: File) => Promise<UserProfile>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -121,6 +122,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return updatedUser;
   }, []);
 
+  const uploadProfileImage = useCallback(async (file: File): Promise<UserProfile> => {
+    const response = await authService.uploadProfileImage(file);
+    const updatedUser = response.data.user;
+    setUser(updatedUser);
+    localStorage.setItem('autocare_user', JSON.stringify(updatedUser));
+    return updatedUser;
+  }, []);
+
   const value: AuthContextType = {
     user,
     token,
@@ -131,6 +140,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     logout,
     refreshUser,
     updateUserProfile,
+    uploadProfileImage,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

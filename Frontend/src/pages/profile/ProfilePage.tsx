@@ -15,6 +15,13 @@ import { getMyVehicles, type Vehicle } from '../../services/vehicleService';
 import defaultVehicleHeroImg from '../../assets/vehicles/default-vehicle-hero.png';
 import '../../styles/profile.css';
 
+const resolveImageUrl = (img?: string): string | undefined => {
+  if (!img) return undefined;
+  if (img.startsWith('http://') || img.startsWith('https://') || img.startsWith('blob:')) return img;
+  const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '');
+  return `${base}${img.startsWith('/') ? '' : '/'}${img}`;
+};
+
 export const ProfilePage: React.FC = () => {
   const { user, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
@@ -23,6 +30,7 @@ export const ProfilePage: React.FC = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loadingVehicles, setLoadingVehicles] = useState<boolean>(true);
   const [vehicleError, setVehicleError] = useState<string | null>(null);
+  const [failedImgUrl, setFailedImgUrl] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(() => {
     return (location.state as { successMessage?: string })?.successMessage || null;
   });
@@ -67,8 +75,10 @@ export const ProfilePage: React.FC = () => {
   };
 
   // Safe user image check
-  const userImg = (user as unknown as { profileImage?: string; avatar?: string })?.profileImage ||
-                  (user as unknown as { profileImage?: string; avatar?: string })?.avatar;
+  const rawUserImg = (user as unknown as { profileImage?: string; avatar?: string })?.profileImage ||
+                     (user as unknown as { profileImage?: string; avatar?: string })?.avatar;
+  const userImg = resolveImageUrl(rawUserImg);
+  const canShowAvatar = !!userImg && failedImgUrl !== userImg;
 
   // Deterministic display Owner ID from real MongoDB _id
   const ownerId = user?._id
@@ -155,11 +165,13 @@ export const ProfilePage: React.FC = () => {
               <div className="autocare-profile-avatar-wrapper">
                 <div className="autocare-profile-avatar-outer">
                   <div className="autocare-profile-avatar-inner">
-                    {userImg ? (
+                    {canShowAvatar && userImg ? (
                       <img
+                        key={userImg}
                         src={userImg}
                         alt={user?.fullName || 'User'}
                         className="autocare-profile-avatar-img"
+                        onError={() => setFailedImgUrl(userImg)}
                       />
                     ) : (
                       <span className="autocare-profile-avatar-initials">
