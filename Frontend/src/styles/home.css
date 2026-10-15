@@ -391,13 +391,13 @@
 }
 
 .autocare-hero-container {
-  max-width: 1320px;
+  max-width: 1380px;
   margin: 0 auto;
   padding: 0 24px;
   display: grid;
-  grid-template-columns: 1.05fr 0.95fr;
+  grid-template-columns: 1fr 1.08fr;
   align-items: center;
-  gap: 40px;
+  gap: 32px;
 }
 
 .autocare-hero-content {
@@ -626,29 +626,34 @@
   position: relative;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
+  width: 100%;
 }
 
 .autocare-hero-car-wrapper {
   position: relative;
   width: 100%;
-  max-width: 600px;
+  max-width: 700px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
 }
 
 .autocare-hero-car-img {
   width: 100%;
-  height: auto;
-  max-height: 520px;
-  object-fit: contain;
-  filter: drop-shadow(0 20px 32px rgba(0, 0, 0, 0.16));
-  transition: transform 0.4s ease;
-}
-
-.autocare-hero-car-img:hover {
-  transform: scale(1.02);
+  max-width: 660px;
+  height: 620px;
+  object-fit: cover;
+  object-position: right 22%;
+  mix-blend-mode: multiply;
+  display: block;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 6%, #000 94%, transparent 100%),
+                      linear-gradient(to right, transparent 0%, #000 8%, #000 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 6%, #000 94%, transparent 100%),
+              linear-gradient(to right, transparent 0%, #000 8%, #000 100%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
 }
 
 /* Floating Telemetry Badges */
@@ -1416,6 +1421,21 @@
 
   .autocare-hero-trust-row {
     justify-content: center;
+  }
+
+  .autocare-hero-visual-col {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .autocare-hero-car-wrapper {
+    max-width: 580px;
+    justify-content: center;
+  }
+
+  .autocare-hero-car-img {
+    height: 480px;
+    object-position: center 24%;
   }
 
   .autocare-capabilities-grid,

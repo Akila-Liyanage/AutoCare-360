@@ -8,10 +8,9 @@ import {
   CheckCircle2, 
   AlertTriangle,
   QrCode, 
-  Gauge, 
+  Gauge,
   Brain, 
   Building2, 
-  Sparkles,
   FileX2,
   FileSearch,
   Eye,
@@ -138,34 +137,6 @@ export const HomePage: React.FC = () => {
                   alt="AutoCare 360 Digital Vehicle Passport" 
                   className="autocare-hero-car-img" 
                 />
-
-                {/* Floating Telemetry Badge 1: Trust Index */}
-                <div className="autocare-floating-card is-score">
-                  <div className="autocare-floating-card-icon is-green">
-                    <Sparkles size={18} />
-                  </div>
-                  <div>
-                    <span className="autocare-floating-card-label">Vehicle Trust Index</span>
-                    <strong className="autocare-floating-card-val">98 / 100 • Certified</strong>
-                  </div>
-                </div>
-
-                {/* Floating Telemetry Badge 2: Verified Odometer */}
-                <div className="autocare-floating-card is-odo">
-                  <div className="autocare-floating-card-icon is-blue">
-                    <Gauge size={18} />
-                  </div>
-                  <div>
-                    <span className="autocare-floating-card-label">Verified Odometer</span>
-                    <strong className="autocare-floating-card-val">24,500 km • Authentic</strong>
-                  </div>
-                </div>
-
-                {/* Floating Telemetry Badge 3: Digital Passport Active */}
-                <div className="autocare-floating-card is-status">
-                  <span className="autocare-status-dot" />
-                  <span>Digital Passport Active</span>
-                </div>
               </div>
             </div>
           </div>
