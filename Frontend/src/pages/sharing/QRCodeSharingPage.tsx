@@ -11,7 +11,8 @@ import {
   X,
   QrCode,
   Link as LinkIcon,
-  ShieldCheck
+  ShieldCheck,
+  ExternalLink
 } from 'lucide-react';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
@@ -412,6 +413,18 @@ export const QRCodeSharingPage: React.FC = () => {
                     <Download size={14} />
                     <span>Download</span>
                   </button>
+
+                  <Link
+                    to={`/shared/vehicle/${qrToken}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="autocare-qr-btn-action"
+                    title="Preview Buyer Shared Record View"
+                    style={{ textDecoration: 'none' }}
+                  >
+                    <ExternalLink size={14} />
+                    <span>Preview</span>
+                  </Link>
 
                   <button
                     type="button"

@@ -644,11 +644,23 @@ export const ViewVehiclePage: React.FC = () => {
                         4 current · 1 expiring soon
                       </p>
                     </div>
+                    <Link
+                      to={`/vehicles/${vehicle._id || id}/documents`}
+                      className="autocare-view-card-link"
+                      title="Manage and view verified documents"
+                    >
+                      View all documents
+                    </Link>
                   </div>
 
                   <div className="autocare-view-doc-list">
                     {/* Doc 1 */}
-                    <div className="autocare-view-doc-item">
+                    <Link
+                      to={`/vehicles/${vehicle._id || id}/documents`}
+                      className="autocare-view-doc-item"
+                      style={{ textDecoration: 'none', color: 'inherit' }}
+                      title="View registration certificate"
+                    >
                       <span className="autocare-view-doc-name">
                         Vehicle registration certificate
                       </span>
@@ -656,19 +668,29 @@ export const ViewVehiclePage: React.FC = () => {
                         <span className="autocare-view-doc-date">Verified</span>
                         <span className="autocare-doc-pill is-pdf">PDF</span>
                       </div>
-                    </div>
+                    </Link>
 
                     {/* Doc 2 */}
-                    <div className="autocare-view-doc-item">
+                    <Link
+                      to={`/vehicles/${vehicle._id || id}/documents`}
+                      className="autocare-view-doc-item"
+                      style={{ textDecoration: 'none', color: 'inherit' }}
+                      title="View insurance policy"
+                    >
                       <span className="autocare-view-doc-name">Insurance policy</span>
                       <div className="autocare-view-doc-status-wrap">
                         <span className="autocare-view-doc-date">Expires 14 Nov 2026</span>
                         <span className="autocare-doc-pill is-soon">SOON</span>
                       </div>
-                    </div>
+                    </Link>
 
                     {/* Doc 3 */}
-                    <div className="autocare-view-doc-item">
+                    <Link
+                      to={`/vehicles/${vehicle._id || id}/documents`}
+                      className="autocare-view-doc-item"
+                      style={{ textDecoration: 'none', color: 'inherit' }}
+                      title="View annual diagnostic report"
+                    >
                       <span className="autocare-view-doc-name">
                         Annual diagnostic report
                       </span>
@@ -676,10 +698,15 @@ export const ViewVehiclePage: React.FC = () => {
                         <span className="autocare-view-doc-date">14 Aug 2026</span>
                         <span className="autocare-doc-pill is-pdf">PDF</span>
                       </div>
-                    </div>
+                    </Link>
 
                     {/* Doc 4 */}
-                    <div className="autocare-view-doc-item">
+                    <Link
+                      to={`/vehicles/${vehicle._id || id}/documents`}
+                      className="autocare-view-doc-item"
+                      style={{ textDecoration: 'none', color: 'inherit' }}
+                      title="View ownership certificate"
+                    >
                       <span className="autocare-view-doc-name">
                         Ownership certificate
                       </span>
@@ -687,7 +714,7 @@ export const ViewVehiclePage: React.FC = () => {
                         <span className="autocare-view-doc-date">15 May 2026</span>
                         <span className="autocare-doc-pill is-signed">SIGNED</span>
                       </div>
-                    </div>
+                    </Link>
                   </div>
                 </div>
               </div>

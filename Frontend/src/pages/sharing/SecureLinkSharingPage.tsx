@@ -9,7 +9,8 @@ import {
   Lock,
   ShieldCheck,
   Ban,
-  QrCode
+  QrCode,
+  ExternalLink
 } from 'lucide-react';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
@@ -417,6 +418,27 @@ export const SecureLinkSharingPage: React.FC = () => {
                     <Copy size={14} />
                     <span>Copy link</span>
                   </button>
+
+                  <Link
+                    to={`/shared/vehicle/${linkSlug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="autocare-sharing-btn-copy"
+                    style={{
+                      textDecoration: 'none',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      background: '#ffffff',
+                      color: '#0b2545',
+                      border: '1px solid #cbd5e1'
+                    }}
+                    title="Preview Buyer / Public Shared Record View"
+                  >
+                    <ExternalLink size={14} />
+                    <span>Preview</span>
+                  </Link>
 
                   <button
                     type="button"
