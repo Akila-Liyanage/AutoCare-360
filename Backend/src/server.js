@@ -1,10 +1,41 @@
 require('dotenv').config();
+const dns = require('dns');
+
+// Reliable DNS resolution fallback for Windows/hotspot environments
+try {
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+} catch (e) {}
+
+const originalLookup = dns.lookup;
+dns.lookup = function (hostname, options, callback) {
+  if (typeof options === 'function') {
+    callback = options;
+    options = {};
+  }
+  originalLookup(hostname, options, (err, address, family) => {
+    if (err && (err.code === 'ENOTFOUND' || err.code === 'EAI_AGAIN')) {
+      dns.resolve4(hostname, (resErr, addresses) => {
+        if (!resErr && addresses && addresses.length > 0) {
+          if (options && options.all) {
+            return callback(null, addresses.map((a) => ({ address: a, family: 4 })));
+          }
+          return callback(null, addresses[0], 4);
+        }
+        return callback(err, address, family);
+      });
+    } else {
+      return callback(err, address, family);
+    }
+  });
+};
+
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const vehicleRoutes = require('./routes/vehicleRoutes');
+const serviceRoutes = require('./routes/serviceRoutes');
 
 const app = express();
 
@@ -60,6 +91,10 @@ app.use('/api', (req, res, next) => {
 
 // Mount Authentication Routes
 app.use('/api/auth', authRoutes);
+
+// Mount Service & Maintenance Records Routes
+app.use('/api/services', serviceRoutes);
+app.use('/api/vehicles/:vehicleId/services', serviceRoutes);
 
 // Mount Vehicle Digital Passport Routes
 app.use('/api/vehicles', vehicleRoutes);

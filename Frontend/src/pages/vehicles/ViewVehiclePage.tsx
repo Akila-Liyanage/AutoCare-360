@@ -25,6 +25,10 @@ import {
   updateVehicle,
   type Vehicle
 } from '../../services/vehicleService';
+import {
+  getVehicleServiceRecords,
+  type BackendServiceRecord
+} from '../../services/serviceService';
 
 // Cropped default asset extracted directly from Figma reference
 import defaultHeroImg from '../../assets/vehicles/default-vehicle-hero.png';
@@ -55,6 +59,10 @@ export const ViewVehiclePage: React.FC = () => {
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
 
+  // Recent service history records
+  const [recentServices, setRecentServices] = useState<BackendServiceRecord[]>([]);
+  const [servicesLoading, setServicesLoading] = useState<boolean>(true);
+
   useEffect(() => {
     let isMounted = true;
 
@@ -77,6 +85,19 @@ export const ViewVehiclePage: React.FC = () => {
               : 'Failed to retrieve vehicle details. Please verify your access.';
           setError(message);
           setLoading(false);
+        }
+      });
+
+    getVehicleServiceRecords(id)
+      .then((records) => {
+        if (isMounted) {
+          setRecentServices(records.slice(0, 3));
+          setServicesLoading(false);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setServicesLoading(false);
         }
       });
 
@@ -563,6 +584,7 @@ export const ViewVehiclePage: React.FC = () => {
                     </div>
                     <Link
                       to="/service-history"
+                      state={{ vehicleId: id, vehicle }}
                       className="autocare-view-card-link"
                     >
                       View complete history
@@ -570,68 +592,85 @@ export const ViewVehiclePage: React.FC = () => {
                   </div>
 
                   <div className="autocare-view-service-list">
-                    {/* Item 1 */}
-                    <div className="autocare-view-service-item">
-                      <div className="autocare-view-service-left">
-                        <div className="autocare-view-service-icon-box">
-                          <Wrench size={18} />
-                        </div>
-                        <div className="autocare-view-service-info">
-                          <h5 className="autocare-view-service-name">
-                            Annual safety &amp; electronics diagnostics
-                          </h5>
-                          <p className="autocare-view-service-meta">
-                            14 Aug 2026 · Apex Tech Service Center · {(vehicle.currentMileage ?? 82410).toLocaleString()} km
-                          </p>
-                        </div>
+                    {servicesLoading ? (
+                      <div style={{ padding: '24px', textAlign: 'center', color: '#64748b' }}>
+                        <p style={{ margin: 0, fontSize: '13px' }}>Loading recent records...</p>
                       </div>
-                      <div className="autocare-view-service-right">
-                        <span className="autocare-view-service-cost">LKR 28,500</span>
-                        <span className="autocare-badge-verified">VERIFIED</span>
+                    ) : recentServices.length === 0 ? (
+                      <div style={{ padding: '28px 16px', textAlign: 'center', color: '#64748b' }}>
+                        <Wrench size={24} style={{ color: '#94a3b8', margin: '0 auto 8px auto', display: 'block' }} />
+                        <p style={{ margin: '0 0 4px 0', fontSize: '13.5px', fontWeight: 600, color: '#0f172a' }}>
+                          No Service History Found
+                        </p>
+                        <p style={{ margin: 0, fontSize: '12.5px', color: '#64748b' }}>
+                          No maintenance records have been logged for this vehicle yet.
+                        </p>
                       </div>
-                    </div>
+                    ) : (
+                      recentServices.map((record) => {
+                        const isVerified =
+                          record.recordSource === 'verified_garage' &&
+                          record.verificationStatus === 'verified';
+                        const cost =
+                          record.totalCost ??
+                          ((record.labourCost || 0) + (record.partsCost || 0));
 
-                    {/* Item 2 */}
-                    <div className="autocare-view-service-item">
-                      <div className="autocare-view-service-left">
-                        <div className="autocare-view-service-icon-box">
-                          <Wrench size={18} />
-                        </div>
-                        <div className="autocare-view-service-info">
-                          <h5 className="autocare-view-service-name">
-                            Cabin filter &amp; AC service
-                          </h5>
-                          <p className="autocare-view-service-meta">
-                            12 Jul 2026 · Apex Tech Service Center · {Math.max((vehicle.currentMileage ?? 82410) - 1570, 0).toLocaleString()} km
-                          </p>
-                        </div>
-                      </div>
-                      <div className="autocare-view-service-right">
-                        <span className="autocare-view-service-cost">LKR 12,000</span>
-                        <span className="autocare-badge-verified">VERIFIED</span>
-                      </div>
-                    </div>
+                        let formattedDate = record.serviceDate;
+                        try {
+                          const d = new Date(record.serviceDate);
+                          if (!isNaN(d.getTime())) {
+                            formattedDate = d.toLocaleDateString('en-US', {
+                              day: '2-digit',
+                              month: 'short',
+                              year: 'numeric',
+                            });
+                          }
+                        } catch {
+                          // fallback
+                        }
 
-                    {/* Item 3 */}
-                    <div className="autocare-view-service-item">
-                      <div className="autocare-view-service-left">
-                        <div className="autocare-view-service-icon-box">
-                          <Wrench size={18} />
-                        </div>
-                        <div className="autocare-view-service-info">
-                          <h5 className="autocare-view-service-name">
-                            Tyre safety check &amp; rotation
-                          </h5>
-                          <p className="autocare-view-service-meta">
-                            04 May 2026 · Perera Auto Works · {Math.max((vehicle.currentMileage ?? 82410) - 4490, 0).toLocaleString()} km
-                          </p>
-                        </div>
-                      </div>
-                      <div className="autocare-view-service-right">
-                        <span className="autocare-view-service-cost">LKR 8,500</span>
-                        <span className="autocare-badge-verified">VERIFIED</span>
-                      </div>
-                    </div>
+                        const garageDisplay =
+                          record.garageName ||
+                          (isVerified ? 'Certified Service Center' : 'Owner Self-Reported');
+
+                        return (
+                          <div key={record._id} className="autocare-view-service-item">
+                            <div className="autocare-view-service-left">
+                              <div className="autocare-view-service-icon-box">
+                                <Wrench size={18} />
+                              </div>
+                              <div className="autocare-view-service-info">
+                                <h5 className="autocare-view-service-name">
+                                  {record.serviceType}
+                                </h5>
+                                <p className="autocare-view-service-meta">
+                                  {formattedDate} · {garageDisplay} · {record.mileage.toLocaleString()} km
+                                </p>
+                              </div>
+                            </div>
+                            <div className="autocare-view-service-right">
+                              <span className="autocare-view-service-cost">
+                                LKR {cost.toLocaleString()}
+                              </span>
+                              {isVerified ? (
+                                <span className="autocare-badge-verified">VERIFIED</span>
+                              ) : (
+                                <span
+                                  className="autocare-badge-verified"
+                                  style={{
+                                    backgroundColor: '#fef3c7',
+                                    color: '#92400e',
+                                    border: '1px solid #fde68a',
+                                  }}
+                                >
+                                  SELF-REPORTED
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
 

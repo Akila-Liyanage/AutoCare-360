@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import {
   Search,
   Bell,
@@ -9,40 +10,283 @@ import {
   ShieldCheck,
   FileText,
   Clock,
-  X
+  X,
+  Loader2,
+  RotateCw
 } from 'lucide-react';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import {
-  MOCK_SERVICE_RECORDS,
-  type ServiceRecordItem
+  type ServiceRecordItem,
+  type ServicePartWorkItem
 } from './serviceData';
+import {
+  getVehicleServiceRecords,
+  type BackendServiceRecord
+} from '../../services/serviceService';
+import {
+  getMyVehicles,
+  type Vehicle
+} from '../../services/vehicleService';
 import '../../styles/services.css';
 
 type ServiceTab = 'all' | 'verified' | 'self-reported';
 
+interface LocationState {
+  vehicleId?: string;
+  vehicle?: Vehicle;
+}
+
+/**
+ * Transforms Backend ServiceRecord model document into UI ServiceRecordItem structure
+ */
+const mapBackendRecordToItem = (record: BackendServiceRecord): ServiceRecordItem => {
+  const isVerified =
+    record.recordSource === 'verified_garage' && record.verificationStatus === 'verified';
+
+  // Format work items and replaced components
+  const workItems: ServicePartWorkItem[] = [];
+  if (record.workPerformed) {
+    workItems.push({
+      task: record.workPerformed,
+      certification: isVerified ? 'Certified Workshop Protocol' : 'Self-Reported Entry',
+    });
+  }
+
+  if (Array.isArray(record.partsReplaced) && record.partsReplaced.length > 0) {
+    record.partsReplaced.forEach((part) => {
+      workItems.push({
+        task: `Replaced: ${part}`,
+        certification: isVerified ? 'OEM Specified Part' : 'Owner Recorded Item',
+      });
+    });
+  }
+
+  if (workItems.length === 0) {
+    workItems.push({
+      task: record.serviceType,
+      certification: isVerified ? 'Verified Service' : 'Self-Reported Entry',
+    });
+  }
+
+  // Format date safely
+  let formattedDate = record.serviceDate;
+  try {
+    const d = new Date(record.serviceDate);
+    if (!isNaN(d.getTime())) {
+      formattedDate = d.toLocaleDateString('en-US', {
+        month: 'short',
+        day: '2-digit',
+        year: 'numeric',
+      });
+    }
+  } catch {
+    // Keep raw string fallback
+  }
+
+  const invoiceNumber = `INV-${record._id.slice(-6).toUpperCase()}`;
+  const totalCost = record.totalCost ?? (record.labourCost || 0) + (record.partsCost || 0);
+
+  return {
+    id: record._id,
+    title: record.serviceType,
+    cost: totalCost,
+    currency: 'LKR',
+    date: formattedDate,
+    mileage: `${record.mileage.toLocaleString()} km`,
+    isVerified,
+    type: isVerified ? 'verified' : 'self-reported',
+    ledgerId: `0x${record._id.slice(0, 10)} ... ${record._id.slice(-6)}`,
+    garage: {
+      name: record.garageName || (isVerified ? 'Certified Partner Garage' : 'Owner Self-Reported'),
+      partnerId: isVerified
+        ? `#GAR-${(record.garageId || record._id).slice(-4).toUpperCase()}`
+        : 'Self-Reported Entry',
+      technician: record.technicianName || (isVerified ? 'Certified Technician' : 'Vehicle Owner'),
+    },
+    workPerformed: workItems,
+    invoice: {
+      number: invoiceNumber,
+      paymentMethod: isVerified ? 'Electronic Settlement' : 'Owner Maintenance Routine',
+      fileName: record.invoiceUrl
+        ? record.invoiceUrl.split('/').pop() || 'certified-invoice.pdf'
+        : isVerified
+        ? 'certified-invoice.pdf'
+        : 'service-log-entry.pdf',
+      fileSize: 'Digital Record',
+      fileType: isVerified ? 'Cryptographic PDF' : 'Owner Log Entry',
+    },
+  };
+};
+
 export const ServiceHistoryPage: React.FC = () => {
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const locationState = (location.state as LocationState) || {};
+
+  // State
   const [activeTab, setActiveTab] = useState<ServiceTab>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedRecordId, setSelectedRecordId] = useState<string>(
-    MOCK_SERVICE_RECORDS[0]?.id || ''
-  );
+  const [records, setRecords] = useState<ServiceRecordItem[]>([]);
+  const [selectedRecordId, setSelectedRecordId] = useState<string>('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Tab counts
-  const allCount = MOCK_SERVICE_RECORDS.length;
-  const verifiedCount = useMemo(
-    () => MOCK_SERVICE_RECORDS.filter((r) => r.type === 'verified').length,
+  // Async data & vehicle states
+  const [currentVehicle, setCurrentVehicle] = useState<Vehicle | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [apiError, setApiError] = useState<string | null>(null);
+
+  /**
+   * Helper to load service records for a target vehicle
+   */
+  const fetchRecords = useCallback(
+    async (vehicleToLoad: Vehicle) => {
+      try {
+        const backendRecords = await getVehicleServiceRecords(vehicleToLoad._id);
+        const mapped = backendRecords.map(mapBackendRecordToItem);
+        setRecords(mapped);
+        if (mapped.length > 0) {
+          setSelectedRecordId(mapped[0].id);
+        } else {
+          setSelectedRecordId('');
+        }
+      } catch (err: unknown) {
+        const msg =
+          err instanceof Error
+            ? err.message
+            : 'Failed to retrieve service records. Please check your connection and try again.';
+        setApiError(msg);
+      } finally {
+        setIsLoading(false);
+      }
+    },
     []
   );
+
+  /**
+   * Manual refresh handler triggered by user action
+   */
+  const handleRefresh = useCallback(() => {
+    setIsLoading(true);
+    setApiError(null);
+
+    const targetVehicleId = locationState.vehicleId || searchParams.get('vehicleId');
+    const targetVehicle = locationState.vehicle || currentVehicle;
+
+    if (!targetVehicle && !targetVehicleId) {
+      getMyVehicles()
+        .then((vehicles) => {
+          if (vehicles.length > 0) {
+            setCurrentVehicle(vehicles[0]);
+            fetchRecords(vehicles[0]);
+          } else {
+            setIsLoading(false);
+          }
+        })
+        .catch((err: unknown) => {
+          setApiError(err instanceof Error ? err.message : 'Failed to retrieve vehicles.');
+          setIsLoading(false);
+        });
+      return;
+    }
+
+    if (targetVehicle) {
+      fetchRecords(targetVehicle);
+    } else if (targetVehicleId) {
+      getMyVehicles()
+        .then((vehicles) => {
+          const match = vehicles.find((v) => v._id === targetVehicleId) || vehicles[0];
+          if (match) {
+            setCurrentVehicle(match);
+            fetchRecords(match);
+          } else {
+            setIsLoading(false);
+          }
+        })
+        .catch((err: unknown) => {
+          setApiError(err instanceof Error ? err.message : 'Failed to retrieve vehicles.');
+          setIsLoading(false);
+        });
+    }
+  }, [currentVehicle, fetchRecords, locationState.vehicle, locationState.vehicleId, searchParams]);
+
+  /**
+   * Initial data synchronization on page mount
+   */
+  useEffect(() => {
+    let isMounted = true;
+
+    const initialize = async () => {
+      try {
+        let targetVehicleId = locationState.vehicleId || searchParams.get('vehicleId');
+        let targetVehicle = locationState.vehicle || null;
+
+        if (!targetVehicleId || !targetVehicle) {
+          const vehicles = await getMyVehicles();
+          if (vehicles.length > 0) {
+            if (targetVehicleId) {
+              targetVehicle = vehicles.find((v) => v._id === targetVehicleId) || vehicles[0];
+            } else {
+              targetVehicle = vehicles[0];
+            }
+            targetVehicleId = targetVehicle._id;
+          }
+        }
+
+        if (!isMounted) return;
+
+        if (!targetVehicleId || !targetVehicle) {
+          setCurrentVehicle(null);
+          setRecords([]);
+          setIsLoading(false);
+          return;
+        }
+
+        setCurrentVehicle(targetVehicle);
+
+        const backendRecords = await getVehicleServiceRecords(targetVehicleId);
+        if (!isMounted) return;
+
+        const mapped = backendRecords.map(mapBackendRecordToItem);
+        setRecords(mapped);
+        if (mapped.length > 0) {
+          setSelectedRecordId(mapped[0].id);
+        } else {
+          setSelectedRecordId('');
+        }
+        setIsLoading(false);
+      } catch (err: unknown) {
+        if (!isMounted) return;
+        const msg =
+          err instanceof Error
+            ? err.message
+            : 'Failed to retrieve service records. Please check your connection and try again.';
+        setApiError(msg);
+        setIsLoading(false);
+      }
+    };
+
+    initialize();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [locationState.vehicle, locationState.vehicleId, searchParams]);
+
+  // Tab counts
+  const allCount = records.length;
+  const verifiedCount = useMemo(
+    () => records.filter((r) => r.type === 'verified').length,
+    [records]
+  );
   const selfReportedCount = useMemo(
-    () => MOCK_SERVICE_RECORDS.filter((r) => r.type === 'self-reported').length,
-    []
+    () => records.filter((r) => r.type === 'self-reported').length,
+    [records]
   );
 
   // Filtered records by tab and search query
   const filteredRecords = useMemo(() => {
-    return MOCK_SERVICE_RECORDS.filter((record) => {
+    return records.filter((record) => {
       // Tab filter
       if (activeTab === 'verified' && record.type !== 'verified') return false;
       if (activeTab === 'self-reported' && record.type !== 'self-reported') return false;
@@ -68,7 +312,7 @@ export const ServiceHistoryPage: React.FC = () => {
 
       return true;
     });
-  }, [activeTab, searchQuery]);
+  }, [records, activeTab, searchQuery]);
 
   // Selected Record resolution
   const selectedRecord: ServiceRecordItem | undefined = useMemo(() => {
@@ -86,7 +330,7 @@ export const ServiceHistoryPage: React.FC = () => {
   const handleTabChange = (tab: ServiceTab) => {
     setActiveTab(tab);
     // Auto-select first item in that tab if available
-    const nextFiltered = MOCK_SERVICE_RECORDS.filter((r) => {
+    const nextFiltered = records.filter((r) => {
       if (tab === 'verified') return r.type === 'verified';
       if (tab === 'self-reported') return r.type === 'self-reported';
       return true;
@@ -97,7 +341,7 @@ export const ServiceHistoryPage: React.FC = () => {
   };
 
   const formatCost = (val: number, cur: string) => {
-    return `${cur} ${val.toFixed(2)}`;
+    return `${cur} ${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   return (
@@ -106,11 +350,25 @@ export const ServiceHistoryPage: React.FC = () => {
 
       <main className="autocare-services-main">
         <div className="autocare-services-container">
-          {/* Top Header Row (Title + Toolbar) */}
+          {/* Top Header Row (Title + Vehicle Identity + Toolbar) */}
           <div className="autocare-services-header-row">
-            <h1 className="autocare-services-title">
-              Maintenance &amp; Service Records History
-            </h1>
+            <div>
+              <h1 className="autocare-services-title">
+                Maintenance &amp; Service Records History
+              </h1>
+              {currentVehicle && (
+                <p style={{ margin: '4px 0 0 0', fontSize: '13.5px', color: '#64748b' }}>
+                  Vehicle:{' '}
+                  <strong style={{ color: '#0f172a' }}>
+                    {currentVehicle.manufacturer} {currentVehicle.model} ({currentVehicle.manufacturingYear})
+                  </strong>{' '}
+                  • Plate:{' '}
+                  <span style={{ fontWeight: 600, color: '#0056a2' }}>
+                    {currentVehicle.registrationNumber}
+                  </span>
+                </p>
+              )}
+            </div>
 
             <div className="autocare-services-toolbar">
               {/* Search Field */}
@@ -123,6 +381,7 @@ export const ServiceHistoryPage: React.FC = () => {
                   placeholder="Search VINs, service records..."
                   className="autocare-services-search-input"
                   aria-label="Search service records"
+                  disabled={isLoading}
                 />
               </div>
 
@@ -135,6 +394,18 @@ export const ServiceHistoryPage: React.FC = () => {
                 title="Notifications"
               >
                 <Bell size={18} />
+              </button>
+
+              {/* Refresh Records Button */}
+              <button
+                type="button"
+                className="autocare-services-bell-btn"
+                onClick={handleRefresh}
+                aria-label="Refresh service records"
+                title="Refresh records"
+                disabled={isLoading}
+              >
+                <RotateCw size={17} className={isLoading ? 'animate-spin' : ''} />
               </button>
 
               {/* Security / Status Badge */}
@@ -186,7 +457,7 @@ export const ServiceHistoryPage: React.FC = () => {
               className="autocare-btn-add-manual"
               onClick={() =>
                 showToast(
-                  'Backend integration pending: Manual service entry creation by vehicle owners will be connected to the API in the next phase.'
+                  'Backend service APIs are active! Modal form integration for adding service records is scheduled in the upcoming sprint.'
                 )
               }
             >
@@ -195,20 +466,106 @@ export const ServiceHistoryPage: React.FC = () => {
             </button>
           </div>
 
+          {/* API Error State Banner */}
+          {apiError && (
+            <div
+              style={{
+                backgroundColor: '#fef2f2',
+                border: '1px solid #fecaca',
+                borderRadius: '12px',
+                padding: '20px 24px',
+                marginBottom: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '16px',
+                flexWrap: 'wrap',
+              }}
+              role="alert"
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <AlertCircle size={22} style={{ color: '#ef4444', flexShrink: 0 }} />
+                <div>
+                  <h4 style={{ margin: '0 0 4px 0', fontSize: '14.5px', fontWeight: 700, color: '#991b1b' }}>
+                    Unable to Load Service Records
+                  </h4>
+                  <p style={{ margin: 0, fontSize: '13px', color: '#b91c1c' }}>{apiError}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleRefresh}
+                style={{
+                  backgroundColor: '#0056a2',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '8px 18px',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
           {/* Main Two-Column Grid */}
           <div className="autocare-services-grid">
             {/* Left Column: Service Records Stack */}
-            <section
-              className="autocare-services-list"
-              aria-label="Service Records List"
-            >
-              {filteredRecords.length === 0 ? (
-                <div className="autocare-services-empty">
-                  <p style={{ fontWeight: 600, margin: '0 0 6px 0', color: '#0f172a' }}>
-                    No matching service logs
+            <section className="autocare-services-list" aria-label="Service Records List">
+              {isLoading ? (
+                /* Loading State */
+                <div
+                  style={{
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '12px',
+                    padding: '48px 24px',
+                    textAlign: 'center',
+                    color: '#64748b',
+                  }}
+                >
+                  <Loader2
+                    size={28}
+                    style={{
+                      animation: 'spin 1s linear infinite',
+                      color: '#0056a2',
+                      margin: '0 auto 12px auto',
+                      display: 'block',
+                    }}
+                  />
+                  <p style={{ margin: '0 0 4px 0', fontWeight: 600, color: '#0f172a', fontSize: '14px' }}>
+                    Connecting to AutoCare Ledger...
                   </p>
-                  <p style={{ fontSize: '13px', margin: 0 }}>
-                    Try clearing the search query or changing the filter tab.
+                  <p style={{ margin: 0, fontSize: '12.5px', color: '#64748b' }}>
+                    Retrieving certified service history from database.
+                  </p>
+                </div>
+              ) : !currentVehicle ? (
+                /* No Vehicle Registered State */
+                <div className="autocare-services-empty" style={{ textAlign: 'center', padding: '40px 20px' }}>
+                  <Wrench size={32} style={{ color: '#94a3b8', margin: '0 auto 10px auto' }} />
+                  <p style={{ fontWeight: 600, margin: '0 0 6px 0', color: '#0f172a' }}>
+                    No Vehicle Registered
+                  </p>
+                  <p style={{ fontSize: '13px', margin: 0, color: '#64748b' }}>
+                    Please add a vehicle to view its maintenance passport.
+                  </p>
+                </div>
+              ) : filteredRecords.length === 0 ? (
+                /* Empty Records State */
+                <div className="autocare-services-empty" style={{ textAlign: 'center', padding: '40px 20px' }}>
+                  <Wrench size={32} style={{ color: '#94a3b8', margin: '0 auto 10px auto' }} />
+                  <p style={{ fontWeight: 600, margin: '0 0 6px 0', color: '#0f172a' }}>
+                    {records.length === 0 ? 'No Service Records Found' : 'No Matching Records'}
+                  </p>
+                  <p style={{ fontSize: '13px', margin: 0, color: '#64748b' }}>
+                    {records.length === 0
+                      ? 'No maintenance history has been logged for this vehicle yet.'
+                      : 'Try clearing your search query or switching tabs.'}
                   </p>
                 </div>
               ) : (
@@ -257,7 +614,22 @@ export const ServiceHistoryPage: React.FC = () => {
               className="autocare-service-detail-panel"
               aria-label="Selected Service Record Details"
             >
-              {selectedRecord ? (
+              {isLoading ? (
+                <div style={{ textAlign: 'center', padding: '80px 24px', color: '#64748b' }}>
+                  <Loader2
+                    size={28}
+                    style={{
+                      animation: 'spin 1s linear infinite',
+                      color: '#0056a2',
+                      margin: '0 auto 12px auto',
+                      display: 'block',
+                    }}
+                  />
+                  <p style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>
+                    Loading record details...
+                  </p>
+                </div>
+              ) : selectedRecord ? (
                 <>
                   {/* Detail Panel Header */}
                   <div className="autocare-detail-header">
@@ -295,7 +667,9 @@ export const ServiceHistoryPage: React.FC = () => {
                         {selectedRecord.garage.name}
                       </h4>
                       <p className="autocare-garage-sub">
-                        Certified Garage Partner {selectedRecord.garage.partnerId} •
+                        {selectedRecord.isVerified
+                          ? `Certified Garage Partner ${selectedRecord.garage.partnerId} • `
+                          : `${selectedRecord.garage.partnerId} • `}
                         Technician: {selectedRecord.garage.technician}
                       </p>
                     </div>
@@ -367,7 +741,13 @@ export const ServiceHistoryPage: React.FC = () => {
                 </>
               ) : (
                 <div style={{ textAlign: 'center', padding: '60px 20px', color: '#64748b' }}>
-                  <p>Please select a service record to view full details.</p>
+                  <Wrench size={32} style={{ color: '#94a3b8', margin: '0 auto 12px auto' }} />
+                  <p style={{ fontWeight: 600, color: '#0f172a', margin: '0 0 4px 0' }}>
+                    No Record Selected
+                  </p>
+                  <p style={{ fontSize: '13px', margin: 0 }}>
+                    Please select a service record to view full details.
+                  </p>
                 </div>
               )}
             </section>
