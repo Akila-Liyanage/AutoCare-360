@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { 
-  Bell, 
-  ChevronDown, 
-  LogOut, 
-  User, 
-  Menu, 
+import {
+  Bell,
+  ChevronDown,
+  LogOut,
+  User,
+  Menu,
   X,
   ShieldCheck,
   FileText
@@ -69,10 +69,10 @@ export const Navbar: React.FC = () => {
       <div className="autocare-navbar-container">
         {/* Left: AutoCare 360 Logo */}
         <Link to="/" className="autocare-navbar-brand" aria-label="AutoCare 360 Home">
-          <img 
-            src={logoImg} 
-            alt="AutoCare 360" 
-            className="autocare-navbar-logo" 
+          <img
+            src={logoImg}
+            alt="AutoCare 360"
+            className="autocare-navbar-logo"
           />
         </Link>
 
@@ -96,9 +96,9 @@ export const Navbar: React.FC = () => {
           {isAuthenticated && user ? (
             <>
               {/* Notification Bell */}
-              <Link 
-                to="/notifications" 
-                className="autocare-nav-icon-btn" 
+              <Link
+                to="/notifications"
+                className="autocare-nav-icon-btn"
                 aria-label="System Notifications"
                 title="Notifications"
               >
@@ -123,16 +123,16 @@ export const Navbar: React.FC = () => {
                       {user.fullName || 'Vehicle Owner'}
                     </span>
                     <span className="autocare-nav-user-role">
-                      {user.role === 'garage' 
-                        ? 'Verified Garage' 
-                        : user.role === 'admin' 
-                        ? 'System Admin' 
-                        : 'Vehicle Owner'}
+                      {user.role === 'garage'
+                        ? 'Verified Garage'
+                        : user.role === 'admin'
+                          ? 'System Admin'
+                          : 'Vehicle Owner'}
                     </span>
                   </div>
-                  <ChevronDown 
-                    size={15} 
-                    className={`autocare-nav-chevron ${dropdownOpen ? 'is-open' : ''}`} 
+                  <ChevronDown
+                    size={15}
+                    className={`autocare-nav-chevron ${dropdownOpen ? 'is-open' : ''}`}
                   />
                 </button>
 
@@ -149,20 +149,29 @@ export const Navbar: React.FC = () => {
 
                     <div className="autocare-profile-menu-divider" />
 
-                    <Link 
-                      to="/profile" 
+                    <Link
+                      to="/profile"
                       className="autocare-profile-menu-item"
                       onClick={() => setDropdownOpen(false)}
                     >
                       <User size={16} /> My Profile
                     </Link>
-                    <Link 
-                      to="/vehicles" 
+                    <Link
+                      to="/vehicles"
                       className="autocare-profile-menu-item"
                       onClick={() => setDropdownOpen(false)}
                     >
                       <FileText size={16} /> My Vehicles
                     </Link>
+                    {user?.role === 'garage' && (
+                      <Link
+                        to="/garage/dashboard"
+                        className="autocare-profile-menu-item"
+                        onClick={() => setDropdownOpen(false)}
+                      >
+                        <ShieldCheck size={16} /> Garage Dashboard
+                      </Link>
+                    )}
 
                     <div className="autocare-profile-menu-divider" />
 
@@ -224,6 +233,15 @@ export const Navbar: React.FC = () => {
                 >
                   My Profile
                 </Link>
+                {user?.role === 'garage' && (
+                  <Link
+                    to="/garage/dashboard"
+                    className="autocare-mobile-link"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Garage Dashboard
+                  </Link>
+                )}
                 <button
                   type="button"
                   className="autocare-mobile-link is-logout"

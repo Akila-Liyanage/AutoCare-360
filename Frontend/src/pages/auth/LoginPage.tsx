@@ -96,9 +96,13 @@ export const LoginPage: React.FC = () => {
 
       setApiSuccess(response.message || 'Authentication successful!');
 
-      // Smooth brief transition to authenticated workspace placeholder
+      // Smooth brief transition to authenticated workspace
       setTimeout(() => {
-        navigate('/dashboard');
+        if (selectedRole === 'garage' || response.data?.user?.role === 'garage') {
+          navigate('/garage/dashboard');
+        } else {
+          navigate('/dashboard');
+        }
       }, 700);
     } catch (err: unknown) {
       const errorMessage =

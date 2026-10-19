@@ -23,6 +23,7 @@ import QRCodeSharingPage from './pages/sharing/QRCodeSharingPage';
 import AccessPermissionManagementPage from './pages/sharing/AccessPermissionManagementPage';
 import ConfigureAccessPermissionsPage from './pages/sharing/ConfigureAccessPermissionsPage';
 import BuyerSharedRecordViewPage from './pages/sharing/BuyerSharedRecordViewPage';
+import GarageDashboardPage from './pages/garage/GarageDashboardPage';
 import './App.css';
 
 export const App: React.FC = () => {
@@ -74,6 +75,11 @@ export const App: React.FC = () => {
           {/* Buyer / Public Shared Record View — Protected Passports & Verification */}
           <Route path="/buyer-qr" element={<BuyerSharedRecordViewPage />} />
           <Route path="/shared/vehicle/:token" element={<BuyerSharedRecordViewPage />} />
+
+          {/* Verified Garage Service Management — BR-03 */}
+          <Route path="/garage/dashboard" element={<GarageDashboardPage />} />
+          <Route path="/garage" element={<Navigate to="/garage/dashboard" replace />} />
+
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/profile/edit" element={<EditProfilePage />} />
 
