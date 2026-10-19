@@ -29,6 +29,7 @@ dns.lookup = function (hostname, options, callback) {
   });
 };
 
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
@@ -36,6 +37,7 @@ const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const vehicleRoutes = require('./routes/vehicleRoutes');
 const serviceRoutes = require('./routes/serviceRoutes');
+const documentRoutes = require('./routes/documentRoutes');
 
 const app = express();
 
@@ -95,6 +97,13 @@ app.use('/api/auth', authRoutes);
 // Mount Service & Maintenance Records Routes
 app.use('/api/services', serviceRoutes);
 app.use('/api/vehicles/:vehicleId/services', serviceRoutes);
+
+// Mount Vehicle Documents Routes
+app.use('/api/documents', documentRoutes);
+app.use('/api/vehicles/:vehicleId/documents', documentRoutes);
+
+// Static serving for uploaded documents
+app.use('/uploads/documents', express.static(path.join(__dirname, '../uploads/documents')));
 
 // Mount Vehicle Digital Passport Routes
 app.use('/api/vehicles', vehicleRoutes);
