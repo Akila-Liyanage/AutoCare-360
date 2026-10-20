@@ -15,6 +15,7 @@ router.use(protect);
 
 // Summary analytics endpoint (registered before /:id to prevent route shadowing)
 router.get('/summary', getExpenseSummary);
+router.get('/summary/:vehicleId', getExpenseSummary);
 
 // Base endpoints for vehicle expense collection
 router

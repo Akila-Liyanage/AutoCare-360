@@ -263,16 +263,15 @@ export const ViewVehiclePage: React.FC = () => {
                 <span>Share records</span>
               </Link>
 
-              <button
-                type="button"
+              <Link
+                to={`/service-history?vehicleId=${id}&action=add`}
+                state={{ vehicleId: id, vehicle, openAddModal: true }}
                 className="autocare-btn-add-record"
-                onClick={() =>
-                  showToast('Service record logging by verified workshops will be available in Phase 3.')
-                }
+                style={{ textDecoration: 'none' }}
               >
                 <Plus size={16} />
                 <span>Add service record</span>
-              </button>
+              </Link>
             </div>
           </div>
 
@@ -525,7 +524,8 @@ export const ViewVehiclePage: React.FC = () => {
 
                 {/* Metric 4: Lifetime Service Cost */}
                 <Link
-                  to="/expenses"
+                  to={`/expenses?vehicleId=${id}`}
+                  state={{ vehicleId: id, vehicle }}
                   className="autocare-view-metric-card"
                   style={{ textDecoration: 'none', color: 'inherit' }}
                   title="View detailed expense tracking"
@@ -659,13 +659,24 @@ export const ViewVehiclePage: React.FC = () => {
                         Certified records appended by verified garages.
                       </p>
                     </div>
-                    <Link
-                      to="/service-history"
-                      state={{ vehicleId: id, vehicle }}
-                      className="autocare-view-card-link"
-                    >
-                      View complete history
-                    </Link>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                      <Link
+                        to={`/service-history?vehicleId=${id}&action=add`}
+                        state={{ vehicleId: id, vehicle, openAddModal: true }}
+                        className="autocare-view-card-link"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}
+                      >
+                        <Plus size={14} />
+                        <span>Add record</span>
+                      </Link>
+                      <Link
+                        to={`/service-history?vehicleId=${id}`}
+                        state={{ vehicleId: id, vehicle }}
+                        className="autocare-view-card-link"
+                      >
+                        View complete history
+                      </Link>
+                    </div>
                   </div>
 
                   <div className="autocare-view-service-list">

@@ -56,7 +56,7 @@ const createExpense = async (req, res, next) => {
     } = req.body;
 
     // Validate required fields
-    if (!category || !title || amount === undefined || amount === null || !expenseDate) {
+    if (!category || !String(category).trim() || !title || !String(title).trim() || amount === undefined || amount === null || !expenseDate) {
       return res.status(400).json({
         success: false,
         message: 'Please provide all required fields: category, title, amount, and expenseDate.',
@@ -76,6 +76,15 @@ const createExpense = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         message: 'Please provide a valid expense date.',
+      });
+    }
+
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+    if (parsedDate > endOfToday) {
+      return res.status(400).json({
+        success: false,
+        message: 'Expense date cannot be in the future.',
       });
     }
 
@@ -365,6 +374,14 @@ const updateExpense = async (req, res, next) => {
           message: 'Please provide a valid expense date.',
         });
       }
+      const endOfToday = new Date();
+      endOfToday.setHours(23, 59, 59, 999);
+      if (d > endOfToday) {
+        return res.status(400).json({
+          success: false,
+          message: 'Expense date cannot be in the future.',
+        });
+      }
       expense.expenseDate = d;
     }
 
@@ -567,6 +584,7 @@ const getExpenseSummary = async (req, res, next) => {
       data: {
         summary: {
           totalExpense,
+          totalExpenses: totalExpense,
           serviceExpenseTotal,
           manualExpenseTotal,
           expenseCount: expenses.length,

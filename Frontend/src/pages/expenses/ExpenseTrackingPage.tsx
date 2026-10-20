@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useLocation, Link } from 'react-router-dom';
+import { useLocation, useSearchParams, Link } from 'react-router-dom';
 import {
   Download,
   Plus,
@@ -11,7 +11,9 @@ import {
   Receipt,
   RefreshCw,
   AlertTriangle,
-  ArrowLeft
+  ArrowLeft,
+  Trash2,
+  ShieldCheck
 } from 'lucide-react';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
@@ -24,6 +26,7 @@ import {
   getVehicleExpenses,
   getExpenseSummary,
   createExpense,
+  deleteExpense,
   type BackendExpense,
   type BackendExpenseSummary
 } from '../../services/expenseService';
@@ -53,6 +56,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 export const ExpenseTrackingPage: React.FC = () => {
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Vehicles state
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -63,6 +67,7 @@ export const ExpenseTrackingPage: React.FC = () => {
   const [summary, setSummary] = useState<BackendExpenseSummary | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // UI filters & toast
   const [searchQuery, setSearchQuery] = useState('');
@@ -72,6 +77,7 @@ export const ExpenseTrackingPage: React.FC = () => {
   // Add Expense Modal state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [newCategory, setNewCategory] = useState('Fuel');
   const [newTitle, setNewTitle] = useState('');
   const [newAmount, setNewAmount] = useState('');
@@ -128,8 +134,9 @@ export const ExpenseTrackingPage: React.FC = () => {
         if (!isMounted) return;
         setVehicles(myVehicles);
 
+        const searchVehicleId = searchParams.get('vehicleId');
         const locationState = (location.state as { vehicleId?: string; vehicle?: Vehicle }) || {};
-        let resolvedId = locationState.vehicleId || locationState.vehicle?._id;
+        let resolvedId = locationState.vehicleId || locationState.vehicle?._id || searchVehicleId;
 
         if (!resolvedId && myVehicles && myVehicles.length > 0) {
           resolvedId = myVehicles[0]._id;
@@ -152,6 +159,10 @@ export const ExpenseTrackingPage: React.FC = () => {
           setRawExpenses(expensesData);
           setSummary(summaryData);
           setIsLoading(false);
+
+          if (searchParams.get('action') === 'add') {
+            setIsAddModalOpen(true);
+          }
         }
       } catch (err: unknown) {
         if (isMounted) {
@@ -170,13 +181,14 @@ export const ExpenseTrackingPage: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [location.state]);
+  }, [location.state, searchParams]);
 
   /**
    * Vehicle filter change
    */
   const handleVehicleChange = (vId: string) => {
     setSelectedVehicleId(vId);
+    setSearchParams({ vehicleId: vId });
     if (vId) {
       loadVehicleData(vId);
     }
@@ -240,23 +252,24 @@ export const ExpenseTrackingPage: React.FC = () => {
         }
       }
 
-      return {
-        id: exp._id,
-        date: formattedDate,
-        year,
-        vehicle: vehicleLabel,
-        service: exp.title,
-        provider,
-        category: exp.category,
-        invoice: invoiceNumber,
-        payment: paymentStatus,
-        amount: exp.amount,
-        source: exp.source,
-        description: exp.description,
-        notes: exp.notes,
-      };
-    });
-  }, [rawExpenses, vehicleLabel]);
+        return {
+          id: exp._id,
+          date: formattedDate,
+          year,
+          vehicle: vehicleLabel,
+          service: exp.title,
+          provider,
+          category: exp.category,
+          invoice: invoiceNumber,
+          payment: paymentStatus,
+          amount: exp.amount,
+          source: exp.source,
+          receiptUrl: exp.receiptUrl || '',
+          description: exp.description,
+          notes: exp.notes,
+        };
+      });
+    }, [rawExpenses, vehicleLabel]);
 
   // Filter ledger items based on search query and date period
   const filteredLedger = useMemo(() => {
@@ -358,7 +371,39 @@ export const ExpenseTrackingPage: React.FC = () => {
       showToast('Please select a vehicle first to log an expense.', 'info');
       return;
     }
+    setFormErrors({});
     setIsAddModalOpen(true);
+  };
+
+  const validateExpenseForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (!newCategory.trim()) {
+      errors.category = 'Expense category is required.';
+    }
+
+    if (!newTitle.trim()) {
+      errors.title = 'Expense title is required.';
+    }
+
+    const parsedAmt = Number(newAmount);
+    if (newAmount === '' || isNaN(parsedAmt) || parsedAmt < 0) {
+      errors.amount = 'Valid non-negative expense amount is required.';
+    }
+
+    if (!newExpenseDate) {
+      errors.expenseDate = 'Expense date is required.';
+    } else {
+      const selectedDate = new Date(newExpenseDate);
+      const endOfToday = new Date();
+      endOfToday.setHours(23, 59, 59, 999);
+      if (selectedDate > endOfToday) {
+        errors.expenseDate = 'Expense date cannot be in the future.';
+      }
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleCreateExpenseSubmit = async (e: React.FormEvent) => {
@@ -367,19 +412,12 @@ export const ExpenseTrackingPage: React.FC = () => {
       showToast('Please select a valid vehicle first.', 'info');
       return;
     }
-    if (!newTitle.trim()) {
-      showToast('Please enter an expense title.', 'info');
+
+    if (!validateExpenseForm()) {
       return;
     }
+
     const parsedAmt = Number(newAmount);
-    if (isNaN(parsedAmt) || parsedAmt < 0) {
-      showToast('Please enter a valid expense amount.', 'info');
-      return;
-    }
-    if (!newExpenseDate) {
-      showToast('Please select a valid expense date.', 'info');
-      return;
-    }
 
     try {
       setIsSubmitting(true);
@@ -400,26 +438,40 @@ export const ExpenseTrackingPage: React.FC = () => {
       setNewVendor('');
       setNewDescription('');
       setNewExpenseDate(new Date().toISOString().split('T')[0]);
+      setFormErrors({});
 
-      // Refresh data
+      // Refresh data & summary
       await loadVehicleData(selectedVehicleId);
     } catch (err: unknown) {
       const msg =
-        err instanceof Error
-          ? err.message
-          : 'Failed to create expense. Please try again.';
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        (err instanceof Error ? err.message : 'Failed to create expense. Please try again.');
       showToast(msg, 'info');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleDownloadInvoices = () => {
-    showToast(`Compiled ledger report for ${filteredLedger.length} verified record(s).`, 'info');
-  };
+  const handleDeleteExpense = async (id: string, title: string) => {
+    if (!window.confirm(`Are you sure you want to delete the expense "${title}"?`)) {
+      return;
+    }
 
-  const handleInvoiceClick = (invoice: string) => {
-    showToast(`Cryptographically verified ledger record: ${invoice}`, 'info');
+    try {
+      setDeletingId(id);
+      await deleteExpense(id);
+      showToast(`Expense "${title}" deleted successfully.`, 'success');
+      if (selectedVehicleId) {
+        await loadVehicleData(selectedVehicleId);
+      }
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        (err instanceof Error ? err.message : 'Failed to delete expense.');
+      showToast(msg, 'info');
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const resetFilters = () => {
@@ -688,15 +740,6 @@ export const ExpenseTrackingPage: React.FC = () => {
                   Invoice amounts are sourced from verified vehicle service records &amp; manual logs.
                 </p>
               </div>
-
-              <button
-                type="button"
-                className="autocare-btn-download-invoices"
-                onClick={handleDownloadInvoices}
-              >
-                <Download size={15} />
-                Download invoices
-              </button>
             </div>
 
             {/* Filter and Search Bar */}
@@ -778,9 +821,10 @@ export const ExpenseTrackingPage: React.FC = () => {
                       <th>Date</th>
                       <th>Service &amp; Provider</th>
                       <th>Category</th>
-                      <th>Invoice</th>
+                      <th>Invoice &amp; Receipt</th>
                       <th>Payment</th>
                       <th>Amount</th>
+                      <th style={{ textAlign: 'right' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -793,15 +837,23 @@ export const ExpenseTrackingPage: React.FC = () => {
                         </td>
                         <td className="autocare-col-category">{row.category}</td>
                         <td>
-                          <button
-                            type="button"
-                            className="autocare-invoice-link"
-                            onClick={() => handleInvoiceClick(row.invoice)}
-                            style={{ background: 'none', border: 'none', padding: 0, font: 'inherit' }}
-                          >
-                            {row.invoice}
-                            <ExternalLink size={12} />
-                          </button>
+                          {row.receiptUrl ? (
+                            <a
+                              href={row.receiptUrl.startsWith('http') ? row.receiptUrl : `http://localhost:5000${row.receiptUrl}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="autocare-invoice-link"
+                              title="Open verified receipt / invoice"
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', textDecoration: 'none' }}
+                            >
+                              <span>{row.invoice}</span>
+                              <ExternalLink size={12} />
+                            </a>
+                          ) : (
+                            <span style={{ fontSize: '13px', color: '#64748b' }}>
+                              {row.invoice || '—'}
+                            </span>
+                          )}
                         </td>
                         <td>
                           <span
@@ -818,6 +870,59 @@ export const ExpenseTrackingPage: React.FC = () => {
                         </td>
                         <td className="autocare-col-amount">
                           LKR {row.amount.toLocaleString()}
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          {row.source === 'manual' ? (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteExpense(row.id, row.service)}
+                              disabled={deletingId === row.id}
+                              title="Delete manual expense"
+                              style={{
+                                background: 'transparent',
+                                border: '1px solid #fee2e2',
+                                color: '#ef4444',
+                                padding: '5px 9px',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                fontSize: '12px',
+                                fontWeight: 600,
+                                transition: 'all 0.15s ease',
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = '#fef2f2';
+                                e.currentTarget.style.borderColor = '#fca5a5';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'transparent';
+                                e.currentTarget.style.borderColor = '#fee2e2';
+                              }}
+                            >
+                              <Trash2 size={13} />
+                              <span>Delete</span>
+                            </button>
+                          ) : (
+                            <span
+                              title="Service-generated expense: Protected by service record integrity"
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                fontSize: '11.5px',
+                                color: '#059669',
+                                background: '#ecfdf5',
+                                padding: '4px 8px',
+                                borderRadius: '6px',
+                                fontWeight: 600,
+                              }}
+                            >
+                              <ShieldCheck size={13} />
+                              <span>Protected</span>
+                            </span>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -879,7 +984,11 @@ export const ExpenseTrackingPage: React.FC = () => {
                 <select
                   className="autocare-docs-form-select"
                   value={newCategory}
-                  onChange={(e) => setNewCategory(e.target.value)}
+                  onChange={(e) => {
+                    setNewCategory(e.target.value);
+                    setFormErrors((prev) => ({ ...prev, category: '' }));
+                  }}
+                  style={formErrors.category ? { borderColor: '#ef4444' } : {}}
                   required
                 >
                   <option value="Fuel">Fuel Refill</option>
@@ -891,6 +1000,11 @@ export const ExpenseTrackingPage: React.FC = () => {
                   <option value="Subscription">Connected Services &amp; Subscriptions</option>
                   <option value="Other">Other Expenses</option>
                 </select>
+                {formErrors.category && (
+                  <span style={{ fontSize: '12px', color: '#ef4444', marginTop: '2px', display: 'block' }}>
+                    {formErrors.category}
+                  </span>
+                )}
               </div>
 
               <div className="autocare-docs-form-group">
@@ -901,8 +1015,17 @@ export const ExpenseTrackingPage: React.FC = () => {
                   className="autocare-docs-form-input"
                   placeholder="e.g. Full Tank Octane 95 Refill"
                   value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
+                  onChange={(e) => {
+                    setNewTitle(e.target.value);
+                    setFormErrors((prev) => ({ ...prev, title: '' }));
+                  }}
+                  style={formErrors.title ? { borderColor: '#ef4444' } : {}}
                 />
+                {formErrors.title && (
+                  <span style={{ fontSize: '12px', color: '#ef4444', marginTop: '2px', display: 'block' }}>
+                    {formErrors.title}
+                  </span>
+                )}
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
@@ -916,8 +1039,17 @@ export const ExpenseTrackingPage: React.FC = () => {
                     className="autocare-docs-form-input"
                     placeholder="e.g. 18500"
                     value={newAmount}
-                    onChange={(e) => setNewAmount(e.target.value)}
+                    onChange={(e) => {
+                      setNewAmount(e.target.value);
+                      setFormErrors((prev) => ({ ...prev, amount: '' }));
+                    }}
+                    style={formErrors.amount ? { borderColor: '#ef4444' } : {}}
                   />
+                  {formErrors.amount && (
+                    <span style={{ fontSize: '12px', color: '#ef4444', marginTop: '2px', display: 'block' }}>
+                      {formErrors.amount}
+                    </span>
+                  )}
                 </div>
 
                 <div className="autocare-docs-form-group">
@@ -925,10 +1057,20 @@ export const ExpenseTrackingPage: React.FC = () => {
                   <input
                     type="date"
                     required
+                    max={new Date().toISOString().split('T')[0]}
                     className="autocare-docs-form-input"
                     value={newExpenseDate}
-                    onChange={(e) => setNewExpenseDate(e.target.value)}
+                    onChange={(e) => {
+                      setNewExpenseDate(e.target.value);
+                      setFormErrors((prev) => ({ ...prev, expenseDate: '' }));
+                    }}
+                    style={formErrors.expenseDate ? { borderColor: '#ef4444' } : {}}
                   />
+                  {formErrors.expenseDate && (
+                    <span style={{ fontSize: '12px', color: '#ef4444', marginTop: '2px', display: 'block' }}>
+                      {formErrors.expenseDate}
+                    </span>
+                  )}
                 </div>
               </div>
 

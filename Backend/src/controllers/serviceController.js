@@ -47,6 +47,8 @@ const createServiceRecord = async (req, res, next) => {
       mileage,
       serviceType,
       workPerformed,
+      description,
+      category,
       partsReplaced,
       labourCost,
       partsCost,
@@ -58,15 +60,19 @@ const createServiceRecord = async (req, res, next) => {
       notes,
     } = req.body;
 
+    const effectiveWork = String(workPerformed || description || '').trim();
+    const effectiveType = String(serviceType || category || '').trim();
+    const effectiveMileage = mileage !== undefined && mileage !== null ? mileage : req.body.mileageAtService;
+
     // Required fields validation
-    if (!serviceDate || mileage === undefined || mileage === null || !serviceType || !workPerformed) {
+    if (!serviceDate || effectiveMileage === undefined || effectiveMileage === null || !effectiveType || !effectiveWork) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide all required fields: serviceDate, mileage, serviceType, and workPerformed.',
+        message: 'Please provide all required fields: serviceDate, mileage, serviceType, and description/workPerformed.',
       });
     }
 
-    const parsedMileage = Number(mileage);
+    const parsedMileage = Number(effectiveMileage);
     if (isNaN(parsedMileage) || parsedMileage < 0) {
       return res.status(400).json({
         success: false,
@@ -82,10 +88,20 @@ const createServiceRecord = async (req, res, next) => {
       });
     }
 
+    // Future date validation
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+    if (parsedDate > endOfToday) {
+      return res.status(400).json({
+        success: false,
+        message: 'Service date cannot be in the future.',
+      });
+    }
+
     // Cost calculations & non-negative bounds validation
-    const parsedLabour = labourCost !== undefined ? Number(labourCost) : 0;
-    const parsedParts = partsCost !== undefined ? Number(partsCost) : 0;
-    let parsedTotal = totalCost !== undefined ? Number(totalCost) : 0;
+    const parsedLabour = labourCost !== undefined && labourCost !== '' ? Number(labourCost) : 0;
+    const parsedParts = partsCost !== undefined && partsCost !== '' ? Number(partsCost) : 0;
+    let parsedTotal = totalCost !== undefined && totalCost !== '' ? Number(totalCost) : 0;
 
     if (isNaN(parsedLabour) || parsedLabour < 0 || isNaN(parsedParts) || parsedParts < 0 || isNaN(parsedTotal) || parsedTotal < 0) {
       return res.status(400).json({
@@ -131,8 +147,8 @@ const createServiceRecord = async (req, res, next) => {
       technicianName: resolvedTechnician,
       serviceDate: parsedDate,
       mileage: parsedMileage,
-      serviceType: String(serviceType).trim(),
-      workPerformed: String(workPerformed).trim(),
+      serviceType: effectiveType,
+      workPerformed: effectiveWork,
       partsReplaced: Array.isArray(partsReplaced) ? partsReplaced.map((p) => String(p).trim()).filter(Boolean) : [],
       labourCost: parsedLabour,
       partsCost: parsedParts,
