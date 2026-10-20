@@ -13,6 +13,7 @@ import {
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import { getMyVehicles, type Vehicle } from '../../services/vehicleService';
+import { resolveImageUrl } from '../../utils/imageUrl';
 
 // Approved Local Project Fallback Vehicle Asset
 import fallbackVehicleImg from '../../assets/auth/vehicle_owner_bg.jpg';
@@ -186,7 +187,7 @@ export const MyVehiclesPage: React.FC = () => {
               <div className="autocare-vehicles-grid">
                 {vehicles.map((vehicle) => {
                   const trust = getDisplayTrustScore(vehicle);
-                  const vehicleImg = vehicle.imageUrl?.trim() || fallbackVehicleImg;
+                  const vehicleImg = resolveImageUrl(vehicle.imageUrl) || fallbackVehicleImg;
 
                   return (
                     <div

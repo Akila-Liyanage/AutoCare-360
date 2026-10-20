@@ -104,10 +104,54 @@ export const updateVehicle = async (
   return response.data?.data?.vehicle;
 };
 
+/**
+ * Upload a vehicle photo to the backend
+ * POST /api/vehicles/upload-image
+ */
+export const uploadVehicleImage = async (file: File): Promise<string> => {
+  const formData = new FormData();
+  formData.append('image', file);
+
+  const response = await api.post<{
+    success: boolean;
+    message: string;
+    data: { imageUrl: string; filename: string };
+  }>('/vehicles/upload-image', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+
+  return response.data?.data?.imageUrl || '';
+};
+
+/**
+ * Upload/update a photo for an existing vehicle
+ * POST /api/vehicles/:id/image
+ */
+export const updateVehicleImage = async (id: string, file: File): Promise<string> => {
+  const formData = new FormData();
+  formData.append('image', file);
+
+  const response = await api.post<{
+    success: boolean;
+    message: string;
+    data: { imageUrl: string; vehicle: Vehicle };
+  }>(`/vehicles/${id}/image`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+
+  return response.data?.data?.imageUrl || '';
+};
+
 export default {
   getMyVehicles,
   getVehicleById,
   createVehicle,
   updateVehicle,
+  uploadVehicleImage,
+  updateVehicleImage,
 };
 
