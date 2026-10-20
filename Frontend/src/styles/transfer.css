@@ -1,0 +1,993 @@
+/* AutoCare 360 - transfer.css
+   Dedicated Stylesheet for Transfer Vehicle Records / Transfer Ownership
+   Aligned strictly with Figma: Transfer vehicle records (Screen 4)
+*/
+
+@import './variables.css';
+@import './home.css';
+
+/* --------------------------------------------------------------------------
+   Page Layout & Container
+   -------------------------------------------------------------------------- */
+.autocare-transfer-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f8fafc;
+}
+
+.autocare-transfer-main {
+  flex: 1;
+  padding: 28px 0 72px 0;
+}
+
+.autocare-transfer-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* --------------------------------------------------------------------------
+   Back to Vehicle Details Navigation Link
+   -------------------------------------------------------------------------- */
+.autocare-transfer-back-nav {
+  margin-bottom: 20px;
+}
+
+.autocare-transfer-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  color: #0056A2;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.autocare-transfer-back-btn:hover {
+  background: #eff6ff;
+  color: #004684;
+}
+
+/* --------------------------------------------------------------------------
+   Top Header Row (Title + Search + Bell + Blockchain Status)
+   -------------------------------------------------------------------------- */
+.autocare-transfer-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.autocare-transfer-title {
+  font-size: 28px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.4px;
+}
+
+.autocare-transfer-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Search Box Pill */
+.autocare-transfer-search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background-color: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 9999px;
+  padding: 0 16px;
+  height: 42px;
+  width: 320px;
+  transition: all 0.2s ease;
+}
+
+.autocare-transfer-search-box:focus-within {
+  background-color: #ffffff;
+  border-color: var(--autocare-blue);
+  box-shadow: 0 0 0 3px rgba(0, 86, 162, 0.12);
+}
+
+.autocare-transfer-search-icon {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.autocare-transfer-search-input {
+  border: none;
+  outline: none;
+  background: transparent;
+  width: 100%;
+  margin-left: 10px;
+  font-size: 13.5px;
+  color: #0f172a;
+}
+
+.autocare-transfer-search-input::placeholder {
+  color: #94a3b8;
+}
+
+/* Bell Icon Button */
+.autocare-transfer-bell-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.autocare-transfer-bell-btn:hover {
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+/* Blockchain Secured Capsule Pill */
+.autocare-transfer-badge-secured {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #eaf7ec;
+  border: 1px solid #d1f2d4;
+  color: #15803d;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  letter-spacing: 0.1px;
+}
+
+.autocare-transfer-dot-secured {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #16a34a;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.25);
+  animation: pulse-secured 2.2s infinite;
+}
+
+@keyframes pulse-secured {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Hero Vehicle Summary Card
+   -------------------------------------------------------------------------- */
+.autocare-transfer-hero-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 22px 26px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.autocare-transfer-hero-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.autocare-transfer-hero-thumb {
+  width: 96px;
+  height: 72px;
+  border-radius: 12px;
+  background-color: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.autocare-transfer-hero-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.autocare-transfer-hero-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.autocare-transfer-hero-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.autocare-transfer-hero-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+.autocare-transfer-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background-color: #effcf0;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 9999px;
+}
+
+.autocare-transfer-hero-hash {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+}
+
+.autocare-transfer-hero-hash code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: #475569;
+  background-color: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.autocare-transfer-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.autocare-transfer-btn-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 9px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.autocare-transfer-btn-edit:hover {
+  background-color: #f8fafc;
+  border-color: #94a3b8;
+  transform: translateY(-1px);
+}
+
+.autocare-transfer-btn-passport {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #0056A2;
+  color: #ffffff;
+  border: none;
+  font-size: 13.5px;
+  font-weight: 700;
+  padding: 10px 22px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 86, 162, 0.25);
+  transition: all 0.2s ease;
+}
+
+.autocare-transfer-btn-passport:hover {
+  background-color: #004684;
+  transform: translateY(-1px);
+}
+
+/* --------------------------------------------------------------------------
+   Ownership & Cryptographic Integrity Ledger Card
+   -------------------------------------------------------------------------- */
+.autocare-transfer-ownership-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 22px 26px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  margin-bottom: 24px;
+}
+
+.autocare-transfer-card-heading {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 16px 0;
+  letter-spacing: -0.2px;
+}
+
+.autocare-transfer-ownership-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.autocare-transfer-ledger-box {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.autocare-transfer-ledger-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.autocare-transfer-ledger-val {
+  font-size: 17px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.autocare-transfer-ledger-val.is-green {
+  color: #15803d;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.autocare-transfer-ledger-sub {
+  font-size: 12.5px;
+  color: #94a3b8;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* --------------------------------------------------------------------------
+   Middle Split Section (Left Specifications + Right Passport Score)
+   -------------------------------------------------------------------------- */
+.autocare-transfer-middle-grid {
+  display: grid;
+  grid-template-columns: 1.55fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+  align-items: start;
+}
+
+/* Left: Official Registration Specifications */
+.autocare-transfer-specs-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px 26px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+}
+
+.autocare-transfer-specs-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.autocare-transfer-specs-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 11px 0;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 13.5px;
+}
+
+.autocare-transfer-specs-row:last-child {
+  border-bottom: none;
+}
+
+.autocare-transfer-specs-label {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.autocare-transfer-specs-value {
+  color: #0f172a;
+  font-weight: 700;
+  text-align: right;
+}
+
+.autocare-transfer-specs-value.is-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.3px;
+}
+
+/* Right Stack: Score Card + Odometer Card */
+.autocare-transfer-right-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.autocare-transfer-score-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px 22px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  text-align: center;
+}
+
+.autocare-transfer-circle-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 18px 0 14px 0;
+  position: relative;
+}
+
+.autocare-transfer-circle-svg {
+  transform: rotate(-90deg);
+}
+
+.autocare-transfer-circle-bg {
+  stroke: #e2e8f0;
+}
+
+.autocare-transfer-circle-progress {
+  stroke: #16a34a;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.8s ease;
+}
+
+.autocare-transfer-circle-text {
+  position: absolute;
+  font-size: 26px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.5px;
+}
+
+.autocare-transfer-score-subtext {
+  font-size: 12.5px;
+  color: #64748b;
+  line-height: 1.55;
+  margin: 0;
+  padding: 0 10px;
+}
+
+/* Odometer Authenticity Card */
+.autocare-transfer-odometer-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 22px 24px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+}
+
+.autocare-transfer-odometer-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.autocare-transfer-odometer-icon {
+  color: #0056A2;
+}
+
+.autocare-transfer-odometer-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+.autocare-transfer-odometer-desc {
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0 0 14px 0;
+}
+
+.autocare-transfer-odometer-badge {
+  display: inline-block;
+  background-color: #eaf7ec;
+  border: 1px solid #d1f2d4;
+  color: #15803d;
+  font-size: 11.5px;
+  font-weight: 800;
+  padding: 6px 12px;
+  border-radius: 6px;
+  letter-spacing: 0.3px;
+}
+
+/* --------------------------------------------------------------------------
+   Verified Ledger Records Dark Navy Card
+   -------------------------------------------------------------------------- */
+.autocare-transfer-records-card {
+  background: #0b2545;
+  border-radius: 16px;
+  padding: 24px 28px;
+  box-shadow: 0 4px 20px rgba(11, 37, 69, 0.15);
+  color: #ffffff;
+  margin-bottom: 24px;
+}
+
+.autocare-transfer-records-heading {
+  font-size: 16px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 18px 0;
+  letter-spacing: -0.2px;
+}
+
+.autocare-transfer-records-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.autocare-transfer-record-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0;
+}
+
+.autocare-transfer-record-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.autocare-transfer-record-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.autocare-transfer-record-meta {
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.autocare-transfer-badge-certified {
+  display: inline-flex;
+  align-items: center;
+  background-color: #16a34a;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 14px;
+  border-radius: 9999px;
+  letter-spacing: 0.2px;
+}
+
+.autocare-transfer-record-divider {
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.12);
+  margin: 2px 0;
+}
+
+/* --------------------------------------------------------------------------
+   Transfer Ownership Modal & Form
+   -------------------------------------------------------------------------- */
+.autocare-transfer-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.autocare-transfer-modal {
+  background: #ffffff;
+  border-radius: 18px;
+  width: 100%;
+  max-width: 640px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.25s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(18px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.autocare-transfer-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 22px 26px 16px 26px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.autocare-transfer-modal-title-group h2 {
+  font-size: 19px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 6px 0;
+}
+
+.autocare-transfer-modal-title-group p {
+  font-size: 13.5px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.autocare-transfer-modal-close {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.autocare-transfer-modal-close:hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+.autocare-transfer-modal-body {
+  padding: 24px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.autocare-transfer-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.autocare-transfer-form-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.autocare-transfer-form-required {
+  color: #dc2626;
+  margin-left: 3px;
+}
+
+.autocare-transfer-form-input,
+.autocare-transfer-form-textarea,
+.autocare-transfer-form-select {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #0f172a;
+  background-color: #ffffff;
+  outline: none;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.autocare-transfer-form-input:focus,
+.autocare-transfer-form-textarea:focus,
+.autocare-transfer-form-select:focus {
+  border-color: #0056A2;
+  box-shadow: 0 0 0 3px rgba(0, 86, 162, 0.12);
+}
+
+.autocare-transfer-form-input.is-error {
+  border-color: #dc2626;
+  background-color: #fef2f2;
+}
+
+.autocare-transfer-error-msg {
+  font-size: 12px;
+  color: #dc2626;
+  font-weight: 500;
+}
+
+.autocare-transfer-form-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+/* Verified Owner Banner in Modal */
+.autocare-transfer-current-owner-banner {
+  background-color: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.autocare-transfer-current-owner-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.autocare-transfer-current-owner-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #64748b;
+  letter-spacing: 0.5px;
+}
+
+.autocare-transfer-current-owner-name {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.autocare-transfer-current-owner-hash {
+  font-size: 12px;
+  color: #64748b;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* Cryptographic Handshake Callout */
+.autocare-transfer-security-callout {
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.autocare-transfer-security-icon {
+  color: #0056A2;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.autocare-transfer-security-text {
+  font-size: 12.5px;
+  color: #1e3a8a;
+  line-height: 1.5;
+}
+
+.autocare-transfer-security-text strong {
+  font-weight: 700;
+  display: block;
+  margin-bottom: 2px;
+}
+
+/* Acknowledgement Checkbox */
+.autocare-transfer-checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  color: #334155;
+  line-height: 1.45;
+  cursor: pointer;
+  user-select: none;
+}
+
+.autocare-transfer-checkbox-label input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  margin-top: 2px;
+  accent-color: #0056A2;
+  cursor: pointer;
+}
+
+.autocare-transfer-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 26px 22px 26px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.autocare-transfer-btn-cancel {
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 9px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.autocare-transfer-btn-cancel:hover {
+  background-color: #f8fafc;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+.autocare-transfer-btn-submit {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #0056A2;
+  color: #ffffff;
+  border: none;
+  font-size: 13.5px;
+  font-weight: 700;
+  padding: 9px 22px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 86, 162, 0.25);
+  transition: all 0.2s ease;
+}
+
+.autocare-transfer-btn-submit:hover {
+  background-color: #004684;
+}
+
+/* --------------------------------------------------------------------------
+   Toast Banner
+   -------------------------------------------------------------------------- */
+.autocare-transfer-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  font-weight: 600;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  animation: slideToast 0.3s ease;
+}
+
+@keyframes slideToast {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.autocare-transfer-toast.is-success {
+  background-color: #0f172a;
+  color: #ffffff;
+  border-left: 4px solid #16a34a;
+}
+
+.autocare-transfer-toast.is-info {
+  background-color: #0f172a;
+  color: #ffffff;
+  border-left: 4px solid #0284c7;
+}
+
+.autocare-transfer-toast-close {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.autocare-transfer-toast-close:hover {
+  color: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive Breakpoints
+   -------------------------------------------------------------------------- */
+@media (max-width: 992px) {
+  .autocare-transfer-middle-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .autocare-transfer-ownership-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .autocare-transfer-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .autocare-transfer-toolbar {
+    width: 100%;
+  }
+
+  .autocare-transfer-search-box {
+    width: 100%;
+  }
+
+  .autocare-transfer-hero-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .autocare-transfer-hero-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .autocare-transfer-form-row-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .autocare-transfer-record-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+}

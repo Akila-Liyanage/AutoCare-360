@@ -1,0 +1,964 @@
+/* AutoCare 360 - vehicle.css
+   Dedicated Stylesheet for Vehicle Passport View & Management flows
+   Aligned strictly with Figma: View vehicle(1).png
+*/
+
+@import './variables.css';
+@import './home.css';
+
+/* --------------------------------------------------------------------------
+   View Vehicle Page Container & Layout
+   -------------------------------------------------------------------------- */
+.autocare-view-vehicle-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f8fafc;
+}
+
+.autocare-view-vehicle-main {
+  flex: 1;
+  padding: 36px 0 80px 0;
+}
+
+.autocare-view-vehicle-container {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* Category Tracker / Breadcrumb */
+.autocare-view-category-badge {
+  display: inline-block;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--autocare-blue);
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  margin-bottom: 6px;
+}
+
+/* Header Row: Title & Subtitle + Top Action Buttons */
+.autocare-view-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 28px;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.autocare-view-header-left {
+  flex: 1;
+  min-width: 300px;
+}
+
+.autocare-view-header-title {
+  font-size: 34px;
+  font-weight: 800;
+  color: #0b1a2d;
+  margin: 0 0 6px 0;
+  letter-spacing: -0.6px;
+  line-height: 1.15;
+}
+
+.autocare-view-header-subtitle {
+  font-size: 15px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.autocare-view-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+/* Top Action Buttons */
+.autocare-btn-share-records {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.autocare-btn-share-records:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  transform: translateY(-1px);
+}
+
+.autocare-btn-add-record {
+  background: var(--autocare-blue);
+  border: none;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 10px 22px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 86, 162, 0.25);
+  transition: all 0.2s ease;
+}
+
+.autocare-btn-add-record:hover {
+  background: var(--autocare-blue-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 86, 162, 0.35);
+}
+
+/* --------------------------------------------------------------------------
+   Vehicle Hero Card (Top Identity Showcase)
+   -------------------------------------------------------------------------- */
+.autocare-view-hero-card {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 460px 1fr;
+  margin-bottom: 28px;
+  transition: box-shadow 0.2s ease;
+}
+
+.autocare-view-hero-media {
+  background: linear-gradient(180deg, #f1f5f9 0%, #e8eef5 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  padding: 24px;
+  min-height: 290px;
+}
+
+.autocare-view-hero-img {
+  width: 100%;
+  height: 100%;
+  max-height: 250px;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 20px rgba(0, 0, 0, 0.08));
+  transition: transform 0.3s ease;
+}
+
+.autocare-view-hero-card:hover .autocare-view-hero-img {
+  transform: scale(1.02);
+}
+
+.autocare-view-hero-content {
+  padding: 34px 38px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.autocare-view-hero-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 6px;
+}
+
+.autocare-view-hero-title {
+  font-size: 29px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+}
+
+.autocare-view-passport-badge {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.autocare-view-hero-subtitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 12px;
+}
+
+.autocare-view-hero-desc {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.55;
+  margin-bottom: 24px;
+}
+
+/* 3-Column Spec Strip */
+.autocare-view-spec-strip {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr 1fr;
+  gap: 20px;
+  padding: 16px 0;
+  border-top: 1px solid #f1f5f9;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 24px;
+}
+
+.autocare-view-spec-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.autocare-view-spec-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 5px;
+}
+
+.autocare-view-spec-value {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.3;
+}
+
+.autocare-view-spec-value.is-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.4px;
+}
+
+/* Hero Action Buttons (Download, Edit, Transfer) */
+.autocare-view-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.autocare-btn-download-passport {
+  background: var(--autocare-blue);
+  color: #ffffff;
+  border: none;
+  font-size: 13.5px;
+  font-weight: 700;
+  padding: 9px 20px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 86, 162, 0.2);
+  transition: all 0.2s ease;
+}
+
+.autocare-btn-download-passport:hover {
+  background: var(--autocare-blue-hover);
+  transform: translateY(-1px);
+}
+
+.autocare-btn-edit-vehicle {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 9px 18px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.autocare-btn-edit-vehicle:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  transform: translateY(-1px);
+}
+
+.autocare-btn-transfer-ownership {
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+  color: #0284c7;
+  font-size: 13.5px;
+  font-weight: 700;
+  padding: 9px 18px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.autocare-btn-transfer-ownership:hover {
+  background: #dbeafe;
+  color: #0369a1;
+  transform: translateY(-1px);
+}
+
+/* --------------------------------------------------------------------------
+   4 Metric Cards Row
+   -------------------------------------------------------------------------- */
+.autocare-view-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.autocare-view-metric-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 22px 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.autocare-view-metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+}
+
+.autocare-view-metric-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.autocare-view-metric-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.autocare-view-metric-icon {
+  flex-shrink: 0;
+}
+
+.autocare-view-metric-value {
+  font-size: 26px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 6px 0;
+  letter-spacing: -0.4px;
+}
+
+.autocare-view-metric-subtext {
+  font-size: 12.5px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.autocare-view-metric-subtext.is-green {
+  color: #16a34a;
+}
+
+.autocare-view-metric-subtext.is-blue {
+  color: #0284c7;
+}
+
+/* --------------------------------------------------------------------------
+   2-Column Modular Sections (Middle Row & Bottom Row)
+   -------------------------------------------------------------------------- */
+.autocare-view-two-col-grid {
+  display: grid;
+  grid-template-columns: 1.7fr 1.3fr;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.autocare-view-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 28px 30px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+}
+
+.autocare-view-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 22px;
+  gap: 16px;
+}
+
+.autocare-view-card-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 4px 0;
+  letter-spacing: -0.3px;
+}
+
+.autocare-view-card-subtitle {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+}
+
+.autocare-view-card-link {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--autocare-blue);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  padding: 0;
+  white-space: nowrap;
+  transition: color 0.15s ease;
+}
+
+.autocare-view-card-link:hover {
+  color: var(--autocare-blue-hover);
+  text-decoration: underline;
+}
+
+/* Ownership & Cryptographic Integrity Grid */
+.autocare-view-integrity-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 32px;
+}
+
+.autocare-view-integrity-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 11px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.autocare-view-integrity-label {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.autocare-view-integrity-val-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.autocare-view-integrity-val {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0f172a;
+  text-align: right;
+}
+
+.autocare-view-integrity-val.is-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+}
+
+.autocare-badge-verified {
+  background: #dcfce7;
+  color: #15803d;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+.autocare-badge-valid {
+  background: #dcfce7;
+  color: #15803d;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+/* Trust Score Panel */
+.autocare-view-trust-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 24px;
+  flex: 1;
+}
+
+.autocare-view-trust-ring-row {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+.autocare-view-trust-ring {
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  border: 4px solid #22c55e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 0 16px rgba(34, 197, 94, 0.15);
+  background: #ffffff;
+}
+
+.autocare-view-trust-ring-number {
+  font-size: 24px;
+  font-weight: 800;
+  color: #15803d;
+}
+
+.autocare-view-trust-ring-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.autocare-view-trust-status-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+.autocare-view-trust-status-desc {
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.autocare-view-trust-progress-track {
+  width: 100%;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.autocare-view-trust-progress-bar {
+  height: 100%;
+  background: #22c55e;
+  border-radius: 9999px;
+  transition: width 0.5s ease;
+}
+
+/* Recent Service History Panel */
+.autocare-view-service-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.autocare-view-service-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #f1f5f9;
+  transition: all 0.2s ease;
+}
+
+.autocare-view-service-item:hover {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+}
+
+.autocare-view-service-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.autocare-view-service-icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #eff6ff;
+  color: #0284c7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.autocare-view-service-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.autocare-view-service-name {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.autocare-view-service-meta {
+  font-size: 12.5px;
+  color: #64748b;
+  margin: 0;
+}
+
+.autocare-view-service-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.autocare-view-service-cost {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+/* Verified Documents Panel */
+.autocare-view-doc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.autocare-view-doc-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 13px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.autocare-view-doc-item:last-child {
+  border-bottom: none;
+}
+
+.autocare-view-doc-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.autocare-view-doc-status-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.autocare-view-doc-date {
+  font-size: 12.5px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.autocare-doc-pill {
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.4px;
+}
+
+.autocare-doc-pill.is-pdf {
+  background: #eff6ff;
+  color: #0284c7;
+  border: 1px solid #bfdbfe;
+}
+
+.autocare-doc-pill.is-soon {
+  background: #fff7ed;
+  color: #ea580c;
+  border: 1px solid #fed7aa;
+}
+
+.autocare-doc-pill.is-signed {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+
+/* --------------------------------------------------------------------------
+   Toast Banner (For Safe Placeholder Feedback)
+   -------------------------------------------------------------------------- */
+.autocare-view-toast {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 1000;
+  background: #0f172a;
+  color: #ffffff;
+  padding: 14px 22px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
+  font-size: 13.5px;
+  font-weight: 600;
+  animation: autocareSlideUp 0.25s ease;
+  max-width: 440px;
+}
+
+@keyframes autocareSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.autocare-view-toast-icon {
+  color: var(--autocare-cyan);
+  flex-shrink: 0;
+}
+
+.autocare-view-toast-close {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 2px;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+
+.autocare-view-toast-close:hover {
+  color: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   Lightweight Edit Vehicle Modal (Prepared for existing PATCH)
+   -------------------------------------------------------------------------- */
+.autocare-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+  animation: autocareFadeIn 0.2s ease;
+}
+
+.autocare-modal-container {
+  background: #ffffff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 520px;
+  box-shadow: 0 20px 40px -10px rgba(0, 86, 162, 0.2);
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  animation: autocareScaleIn 0.2s ease;
+}
+
+@keyframes autocareScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.autocare-modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.autocare-modal-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+.autocare-modal-close-btn {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.autocare-modal-close-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.autocare-modal-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.autocare-modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.autocare-modal-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.autocare-modal-input,
+.autocare-modal-select {
+  padding: 10px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #0f172a;
+  background: #ffffff;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.autocare-modal-input:focus,
+.autocare-modal-select:focus {
+  border-color: var(--autocare-blue);
+  box-shadow: 0 0 0 3px rgba(0, 86, 162, 0.12);
+}
+
+.autocare-modal-footer {
+  padding: 16px 24px;
+  background: #f8fafc;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.autocare-btn-cancel {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 9px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.autocare-btn-save {
+  background: var(--autocare-blue);
+  border: none;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 9px 22px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 86, 162, 0.2);
+}
+
+.autocare-btn-save:hover {
+  background: var(--autocare-blue-hover);
+}
+
+.autocare-btn-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive Breakpoints
+   -------------------------------------------------------------------------- */
+@media (max-width: 1024px) {
+  .autocare-view-hero-card {
+    grid-template-columns: 1fr;
+  }
+
+  .autocare-view-hero-media {
+    min-height: 240px;
+  }
+
+  .autocare-view-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .autocare-view-two-col-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .autocare-view-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .autocare-view-header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .autocare-view-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .autocare-view-integrity-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .autocare-view-hero-content {
+    padding: 24px 20px;
+  }
+
+  .autocare-view-spec-strip {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
