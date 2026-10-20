@@ -680,6 +680,166 @@ const getPublicSharedRecord = async (req, res, next) => {
   }
 };
 
+// @desc    Update permissions of an existing active share link
+// @route   PATCH /api/share-links/:id/permissions
+// @access  Private (Owner only)
+const updateShareLinkPermissions = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid share link ID format.',
+      });
+    }
+
+    const shareLink = await ShareLink.findById(id);
+    if (!shareLink) {
+      return res.status(404).json({
+        success: false,
+        message: 'Share link not found.',
+      });
+    }
+
+    // Authorization: owner only
+    if (shareLink.ownerId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Only the link owner can update this share link permissions.',
+      });
+    }
+
+    // Dynamic expiry update if still active but past expiration date
+    if (shareLink.status === 'active' && shareLink.expiresAt <= new Date()) {
+      shareLink.status = 'expired';
+      await shareLink.save();
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot update permissions. This share link has expired.',
+      });
+    }
+
+    // Only active links can be edited
+    if (shareLink.status !== 'active') {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot update permissions. Share link status is "${shareLink.status}". Only active share links can be edited.`,
+      });
+    }
+
+    const { permissionLevel, allowedSections, expiresAt, maxViews, protection } = req.body;
+
+    // Validate permissionLevel if provided
+    const validLevels = ['full', 'limited', 'selected'];
+    if (permissionLevel !== undefined && !validLevels.includes(permissionLevel)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid permission level. Must be full, limited, or selected.',
+      });
+    }
+
+    const newPermissionLevel =
+      permissionLevel !== undefined ? permissionLevel : shareLink.permissionLevel;
+
+    // Validate allowedSections if provided
+    if (allowedSections !== undefined && !Array.isArray(allowedSections)) {
+      return res.status(400).json({
+        success: false,
+        message: 'allowedSections must be an array of strings.',
+      });
+    }
+
+    let newAllowedSections =
+      allowedSections !== undefined ? allowedSections : shareLink.allowedSections;
+
+    // If selected -> allowedSections must be non-empty
+    if (newPermissionLevel === 'selected') {
+      if (!Array.isArray(newAllowedSections) || newAllowedSections.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'allowedSections must not be empty when permissionLevel is "selected".',
+        });
+      }
+    } else {
+      if (allowedSections !== undefined) {
+        newAllowedSections = allowedSections;
+      } else if (permissionLevel !== undefined && permissionLevel !== 'selected') {
+        newAllowedSections = [];
+      }
+    }
+
+    // Validate expiresAt if provided
+    if (expiresAt !== undefined) {
+      const parsedExpiresAt = new Date(expiresAt);
+      if (isNaN(parsedExpiresAt.getTime()) || parsedExpiresAt <= new Date()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Expiration date/time (expiresAt) must be a valid future date.',
+        });
+      }
+      shareLink.expiresAt = parsedExpiresAt;
+    }
+
+    // Validate maxViews if provided
+    if (maxViews !== undefined) {
+      if (typeof maxViews !== 'number' || maxViews < 1) {
+        return res.status(400).json({
+          success: false,
+          message: 'maxViews must be a number greater than or equal to 1.',
+        });
+      }
+      shareLink.maxViews = maxViews;
+    }
+
+    // Update protection settings if provided
+    if (protection && typeof protection === 'object') {
+      if (!shareLink.protection) {
+        shareLink.protection = {
+          allowDownload: false,
+          allowPrint: false,
+          allowCopy: false,
+          watermarkEnabled: true,
+          watermarkText: 'AutoCare 360 - Confidential',
+        };
+      }
+      if (protection.allowDownload !== undefined) {
+        shareLink.protection.allowDownload = Boolean(protection.allowDownload);
+      }
+      if (protection.allowPrint !== undefined) {
+        shareLink.protection.allowPrint = Boolean(protection.allowPrint);
+      }
+      if (protection.allowCopy !== undefined) {
+        shareLink.protection.allowCopy = Boolean(protection.allowCopy);
+      }
+      if (protection.watermarkEnabled !== undefined) {
+        shareLink.protection.watermarkEnabled = Boolean(protection.watermarkEnabled);
+      }
+      if (protection.watermarkText !== undefined) {
+        shareLink.protection.watermarkText = String(protection.watermarkText).trim();
+      }
+    }
+
+    // Apply permission changes (never modify tokenHash)
+    shareLink.permissionLevel = newPermissionLevel;
+    shareLink.allowedSections = newAllowedSections;
+
+    await shareLink.save();
+
+    const sanitizedLink = sanitizeShareLink(shareLink);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Share link permissions updated successfully.',
+      data: {
+        shareLink: sanitizedLink,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createShareLink,
   getOwnerShareLinks,
@@ -687,4 +847,5 @@ module.exports = {
   revokeShareLink,
   deleteShareLink,
   getPublicSharedRecord,
+  updateShareLinkPermissions,
 };
