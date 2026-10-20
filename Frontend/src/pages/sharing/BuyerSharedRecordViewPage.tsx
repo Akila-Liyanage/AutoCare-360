@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ShieldCheck,
@@ -18,6 +18,7 @@ import {
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import defaultVehicleImg from '../../assets/vehicles/default-vehicle-hero.png';
+import api from '../../services/api';
 import '../../styles/shared-record.css';
 
 type SharingScopeMode = 'Limited Scope' | 'Full Records' | 'Selected Records' | 'Expired';
@@ -27,12 +28,25 @@ interface ToastState {
   message: string;
 }
 
-const BuyerSharedRecordViewPage: React.FC = () => {
+interface PublicVehicleData {
+  registrationNumber?: string;
+  manufacturer?: string;
+  model?: string;
+  manufacturingYear?: number;
+  currentMileage?: number;
+  vin?: string;
+  ownerName?: string;
+  color?: string;
+}
+
+export const BuyerSharedRecordViewPage: React.FC = () => {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
 
   // Active simulated permission scope (defaults to Limited Scope as typical for buyer QR view)
   const [scopeMode, setScopeMode] = useState<SharingScopeMode>('Limited Scope');
+  const [viewerName, setViewerName] = useState<string>('Prospective Buyer / Verification Officer');
+  const [liveVehicle, setLiveVehicle] = useState<PublicVehicleData | null>(null);
 
   // Preview document modal state
   const [activePreviewDoc, setActivePreviewDoc] = useState<{
@@ -53,6 +67,44 @@ const BuyerSharedRecordViewPage: React.FC = () => {
       setToast((prev) => ({ ...prev, show: false }));
     }, 4500);
   };
+
+  // Fetch real token data if token is provided in route params
+  useEffect(() => {
+    if (!token) return;
+
+    let isMounted = true;
+    const fetchPublicData = async () => {
+      try {
+        const response = await api.get('/share-links/public/' + token);
+        if (isMounted && response.data?.data) {
+          const { shareSession, vehicle, watermark } = response.data.data;
+          if (watermark?.recipientName) {
+            setViewerName(watermark.recipientName);
+          }
+          if (vehicle) {
+            setLiveVehicle(vehicle);
+          }
+          if (shareSession?.permissionLevel === 'full') {
+            setScopeMode('Full Records');
+          } else if (shareSession?.permissionLevel === 'selected') {
+            setScopeMode('Selected Records');
+          } else {
+            setScopeMode('Limited Scope');
+          }
+        }
+      } catch (err: unknown) {
+        if (isMounted) {
+          // If expired or revoked, show expired state
+          setScopeMode('Expired');
+        }
+      }
+    };
+
+    fetchPublicData();
+    return () => {
+      isMounted = false;
+    };
+  }, [token]);
 
   // Active token identifier
   const displayToken = token || '8f9e-2b7c-4a1d';
@@ -78,7 +130,7 @@ const BuyerSharedRecordViewPage: React.FC = () => {
               <span className="autocare-shared-session-dot">•</span>
 
               <span className="autocare-shared-session-recipient">
-                Viewer: Prospective Buyer / Verification Officer
+                Viewer: {viewerName}
               </span>
             </div>
 
@@ -196,9 +248,11 @@ const BuyerSharedRecordViewPage: React.FC = () => {
                 <div className="autocare-shared-hero-info">
                   <div className="autocare-shared-hero-top">
                     <div>
-                      <h2 className="autocare-shared-vehicle-name">Toyota Aqua (2018)</h2>
+                      <h2 className="autocare-shared-vehicle-name">
+                        {liveVehicle ? `${liveVehicle.manufacturer} ${liveVehicle.model} (${liveVehicle.manufacturingYear || ''})` : 'Toyota Aqua (2018)'}
+                      </h2>
                       <p className="autocare-shared-vehicle-reg">
-                        WP ABC-1234 · 2018 · Pearl White Metallic
+                        {liveVehicle ? `${liveVehicle.registrationNumber} · ${liveVehicle.manufacturingYear || ''} · ${liveVehicle.color || 'Pearl White Metallic'}` : 'WP ABC-1234 · 2018 · Pearl White Metallic'}
                       </p>
                     </div>
 

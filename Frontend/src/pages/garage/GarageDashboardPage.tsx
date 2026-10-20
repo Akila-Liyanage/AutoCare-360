@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Bell,
@@ -11,12 +11,16 @@ import {
 } from 'lucide-react';
 import Footer from '../../components/layout/Footer';
 import logoImg from '../../assets/auth/download (27) (1) 2.png';
+import api from '../../services/api';
+import { useAuth } from '../../hooks/useAuth';
 import {
   MOCK_GARAGE_KPIS,
   MOCK_RECENT_ENTRIES,
   MOCK_OCR_QUEUE,
   MOCK_OCR_WARNING,
   MOCK_GARAGE_RECORDS,
+  type GarageKPI,
+  type RecentVerifiedEntry,
   type GarageRecordItem
 } from './garageData';
 import '../../styles/garage-dashboard.css';
@@ -28,6 +32,7 @@ interface ToastState {
 
 export const GarageDashboardPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   // Active Sidebar Item State
   const [activeTab, setActiveTab] = useState<string>('Overview');
@@ -37,6 +42,33 @@ export const GarageDashboardPage: React.FC = () => {
 
   // Profile Modal State
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
+
+  // Live KPI and recent entries state (backed by real API data with fallback)
+  const [kpis, setKpis] = useState<GarageKPI[]>(MOCK_GARAGE_KPIS);
+  const [recentEntries, setRecentEntries] = useState<RecentVerifiedEntry[]>(MOCK_RECENT_ENTRIES);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchGarageStats = async () => {
+      try {
+        const response = await api.get('/garage/dashboard-stats');
+        if (isMounted && response.data?.data) {
+          if (Array.isArray(response.data.data.kpis) && response.data.data.kpis.length > 0) {
+            setKpis(response.data.data.kpis);
+          }
+          if (Array.isArray(response.data.data.recentEntries) && response.data.data.recentEntries.length > 0) {
+            setRecentEntries(response.data.data.recentEntries);
+          }
+        }
+      } catch {
+        // Fallback gracefully
+      }
+    };
+    fetchGarageStats();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const showToast = (message: string) => {
     setToast({ show: true, message });
@@ -168,8 +200,17 @@ export const GarageDashboardPage: React.FC = () => {
               onClick={() => setShowProfileModal(true)}
               title="View Garage Representative Profile"
             >
-              <span className="autocare-garage-user-name">Kaveesha P.</span>
-              <div className="autocare-garage-user-avatar">KP</div>
+              <span className="autocare-garage-user-name">{user?.fullName || 'Kaveesha P.'}</span>
+              <div className="autocare-garage-user-avatar">
+                {user?.fullName
+                  ? user.fullName
+                      .split(' ')
+                      .map((n) => n[0])
+                      .join('')
+                      .slice(0, 2)
+                      .toUpperCase()
+                  : 'KP'}
+              </div>
             </div>
           </div>
         </header>
@@ -222,7 +263,7 @@ export const GarageDashboardPage: React.FC = () => {
 
           {/* KPI Cards Grid */}
           <section className="autocare-garage-kpis-grid" aria-label="Garage Key Metrics">
-            {MOCK_GARAGE_KPIS.map((kpi) => (
+            {kpis.map((kpi) => (
               <div key={kpi.id} className="autocare-garage-kpi-card">
                 <div className="autocare-garage-kpi-label">{kpi.label}</div>
                 <div
@@ -250,8 +291,8 @@ export const GarageDashboardPage: React.FC = () => {
               <h2 className="autocare-garage-panel-title">Recent Verified Entries</h2>
 
               <div className="autocare-garage-entries-list">
-                {MOCK_RECENT_ENTRIES.map((entry) => (
-                  <div key={entry.id} className="autocare-garage-entry-item">
+                {recentEntries.map((entry) => (
+                  <div key={entry._id || entry.id} className="autocare-garage-entry-item">
                     <div className="autocare-garage-entry-left">
                       <span className="autocare-garage-entry-vehicle">
                         {entry.vehicleTitle} ({entry.regNumber})

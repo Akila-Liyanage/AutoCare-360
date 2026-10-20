@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Vehicle = require('../models/Vehicle');
+const AuditLog = require('../models/AuditLog');
 
 const currentYear = new Date().getFullYear();
 
@@ -335,6 +336,13 @@ const updateVehicle = async (req, res, next) => {
 // @access  Private (Owner, Garage, Admin)
 const lookupVehicle = async (req, res, next) => {
   try {
+    if (req.user.role === 'garage' && req.user.status !== 'active') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Only verified and active garage partners can look up customer vehicles (BR-03, BRULE-01).',
+      });
+    }
+
     const { regNumber, registrationNumber, vin, query } = req.query;
     const searchTerm = (regNumber || registrationNumber || vin || query || '').trim();
 
@@ -376,10 +384,56 @@ const lookupVehicle = async (req, res, next) => {
   }
 };
 
+// @desc    Get audit trail logs for a specific vehicle (BR-08)
+// @route   GET /api/vehicles/:id/audit-logs
+// @access  Private (Owner, Admin)
+const getVehicleAuditLogs = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid vehicle ID format.',
+      });
+    }
+
+    const vehicle = await Vehicle.findById(id);
+    if (!vehicle) {
+      return res.status(404).json({
+        success: false,
+        message: 'Vehicle not found.',
+      });
+    }
+
+    // Owner authorization: owners can only inspect their own vehicle logs
+    if (req.user.role === 'owner' && vehicle.ownerId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. You do not have permission to view audit logs for this vehicle.',
+      });
+    }
+
+    const logs = await AuditLog.find({ vehicleId: vehicle._id }).sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      count: logs.length,
+      data: {
+        logs,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createVehicle,
   getMyVehicles,
   getVehicleById,
   updateVehicle,
   lookupVehicle,
+  getVehicleAuditLogs,
 };
+

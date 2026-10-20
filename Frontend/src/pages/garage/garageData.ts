@@ -8,6 +8,7 @@ export interface GarageKPI {
 
 export interface RecentVerifiedEntry {
   id: string;
+  _id?: string;
   vehicleTitle: string;
   regNumber: string;
   mileage: string;

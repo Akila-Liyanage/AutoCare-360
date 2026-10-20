@@ -186,6 +186,22 @@ const createShareLink = async (req, res, next) => {
 
     const sanitizedLink = sanitizeShareLink(shareLink);
 
+    // Audit Trail logging (BRULE-04)
+    await AuditLog.create({
+      action: 'SHARE_LINK_CREATED',
+      vehicleId: vehicle._id,
+      actorId: req.user._id,
+      actorRole: req.user.role,
+      actorName: req.user.fullName,
+      recipientInfo: normalizedRecipientEmail || recipientName,
+      status: 'success',
+      details: {
+        shareLinkId: shareLink._id,
+        permissionLevel,
+        expiresAt: expirationDate,
+      },
+    });
+
     // Return the raw token ONLY once in the creation response
     return res.status(201).json({
       success: true,
@@ -362,6 +378,19 @@ const revokeShareLink = async (req, res, next) => {
     shareLink.status = 'revoked';
     shareLink.revokedAt = new Date();
     await shareLink.save();
+
+    // Audit Trail logging (BRULE-04)
+    await AuditLog.create({
+      action: 'SHARE_LINK_REVOKED',
+      vehicleId: shareLink.vehicleId,
+      actorId: req.user._id,
+      actorRole: req.user.role,
+      actorName: req.user.fullName,
+      status: 'success',
+      details: {
+        shareLinkId: shareLink._id,
+      },
+    });
 
     const sanitizedLink = sanitizeShareLink(shareLink);
 

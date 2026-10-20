@@ -6,6 +6,7 @@ const {
   getVehicleById,
   updateVehicle,
   lookupVehicle,
+  getVehicleAuditLogs,
 } = require('../controllers/vehicleController');
 const { getVehicleHealthScore } = require('../controllers/healthController');
 const { protect, authorize } = require('../middlewares/authMiddleware');
@@ -18,6 +19,9 @@ router.get('/lookup', authorize('owner', 'garage', 'admin'), lookupVehicle);
 
 // AI Vehicle Health Assessment & Trust Score (BR-09, FR-10)
 router.get('/:id/health-score', authorize('owner', 'garage', 'admin'), getVehicleHealthScore);
+
+// Vehicle Audit Trail logs (BR-08)
+router.get('/:id/audit-logs', authorize('owner', 'admin'), getVehicleAuditLogs);
 
 // Owner vehicle digital passport management
 router.route('/')

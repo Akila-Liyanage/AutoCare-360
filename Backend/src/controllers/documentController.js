@@ -3,6 +3,7 @@ const fs = require('fs');
 const mongoose = require('mongoose');
 const VehicleDocument = require('../models/VehicleDocument');
 const Vehicle = require('../models/Vehicle');
+const AuditLog = require('../models/AuditLog');
 
 // Helper to remove temporary uploaded file on validation/authorization failure
 const cleanupUploadedFile = (file) => {
@@ -55,6 +56,15 @@ const createVehicleDocument = async (req, res, next) => {
       return res.status(403).json({
         success: false,
         message: 'Access denied. You can only upload documents for vehicles you own.',
+      });
+    }
+
+    // Garage authorization: only active verified garages can upload vehicle documents
+    if (req.user.role === 'garage' && req.user.status !== 'active') {
+      cleanupUploadedFile(req.file);
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Only verified and active garage partners can upload vehicle documents.',
       });
     }
 
@@ -181,6 +191,21 @@ const createVehicleDocument = async (req, res, next) => {
       source,
       verificationStatus,
       notes: notes ? String(notes).trim() : '',
+    });
+
+    // Audit Trail logging (BRULE-04)
+    await AuditLog.create({
+      action: 'DOCUMENT_UPLOADED',
+      vehicleId: vehicle._id,
+      actorId: req.user._id,
+      actorRole: req.user.role,
+      actorName: req.user.fullName,
+      status: 'success',
+      details: {
+        documentId: document._id,
+        documentType: document.documentType,
+        title: document.title,
+      },
     });
 
     return res.status(201).json({
@@ -587,6 +612,20 @@ const deleteVehicleDocument = async (req, res, next) => {
     }
 
     await document.deleteOne();
+
+    // Audit Trail logging (BRULE-04)
+    await AuditLog.create({
+      action: 'DOCUMENT_DELETED',
+      vehicleId: document.vehicleId,
+      actorId: req.user._id,
+      actorRole: req.user.role,
+      actorName: req.user.fullName,
+      status: 'success',
+      details: {
+        documentId: document._id,
+        title: document.title,
+      },
+    });
 
     return res.status(200).json({
       success: true,
