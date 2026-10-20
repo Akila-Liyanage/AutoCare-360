@@ -1,7 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Check, Clock, X } from 'lucide-react';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
+import { getMyVehicles, type Vehicle } from '../../services/vehicleService';
+import {
+  createNotification,
+  type CreateNotificationPayload
+} from '../../services/notificationService';
 import '../../styles/create-notification.css';
 
 export type MessageType = 'Service reminder' | 'Other message' | 'System notice';
@@ -12,7 +18,6 @@ export interface CreateNotificationFormState {
   messageType: MessageType;
   recipient: string;
   channels: string;
-  vehicleAssociation: string;
   title: string;
   message: string;
   date: string;
@@ -23,21 +28,48 @@ export interface CreateNotificationFormState {
 
 const INITIAL_FORM_STATE: CreateNotificationFormState = {
   messageType: 'Service reminder',
-  recipient: 'Kaveesha P.',
+  recipient: 'Vehicle Owner',
   channels: 'Email + in-app',
-  vehicleAssociation: 'WP ABC-1234 · Toyota Aqua',
-  title: 'Your Toyota Aqua is due for service',
+  title: 'Periodic Vehicle Service Reminder',
   message:
-    'A periodic engine service is due at 86,000 km. Book with Perera Auto Works to keep your verified history current.',
-  date: '24 Sep 2026',
+    'A periodic maintenance service is due. Please review your service passport and book an inspection.',
+  date: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0],
   time: '09:00 AM',
   recurrence: 'Once',
   priority: 'High',
 };
 
 export const CreateNotificationPage: React.FC = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState<CreateNotificationFormState>(INITIAL_FORM_STATE);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string>('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadVehicles = async () => {
+      try {
+        const myVehicles = await getMyVehicles();
+        if (isMounted) {
+          setVehicles(myVehicles);
+          if (myVehicles.length > 0) {
+            setSelectedVehicleId(myVehicles[0]._id);
+          }
+        }
+      } catch {
+        // Fallback gracefully
+      }
+    };
+
+    loadVehicles();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -68,16 +100,71 @@ export const CreateNotificationPage: React.FC = () => {
     showToast(`Draft "${formData.title || 'Notification'}" saved successfully.`);
   };
 
-  const handleScheduleSubmit = (e: React.FormEvent) => {
+  const handleScheduleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title.trim()) {
       showToast('Please provide a message title.');
       return;
     }
-    showToast(
-      `Notification scheduled successfully for delivery on ${formData.date} at ${formData.time}.`
-    );
+    if (!formData.message.trim()) {
+      showToast('Please provide a notification message.');
+      return;
+    }
+
+    // Map priority to low/medium/high
+    let priorityVal: 'low' | 'medium' | 'high' = 'medium';
+    const p = (formData.priority || '').toLowerCase();
+    if (p === 'high' || p === 'critical') {
+      priorityVal = 'high';
+    } else if (p === 'low') {
+      priorityVal = 'low';
+    }
+
+    // Parse reminderDate
+    let reminderDateVal: string | null = null;
+    if (formData.date) {
+      try {
+        const parsed = new Date(formData.date);
+        if (!isNaN(parsed.getTime())) {
+          reminderDateVal = parsed.toISOString();
+        }
+      } catch {
+        reminderDateVal = null;
+      }
+    }
+
+    try {
+      setIsSubmitting(true);
+      const payload: CreateNotificationPayload = {
+        vehicleId: selectedVehicleId || null,
+        title: formData.title.trim(),
+        message: formData.message.trim(),
+        type: formData.messageType,
+        priority: priorityVal,
+        reminderDate: reminderDateVal,
+        dueDate: reminderDateVal,
+      };
+
+      await createNotification(payload);
+
+      showToast(`Notification "${formData.title}" scheduled successfully.`);
+      setTimeout(() => {
+        navigate('/notifications');
+      }, 1200);
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : 'Failed to schedule notification. Please try again.';
+      showToast(msg);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  const activeVehicle = useMemo(() => {
+    return vehicles.find((v) => v._id === selectedVehicleId) || null;
+  }, [vehicles, selectedVehicleId]);
 
   return (
     <div className="autocare-create-notif-page">
@@ -99,6 +186,7 @@ export const CreateNotificationPage: React.FC = () => {
                 type="button"
                 className="autocare-btn-save-draft"
                 onClick={handleSaveDraft}
+                disabled={isSubmitting}
               >
                 Save draft
               </button>
@@ -106,8 +194,9 @@ export const CreateNotificationPage: React.FC = () => {
                 type="button"
                 className="autocare-btn-schedule-submit"
                 onClick={handleScheduleSubmit}
+                disabled={isSubmitting}
               >
-                Schedule notification
+                {isSubmitting ? 'Scheduling...' : 'Schedule notification'}
               </button>
             </div>
           </div>
@@ -180,18 +269,23 @@ export const CreateNotificationPage: React.FC = () => {
                 </div>
 
                 <div className="autocare-form-group">
-                  <label htmlFor="vehicle-input" className="autocare-form-label">
+                  <label htmlFor="vehicle-select" className="autocare-form-label">
                     VEHICLE ASSOCIATION
                   </label>
-                  <input
-                    id="vehicle-input"
-                    type="text"
-                    name="vehicleAssociation"
-                    value={formData.vehicleAssociation}
-                    onChange={handleInputChange}
-                    placeholder="WP ABC-1234 · Toyota Aqua"
-                    className="autocare-form-input"
-                  />
+                  <select
+                    id="vehicle-select"
+                    name="vehicleId"
+                    value={selectedVehicleId}
+                    onChange={(e) => setSelectedVehicleId(e.target.value)}
+                    className="autocare-form-select"
+                  >
+                    <option value="">No vehicle association (General notification)</option>
+                    {vehicles.map((v) => (
+                      <option key={v._id} value={v._id}>
+                        {v.registrationNumber} · {v.manufacturer} {v.model}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
@@ -201,11 +295,12 @@ export const CreateNotificationPage: React.FC = () => {
 
                 <div className="autocare-form-group">
                   <label htmlFor="title-input" className="autocare-form-label">
-                    TITLE
+                    TITLE *
                   </label>
                   <input
                     id="title-input"
                     type="text"
+                    required
                     name="title"
                     value={formData.title}
                     onChange={handleInputChange}
@@ -216,10 +311,11 @@ export const CreateNotificationPage: React.FC = () => {
 
                 <div className="autocare-form-group">
                   <label htmlFor="message-input" className="autocare-form-label">
-                    MESSAGE
+                    MESSAGE *
                   </label>
                   <textarea
                     id="message-input"
+                    required
                     name="message"
                     value={formData.message}
                     onChange={handleInputChange}
@@ -240,11 +336,10 @@ export const CreateNotificationPage: React.FC = () => {
                     </label>
                     <input
                       id="date-input"
-                      type="text"
+                      type="date"
                       name="date"
                       value={formData.date}
                       onChange={handleInputChange}
-                      placeholder="24 Sep 2026"
                       className="autocare-form-input"
                     />
                   </div>
@@ -312,13 +407,15 @@ export const CreateNotificationPage: React.FC = () => {
                   {formData.messageType.toUpperCase()}
                 </span>
                 <h4 className="autocare-preview-title">
-                  {formData.title || 'Your Toyota Aqua is due for service'}
+                  {formData.title || 'Your vehicle is due for service'}
                 </h4>
                 <p className="autocare-preview-time">
-                  {formData.date || '24 Sep 2026'} · {formData.time || '09:00 AM'}
+                  {formData.date || 'Upcoming'} · {formData.time || '09:00 AM'}
                 </p>
                 <p className="autocare-preview-channel">
-                  {formData.channels
+                  {activeVehicle
+                    ? `${activeVehicle.registrationNumber} · ${activeVehicle.manufacturer} ${activeVehicle.model}`
+                    : formData.channels
                     ? formData.channels.replace('in-app', 'AutoCare app')
                     : 'Email + AutoCare app'}
                 </p>
@@ -329,11 +426,13 @@ export const CreateNotificationPage: React.FC = () => {
                 <h3 className="autocare-readiness-heading">Delivery readiness</h3>
                 <div className="autocare-readiness-item">
                   <Check size={16} className="autocare-readiness-check-icon" />
-                  <span>Recipient has verified email</span>
+                  <span>Recipient has verified account</span>
                 </div>
                 <div className="autocare-readiness-item">
                   <Check size={16} className="autocare-readiness-check-icon" />
-                  <span>Vehicle is linked</span>
+                  <span>
+                    {activeVehicle ? 'Vehicle linked' : 'General notification'}
+                  </span>
                 </div>
                 <div className="autocare-readiness-item">
                   <Check size={16} className="autocare-readiness-check-icon" />
