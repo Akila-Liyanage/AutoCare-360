@@ -1,0 +1,42 @@
+:root {
+  /* Approved AutoCare 360 Brand Palette */
+  --autocare-blue: #0056A2;
+  --autocare-blue-hover: #004684;
+  --autocare-blue-light: #e8f4fc;
+  
+  --autocare-green: #50B748;
+  --autocare-green-hover: #439d3c;
+  --autocare-green-light: #effcf0;
+  
+  --autocare-cyan: #00B4EB;
+  --autocare-cyan-hover: #009ecd;
+  --autocare-cyan-light: #e6f9fd;
+
+  --autocare-white: #FFFFFF;
+
+  /* Neutral Grey Support Tones */
+  --autocare-gray-50: #f8fafc;
+  --autocare-gray-100: #f1f5f9;
+  --autocare-gray-200: #e2e8f0;
+  --autocare-gray-300: #cbd5e1;
+  --autocare-gray-400: #94a3b8;
+  --autocare-gray-500: #64748b;
+  --autocare-gray-600: #475569;
+  --autocare-gray-700: #334155;
+  --autocare-gray-800: #1e293b;
+  --autocare-gray-900: #0f172a;
+
+  /* Functional State Colors */
+  --autocare-error: #dc2626;
+  --autocare-error-bg: #fef2f2;
+  --autocare-error-border: #fecaca;
+
+  /* Card Geometry & Elevation */
+  --autocare-radius-card: 16px;
+  --autocare-radius-input: 8px;
+  --autocare-radius-btn: 8px;
+  --autocare-radius-tab: 8px;
+  --autocare-shadow-card: 0 16px 36px -8px rgba(0, 86, 162, 0.16), 0 6px 16px -4px rgba(0, 0, 0, 0.06);
+  --autocare-shadow-btn: 0 4px 12px rgba(0, 86, 162, 0.25);
+  --autocare-shadow-input: 0 1px 2px rgba(0, 0, 0, 0.04);
+}

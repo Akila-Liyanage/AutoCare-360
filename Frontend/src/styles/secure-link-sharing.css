@@ -1,0 +1,491 @@
+/* AutoCare 360 - secure-link-sharing.css
+   Dedicated Stylesheet for Secure Link Sharing page
+   Aligned strictly with Figma: Secure link sharing.png
+*/
+
+@import './variables.css';
+@import './home.css';
+
+/* --------------------------------------------------------------------------
+   Page Layout & Container
+   -------------------------------------------------------------------------- */
+.autocare-sharing-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f8fafc;
+}
+
+.autocare-sharing-main {
+  flex: 1;
+  padding: 32px 0 72px 0;
+}
+
+.autocare-sharing-container {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* --------------------------------------------------------------------------
+   Breadcrumb / Back Navigation
+   -------------------------------------------------------------------------- */
+.autocare-sharing-back-nav {
+  margin-bottom: 20px;
+}
+
+.autocare-sharing-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  color: #0056A2;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.autocare-sharing-back-btn:hover {
+  background: #eff6ff;
+  color: #004684;
+}
+
+/* --------------------------------------------------------------------------
+   Top Header Row (Title, Subtitle, Save draft, Create secure link)
+   -------------------------------------------------------------------------- */
+.autocare-sharing-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 30px;
+}
+
+.autocare-sharing-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.autocare-sharing-title {
+  font-size: 30px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.autocare-sharing-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
+
+.autocare-sharing-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.autocare-sharing-btn-draft {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.autocare-sharing-btn-draft:hover {
+  background-color: #f8fafc;
+  border-color: #94a3b8;
+  transform: translateY(-1px);
+}
+
+.autocare-sharing-btn-create {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #0056A2;
+  color: #ffffff;
+  border: none;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 10px 22px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 86, 162, 0.25);
+  transition: all 0.2s ease;
+}
+
+.autocare-sharing-btn-create:hover {
+  background-color: #004684;
+  transform: translateY(-1px);
+}
+
+/* --------------------------------------------------------------------------
+   2-Column Layout (Form Stack on Left + Preview/Guidance on Right)
+   -------------------------------------------------------------------------- */
+.autocare-sharing-grid {
+  display: grid;
+  grid-template-columns: 1.8fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.autocare-sharing-form-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Form Card Styling */
+.autocare-sharing-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px 26px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+}
+
+.autocare-sharing-card-title {
+  font-size: 16.5px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 18px 0;
+  letter-spacing: -0.2px;
+}
+
+/* Field Grid Rows */
+.autocare-sharing-field-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.autocare-sharing-field-row-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+
+.autocare-sharing-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.autocare-sharing-form-group.has-spacing {
+  margin-top: 16px;
+}
+
+.autocare-sharing-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.autocare-sharing-input,
+.autocare-sharing-select {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 11px 14px;
+  font-size: 14px;
+  color: #0f172a;
+  background-color: #ffffff;
+  outline: none;
+  transition: all 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.autocare-sharing-input:focus,
+.autocare-sharing-select:focus {
+  border-color: #0056A2;
+  box-shadow: 0 0 0 3px rgba(0, 86, 162, 0.12);
+}
+
+/* Data Visibility Checkbox List */
+.autocare-sharing-checkbox-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.autocare-sharing-checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e293b;
+  cursor: pointer;
+  user-select: none;
+}
+
+.autocare-sharing-checkbox-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  accent-color: #0056A2;
+  cursor: pointer;
+}
+
+/* --------------------------------------------------------------------------
+   Right Column (Active Link Preview & Security Guidance)
+   -------------------------------------------------------------------------- */
+.autocare-sharing-side-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Active Link Preview Card - Tinted Sky Blue */
+.autocare-sharing-preview-card {
+  background-color: #f0f7ff;
+  border: 1px solid #dbeafe;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 86, 162, 0.04);
+}
+
+.autocare-sharing-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.autocare-sharing-preview-title {
+  font-size: 16.5px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+.autocare-sharing-badge-active {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #eaf7ec;
+  border: 1px solid #d1f2d4;
+  color: #15803d;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.autocare-sharing-badge-revoked {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.autocare-sharing-vehicle-target {
+  font-size: 16.5px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 6px 0;
+}
+
+.autocare-sharing-link-box {
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 13.5px;
+  color: #0056A2;
+  font-weight: 600;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  word-break: break-all;
+}
+
+.autocare-sharing-expires-text {
+  font-size: 12.5px;
+  color: #64748b;
+  margin: 0 0 18px 0;
+}
+
+.autocare-sharing-preview-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.autocare-sharing-btn-copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background-color: #0056A2;
+  color: #ffffff;
+  border: none;
+  font-size: 13.5px;
+  font-weight: 700;
+  padding: 8px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: 1;
+}
+
+.autocare-sharing-btn-copy:hover {
+  background-color: #004684;
+}
+
+.autocare-sharing-btn-revoke {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background-color: #c53030;
+  color: #ffffff;
+  border: none;
+  font-size: 13.5px;
+  font-weight: 700;
+  padding: 8px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.autocare-sharing-btn-revoke:hover {
+  background-color: #9b2c2c;
+}
+
+/* Security Guidance Card */
+.autocare-sharing-guidance-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+}
+
+.autocare-sharing-guidance-title {
+  font-size: 15.5px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 8px 0;
+}
+
+.autocare-sharing-guidance-text {
+  font-size: 13.5px;
+  color: #64748b;
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Toast Banner
+   -------------------------------------------------------------------------- */
+.autocare-sharing-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  font-weight: 600;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  animation: slideToast 0.3s ease;
+}
+
+@keyframes slideToast {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.autocare-sharing-toast.is-success {
+  background-color: #0f172a;
+  color: #ffffff;
+  border-left: 4px solid #16a34a;
+}
+
+.autocare-sharing-toast.is-info {
+  background-color: #0f172a;
+  color: #ffffff;
+  border-left: 4px solid #0284c7;
+}
+
+.autocare-sharing-toast-close {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.autocare-sharing-toast-close:hover {
+  color: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive Breakpoints
+   -------------------------------------------------------------------------- */
+@media (max-width: 992px) {
+  .autocare-sharing-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .autocare-sharing-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .autocare-sharing-header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .autocare-sharing-field-row-2,
+  .autocare-sharing-field-row-3 {
+    grid-template-columns: 1fr;
+  }
+}

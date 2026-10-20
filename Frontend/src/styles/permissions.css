@@ -1,0 +1,531 @@
+/* AutoCare 360 - permissions.css
+   Dedicated Stylesheet for Access Permission Management page
+   Aligned strictly with Figma: Access permission management.png
+*/
+
+@import './variables.css';
+@import './home.css';
+
+/* --------------------------------------------------------------------------
+   Page Layout & Container
+   -------------------------------------------------------------------------- */
+.autocare-perm-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f8fafc;
+}
+
+.autocare-perm-main {
+  flex: 1;
+  padding: 32px 0 72px 0;
+}
+
+.autocare-perm-container {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* --------------------------------------------------------------------------
+   Breadcrumb / Back Navigation
+   -------------------------------------------------------------------------- */
+.autocare-perm-back-nav {
+  margin-bottom: 20px;
+}
+
+.autocare-perm-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  color: #0056A2;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.autocare-perm-back-btn:hover {
+  background: #eff6ff;
+  color: #004684;
+}
+
+/* --------------------------------------------------------------------------
+   Top Header Row (Title, Subtitle, Grant access button)
+   -------------------------------------------------------------------------- */
+.autocare-perm-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 26px;
+}
+
+.autocare-perm-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.autocare-perm-title {
+  font-size: 30px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.autocare-perm-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
+
+.autocare-perm-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.autocare-perm-btn-grant {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #0056A2;
+  color: #ffffff;
+  border: none;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 10px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 86, 162, 0.25);
+  transition: all 0.2s ease;
+}
+
+.autocare-perm-btn-grant:hover {
+  background-color: #004684;
+  transform: translateY(-1px);
+}
+
+/* --------------------------------------------------------------------------
+   Card 1: Recipient Context Card
+   -------------------------------------------------------------------------- */
+.autocare-perm-recipient-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 22px 26px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+  margin-bottom: 24px;
+}
+
+.autocare-perm-recipient-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 12px 0;
+  letter-spacing: -0.2px;
+}
+
+.autocare-perm-recipient-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.autocare-perm-recipient-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.autocare-perm-recipient-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.autocare-perm-recipient-role {
+  font-size: 13.5px;
+  color: #64748b;
+}
+
+.autocare-perm-badge-verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #eaf7ec;
+  border: 1px solid #d1f2d4;
+  color: #15803d;
+  font-size: 11.5px;
+  font-weight: 800;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* --------------------------------------------------------------------------
+   Card Stack 2: 3 Permission Mode Cards
+   -------------------------------------------------------------------------- */
+.autocare-perm-options-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.autocare-perm-option-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 22px 24px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.autocare-perm-option-card:hover {
+  border-color: #cbd5e1;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.autocare-perm-option-card.is-selected {
+  border-color: #0056A2;
+  box-shadow: 0 4px 14px rgba(0, 86, 162, 0.1);
+}
+
+.autocare-perm-option-header {
+  margin-bottom: 16px;
+}
+
+.autocare-perm-option-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 4px 0;
+}
+
+.autocare-perm-option-desc {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.autocare-perm-option-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+  font-size: 13.5px;
+}
+
+.autocare-perm-list-bullet {
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.autocare-perm-list-allowed {
+  color: #15803d;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.autocare-perm-list-hidden {
+  color: #dc2626;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.autocare-perm-option-footer {
+  margin-top: auto;
+}
+
+.autocare-perm-pill-status {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.autocare-perm-pill-status.not-selected {
+  background-color: #f1f5f9;
+  color: #64748b;
+}
+
+.autocare-perm-pill-status.selected {
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #0056A2;
+}
+
+/* --------------------------------------------------------------------------
+   Bottom Split Section: Permission Summary (Left) + Review Panel (Right)
+   -------------------------------------------------------------------------- */
+.autocare-perm-bottom-grid {
+  display: grid;
+  grid-template-columns: 1.7fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+/* Left: Permission Summary Card */
+.autocare-perm-summary-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px 26px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+}
+
+.autocare-perm-summary-title {
+  font-size: 16.5px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 16px 0;
+  letter-spacing: -0.2px;
+}
+
+.autocare-perm-summary-table {
+  display: flex;
+  flex-direction: column;
+}
+
+.autocare-perm-summary-row {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  align-items: center;
+  padding: 13px 0;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 13.5px;
+}
+
+.autocare-perm-summary-row:last-child {
+  border-bottom: none;
+}
+
+.autocare-perm-summary-label {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.autocare-perm-summary-val {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+/* Right: Review Panel Card */
+.autocare-perm-review-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px 26px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+  display: flex;
+  flex-direction: column;
+}
+
+.autocare-perm-review-title {
+  font-size: 16.5px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.2px;
+}
+
+.autocare-perm-badge-ready {
+  display: inline-block;
+  background-color: #eaf7ec;
+  border: 1px solid #d1f2d4;
+  color: #15803d;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  align-self: flex-start;
+}
+
+.autocare-perm-review-headline {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 6px 0;
+}
+
+.autocare-perm-review-desc {
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0 0 18px 0;
+}
+
+.autocare-perm-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+
+.autocare-perm-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.autocare-perm-input {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 11px 14px;
+  font-size: 14px;
+  color: #0f172a;
+  background-color: #ffffff;
+  outline: none;
+  transition: all 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.autocare-perm-input:focus {
+  border-color: #0056A2;
+  box-shadow: 0 0 0 3px rgba(0, 86, 162, 0.12);
+}
+
+.autocare-perm-btn-panel-grant {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: #0056A2;
+  color: #ffffff;
+  border: none;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 11px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 86, 162, 0.25);
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.autocare-perm-btn-panel-grant:hover {
+  background-color: #004684;
+}
+
+/* --------------------------------------------------------------------------
+   Toast Banner
+   -------------------------------------------------------------------------- */
+.autocare-perm-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  font-weight: 600;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  animation: slideToast 0.3s ease;
+}
+
+@keyframes slideToast {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.autocare-perm-toast.is-success {
+  background-color: #0f172a;
+  color: #ffffff;
+  border-left: 4px solid #16a34a;
+}
+
+.autocare-perm-toast.is-info {
+  background-color: #0f172a;
+  color: #ffffff;
+  border-left: 4px solid #0284c7;
+}
+
+.autocare-perm-toast-close {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.autocare-perm-toast-close:hover {
+  color: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive Breakpoints
+   -------------------------------------------------------------------------- */
+@media (max-width: 992px) {
+  .autocare-perm-options-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .autocare-perm-bottom-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .autocare-perm-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .autocare-perm-header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .autocare-perm-summary-row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}
