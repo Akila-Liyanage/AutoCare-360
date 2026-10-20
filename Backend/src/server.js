@@ -42,6 +42,8 @@ const expenseRoutes = require('./routes/expenseRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const transferRoutes = require('./routes/transferRoutes');
 const shareLinkRoutes = require('./routes/shareLinkRoutes');
+const qrShareRoutes = require('./routes/qrShareRoutes');
+const publicShareRoutes = require('./routes/publicShareRoutes');
 
 const app = express();
 
@@ -123,6 +125,12 @@ app.use('/api/transfers', transferRoutes);
 
 // Mount Secure Vehicle Link Sharing Routes
 app.use('/api/share-links', shareLinkRoutes);
+
+// Mount Vehicle QR Code Sharing Routes
+app.use('/api/qr-shares', qrShareRoutes);
+
+// Mount Public Shared Vehicle Passport Routes (No auth required)
+app.use('/api/public/shared', publicShareRoutes);
 
 // Mount Vehicle Digital Passport Routes
 app.use('/api/vehicles', vehicleRoutes);
