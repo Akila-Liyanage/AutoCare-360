@@ -1,7 +1,21 @@
+const path = require('path');
+const fs = require('fs');
 const mongoose = require('mongoose');
 const Vehicle = require('../models/Vehicle');
+const AuditLog = require('../models/AuditLog');
 
 const currentYear = new Date().getFullYear();
+
+// Helper to remove temporary uploaded file on validation/operation failure
+const cleanupUploadedFile = (file) => {
+  if (file && file.path && fs.existsSync(file.path)) {
+    try {
+      fs.unlinkSync(file.path);
+    } catch (e) {
+      console.warn('[File Cleanup Warning]: Could not unlink file:', e.message);
+    }
+  }
+};
 
 // @desc    Register / Create a new Vehicle Digital Passport
 // @route   POST /api/vehicles
@@ -33,9 +47,12 @@ const createVehicle = async (req, res, next) => {
       !model ||
       manufacturingYear === undefined ||
       manufacturingYear === null ||
+      manufacturingYear === '' ||
       currentMileage === undefined ||
-      currentMileage === null
+      currentMileage === null ||
+      currentMileage === ''
     ) {
+      cleanupUploadedFile(req.file);
       return res.status(400).json({
         success: false,
         message:
@@ -48,6 +65,7 @@ const createVehicle = async (req, res, next) => {
     // VIN format validation (17 alphanumeric characters excluding I, O, Q)
     const vinRegex = /^[A-HJ-NPR-Z0-9]{17}$/;
     if (!vinRegex.test(normalizedVin)) {
+      cleanupUploadedFile(req.file);
       return res.status(400).json({
         success: false,
         message:
@@ -58,6 +76,7 @@ const createVehicle = async (req, res, next) => {
     // Mileage non-negative validation
     const mileageNum = Number(currentMileage);
     if (isNaN(mileageNum) || mileageNum < 0) {
+      cleanupUploadedFile(req.file);
       return res.status(400).json({
         success: false,
         message: 'Current mileage must be a non-negative number.',
@@ -67,6 +86,7 @@ const createVehicle = async (req, res, next) => {
     // Manufacturing year range validation
     const yearNum = Number(manufacturingYear);
     if (isNaN(yearNum) || yearNum < 1900 || yearNum > currentYear + 1) {
+      cleanupUploadedFile(req.file);
       return res.status(400).json({
         success: false,
         message: `Manufacturing year must be between 1900 and ${currentYear + 1}.`,
@@ -76,14 +96,24 @@ const createVehicle = async (req, res, next) => {
     // Check for duplicate VIN before database insert
     const existingVehicle = await Vehicle.findOne({ vin: normalizedVin });
     if (existingVehicle) {
+      cleanupUploadedFile(req.file);
       return res.status(409).json({
         success: false,
         message: 'A vehicle with this VIN / Chassis number is already registered.',
       });
     }
 
+    // Determine final image URL: uploaded file takes highest priority, then imageUrl body param
+    let finalImageUrl = '';
+    if (req.file) {
+      finalImageUrl = `/uploads/vehicles/${req.file.filename}`;
+    } else if (imageUrl) {
+      finalImageUrl = String(imageUrl).trim();
+    }
+
     // Reject direct base64 / data URLs or oversized imageUrl strings
-    if (imageUrl && (String(imageUrl).startsWith('data:') || String(imageUrl).length > 2048)) {
+    if (finalImageUrl && (finalImageUrl.startsWith('data:') || finalImageUrl.length > 2048)) {
+      cleanupUploadedFile(req.file);
       return res.status(400).json({
         success: false,
         message: 'Direct base64/data URL image persistence is not supported. Please provide a valid image URL.',
@@ -108,7 +138,7 @@ const createVehicle = async (req, res, next) => {
         ? String(registrationJurisdiction).trim()
         : 'Western Province, Sri Lanka',
       status: status || 'Active',
-      imageUrl: imageUrl || '',
+      imageUrl: finalImageUrl,
     });
 
     return res.status(201).json({
@@ -119,6 +149,7 @@ const createVehicle = async (req, res, next) => {
       },
     });
   } catch (error) {
+    cleanupUploadedFile(req.file);
     if (error.code === 11000) {
       return res.status(409).json({
         success: false,
@@ -178,8 +209,9 @@ const getVehicleById = async (req, res, next) => {
       });
     }
 
-    // Tenant isolation: Owner can only access their own vehicle
-    if (vehicle.ownerId.toString() !== req.user._id.toString()) {
+    // Tenant isolation: Owner can only access their own vehicle; verified garages and admins can inspect
+    const isOwner = req.user.role === 'owner';
+    if (isOwner && vehicle.ownerId.toString() !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
         message: 'Access denied. You do not have permission to view this vehicle passport.',
@@ -298,7 +330,21 @@ const updateVehicle = async (req, res, next) => {
     if (req.body.status) {
       vehicle.status = req.body.status;
     }
-    if (req.body.imageUrl !== undefined) {
+    if (req.file) {
+      // Clean up previous uploaded image if one existed
+      if (vehicle.imageUrl && vehicle.imageUrl.includes('/uploads/vehicles/')) {
+        try {
+          const oldFilename = path.basename(vehicle.imageUrl);
+          const oldFilePath = path.join(__dirname, '../../uploads/vehicles', oldFilename);
+          if (fs.existsSync(oldFilePath)) {
+            fs.unlinkSync(oldFilePath);
+          }
+        } catch (cleanErr) {
+          console.warn('[Vehicle Photo Cleanup Notice]:', cleanErr.message);
+        }
+      }
+      vehicle.imageUrl = `/uploads/vehicles/${req.file.filename}`;
+    } else if (req.body.imageUrl !== undefined) {
       vehicle.imageUrl = req.body.imageUrl;
     }
     if (req.body.lastServiceDate !== undefined) {
@@ -318,6 +364,7 @@ const updateVehicle = async (req, res, next) => {
       },
     });
   } catch (error) {
+    cleanupUploadedFile(req.file);
     if (error.name === 'ValidationError') {
       const messages = Object.values(error.errors).map((val) => val.message);
       return res.status(400).json({
@@ -329,9 +376,209 @@ const updateVehicle = async (req, res, next) => {
   }
 };
 
+// @desc    Lookup vehicle by registration number or VIN (BR-03: Garage vehicle search)
+// @route   GET /api/vehicles/lookup
+// @access  Private (Owner, Garage, Admin)
+const lookupVehicle = async (req, res, next) => {
+  try {
+    if (req.user.role === 'garage' && req.user.status !== 'active') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Only verified and active garage partners can look up customer vehicles (BR-03, BRULE-01).',
+      });
+    }
+
+    const { regNumber, registrationNumber, vin, query } = req.query;
+    const searchTerm = (regNumber || registrationNumber || vin || query || '').trim();
+
+    if (!searchTerm) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a registration number or VIN to look up.',
+      });
+    }
+
+    const cleanTerm = searchTerm.replace(/\s+/g, '').toUpperCase();
+    const regex = new RegExp(searchTerm.trim(), 'i');
+
+    const vehicle = await Vehicle.findOne({
+      $or: [
+        { registrationNumber: regex },
+        { registrationNumber: cleanTerm },
+        { vin: cleanTerm },
+        { vin: regex },
+      ],
+    }).populate('ownerId', 'fullName email phone displayName');
+
+    if (!vehicle) {
+      return res.status(404).json({
+        success: false,
+        message: `No vehicle found matching identifier "${searchTerm}".`,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Vehicle passport retrieved successfully.',
+      data: {
+        vehicle,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get audit trail logs for a specific vehicle (BR-08)
+// @route   GET /api/vehicles/:id/audit-logs
+// @access  Private (Owner, Admin)
+const getVehicleAuditLogs = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid vehicle ID format.',
+      });
+    }
+
+    const vehicle = await Vehicle.findById(id);
+    if (!vehicle) {
+      return res.status(404).json({
+        success: false,
+        message: 'Vehicle not found.',
+      });
+    }
+
+    // Owner authorization: owners can only inspect their own vehicle logs
+    if (req.user.role === 'owner' && vehicle.ownerId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. You do not have permission to view audit logs for this vehicle.',
+      });
+    }
+
+    const logs = await AuditLog.find({ vehicleId: vehicle._id }).sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      count: logs.length,
+      data: {
+        logs,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Upload vehicle image / photo
+// @route   POST /api/vehicles/upload-image
+// @access  Private (Owner Only)
+const uploadVehiclePhoto = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid vehicle image file (JPG, PNG, WEBP).',
+      });
+    }
+
+    const imageUrl = `/uploads/vehicles/${req.file.filename}`;
+
+    return res.status(200).json({
+      success: true,
+      message: 'Vehicle photo uploaded successfully.',
+      data: {
+        imageUrl,
+        filename: req.file.filename,
+      },
+    });
+  } catch (error) {
+    cleanupUploadedFile(req.file);
+    next(error);
+  }
+};
+
+// @desc    Upload / update photo for an existing vehicle
+// @route   POST /api/vehicles/:id/image
+// @access  Private (Owner Only)
+const updateVehiclePhoto = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      cleanupUploadedFile(req.file);
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid vehicle ID format.',
+      });
+    }
+
+    const vehicle = await Vehicle.findById(id);
+    if (!vehicle) {
+      cleanupUploadedFile(req.file);
+      return res.status(404).json({
+        success: false,
+        message: 'Vehicle passport not found.',
+      });
+    }
+
+    if (vehicle.ownerId.toString() !== req.user._id.toString()) {
+      cleanupUploadedFile(req.file);
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. You do not have permission to modify this vehicle photo.',
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a vehicle photo to upload.',
+      });
+    }
+
+    // Clean up previous uploaded image if one existed
+    if (vehicle.imageUrl && vehicle.imageUrl.includes('/uploads/vehicles/')) {
+      try {
+        const oldFilename = path.basename(vehicle.imageUrl);
+        const oldFilePath = path.join(__dirname, '../../uploads/vehicles', oldFilename);
+        if (fs.existsSync(oldFilePath)) {
+          fs.unlinkSync(oldFilePath);
+        }
+      } catch (cleanErr) {
+        console.warn('[Vehicle Photo Cleanup Notice]:', cleanErr.message);
+      }
+    }
+
+    const imageUrl = `/uploads/vehicles/${req.file.filename}`;
+    vehicle.imageUrl = imageUrl;
+    await vehicle.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Vehicle photo updated successfully.',
+      data: {
+        vehicle,
+        imageUrl,
+      },
+    });
+  } catch (error) {
+    cleanupUploadedFile(req.file);
+    next(error);
+  }
+};
+
 module.exports = {
   createVehicle,
   getMyVehicles,
   getVehicleById,
   updateVehicle,
+  lookupVehicle,
+  getVehicleAuditLogs,
+  uploadVehiclePhoto,
+  updateVehiclePhoto,
 };
+

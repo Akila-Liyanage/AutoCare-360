@@ -18,6 +18,7 @@ import {
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import defaultHeroImg from '../../assets/vehicles/default-vehicle-hero.png';
+import { resolveImageUrl } from '../../utils/imageUrl';
 import { useAuth } from '../../hooks/useAuth';
 import { getVehicleById, getMyVehicles, type Vehicle } from '../../services/vehicleService';
 import {
@@ -531,7 +532,7 @@ export const TransferVehiclePage: React.FC = () => {
                 <div className="autocare-transfer-hero-left">
                   <div className="autocare-transfer-hero-thumb">
                     <img
-                      src={vehicle.imageUrl || defaultHeroImg}
+                      src={resolveImageUrl(vehicle.imageUrl) || defaultHeroImg}
                       alt={`${vehicle.manufacturer} ${vehicle.model}`}
                       loading="lazy"
                       onError={(e) => {

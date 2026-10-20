@@ -42,8 +42,8 @@ const expenseRoutes = require('./routes/expenseRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const transferRoutes = require('./routes/transferRoutes');
 const shareLinkRoutes = require('./routes/shareLinkRoutes');
-const qrShareRoutes = require('./routes/qrShareRoutes');
-const publicShareRoutes = require('./routes/publicShareRoutes');
+const garageRoutes = require('./routes/garageRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
 
@@ -110,8 +110,10 @@ app.use('/api/vehicles/:vehicleId/services', serviceRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/vehicles/:vehicleId/documents', documentRoutes);
 
-// Static serving for uploaded documents
+// Static serving for uploaded files (vehicles, documents, and uploads root)
+app.use('/uploads/vehicles', express.static(path.join(__dirname, '../uploads/vehicles')));
 app.use('/uploads/documents', express.static(path.join(__dirname, '../uploads/documents')));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Mount Vehicle Expense Tracking Routes
 app.use('/api/expenses', expenseRoutes);
@@ -126,14 +128,14 @@ app.use('/api/transfers', transferRoutes);
 // Mount Secure Vehicle Link Sharing Routes
 app.use('/api/share-links', shareLinkRoutes);
 
-// Mount Vehicle QR Code Sharing Routes
-app.use('/api/qr-shares', qrShareRoutes);
-
-// Mount Public Shared Vehicle Passport Routes (No auth required)
-app.use('/api/public/shared', publicShareRoutes);
-
 // Mount Vehicle Digital Passport Routes
 app.use('/api/vehicles', vehicleRoutes);
+
+// Mount Verified Garage Operations & Dashboard Routes (BR-03)
+app.use('/api/garage', garageRoutes);
+
+// Mount System Administrator & Audit Trail Routes (FR-05, BR-08)
+app.use('/api/admin', adminRoutes);
 
 // 404 JSON Handler for unmatched routes
 app.use((req, res) => {

@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const ServiceRecord = require('../models/ServiceRecord');
 const Vehicle = require('../models/Vehicle');
+const AuditLog = require('../models/AuditLog');
 
 // @desc    Create a new service record
 // @route   POST /api/services or POST /api/vehicles/:vehicleId/services
@@ -113,7 +114,13 @@ const createServiceRecord = async (req, res, next) => {
       resolvedGarageName = garageName ? String(garageName).trim() : 'Self-Reported by Owner';
       resolvedTechnician = technicianName ? String(technicianName).trim() : req.user.fullName;
     } else if (isGarage) {
-      // Garage prepared support (placeholder verification status until Phase 6 full garage verification)
+      // BRULE-01: Only verified garages can update and certify service records
+      if (req.user.status !== 'active') {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied. Only verified and active garage partners can create certified service records (BRULE-01). Your account is currently pending admin verification.',
+        });
+      }
       recordSource = 'verified_garage';
       verificationStatus = 'verified';
       assignedGarageId = req.user._id;
@@ -142,6 +149,23 @@ const createServiceRecord = async (req, res, next) => {
       recordSource,
       verificationStatus,
       notes: notes ? String(notes).trim() : '',
+    });
+
+    // Audit Trail logging (BRULE-04: Every record update must be logged)
+    await AuditLog.create({
+      action: 'SERVICE_RECORD_CREATED',
+      vehicleId: vehicle._id,
+      actorId: req.user._id,
+      actorRole: req.user.role,
+      actorName: req.user.fullName || req.user.displayName,
+      status: 'success',
+      details: {
+        recordId: serviceRecord._id,
+        recordSource,
+        serviceType: serviceRecord.serviceType,
+        mileage: serviceRecord.mileage,
+        totalCost: serviceRecord.totalCost,
+      },
     });
 
     // Optionally update vehicle's currentMileage and lastServiceDate if this entry is newer
@@ -206,6 +230,14 @@ const getVehicleServiceRecords = async (req, res, next) => {
       return res.status(403).json({
         success: false,
         message: 'Access denied. You do not have permission to view service records for this vehicle.',
+      });
+    }
+
+    // Garage authorization: only active/verified garages can view customer vehicle service history (BRULE-01)
+    if (req.user.role === 'garage' && req.user.status !== 'active') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Only verified and active garage partners can view vehicle service history (BRULE-01).',
       });
     }
 
@@ -303,19 +335,41 @@ const updateServiceRecord = async (req, res, next) => {
       });
     }
 
-    // Owner authorization: must own the vehicle
-    if (req.user.role === 'owner' && vehicle.ownerId.toString() !== req.user._id.toString()) {
+    // Authorization check by role
+    if (req.user.role === 'garage') {
+      // BRULE-01: Only verified garages can update service records
+      if (req.user.status !== 'active') {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied. Only verified and active garage partners can update service records (BRULE-01).',
+        });
+      }
+      // Garage can only modify records created by their own workshop
+      if (serviceRecord.garageId && serviceRecord.garageId.toString() !== req.user._id.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied. You can only modify service records created by your own workshop.',
+        });
+      }
+    } else if (req.user.role === 'owner') {
+      // Owner authorization: must own the vehicle
+      if (vehicle.ownerId.toString() !== req.user._id.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied. You do not have permission to modify records for this vehicle.',
+        });
+      }
+      // Strict provenance protection: owners can ONLY update self-reported records
+      if (serviceRecord.recordSource !== 'self_reported') {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied. Vehicle owners cannot modify records published and certified by verified garages.',
+        });
+      }
+    } else if (req.user.role !== 'admin') {
       return res.status(403).json({
         success: false,
-        message: 'Access denied. You do not have permission to modify records for this vehicle.',
-      });
-    }
-
-    // Strict provenance protection: owners can ONLY update self-reported records
-    if (req.user.role === 'owner' && serviceRecord.recordSource !== 'self_reported') {
-      return res.status(403).json({
-        success: false,
-        message: 'Access denied. Vehicle owners cannot modify records published and certified by verified garages.',
+        message: 'Access denied. You do not have permission to modify this service record.',
       });
     }
 
@@ -413,6 +467,20 @@ const updateServiceRecord = async (req, res, next) => {
     }
 
     await serviceRecord.save();
+
+    // Audit Trail logging (BRULE-04: Every record update must be logged)
+    await AuditLog.create({
+      action: 'SERVICE_RECORD_UPDATED',
+      vehicleId: vehicle._id,
+      actorId: req.user._id,
+      actorRole: req.user.role,
+      actorName: req.user.fullName,
+      status: 'success',
+      details: {
+        recordId: serviceRecord._id,
+        updatedFields: Object.keys(req.body),
+      },
+    });
 
     return res.status(200).json({
       success: true,

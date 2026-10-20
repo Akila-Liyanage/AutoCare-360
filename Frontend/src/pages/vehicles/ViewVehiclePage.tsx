@@ -23,8 +23,10 @@ import { useAuth } from '../../hooks/useAuth';
 import {
   getVehicleById,
   updateVehicle,
+  uploadVehicleImage,
   type Vehicle
 } from '../../services/vehicleService';
+import { resolveImageUrl } from '../../utils/imageUrl';
 import {
   getVehicleServiceRecords,
   type BackendServiceRecord
@@ -56,6 +58,8 @@ export const ViewVehiclePage: React.FC = () => {
   const [editColor, setEditColor] = useState<string>('');
   const [editTransmission, setEditTransmission] = useState<string>('Automatic');
   const [editStatus, setEditStatus] = useState<'Active' | 'In Service' | 'Archived'>('Active');
+  const [editPhotoFile, setEditPhotoFile] = useState<File | null>(null);
+  const [editPhotoPreview, setEditPhotoPreview] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
 
@@ -113,6 +117,8 @@ export const ViewVehiclePage: React.FC = () => {
     setEditColor(vehicle.color || '');
     setEditTransmission(vehicle.transmission || 'Automatic');
     setEditStatus(vehicle.status || 'Active');
+    setEditPhotoFile(null);
+    setEditPhotoPreview(null);
     setUpdateError(null);
     setIsEditModalOpen(true);
   };
@@ -126,11 +132,17 @@ export const ViewVehiclePage: React.FC = () => {
       setIsUpdating(true);
       setUpdateError(null);
 
+      let newImageUrl = vehicle.imageUrl;
+      if (editPhotoFile) {
+        newImageUrl = await uploadVehicleImage(editPhotoFile);
+      }
+
       const updated = await updateVehicle(vehicle._id, {
         currentMileage: Number(editMileage) || 0,
         color: editColor.trim(),
         transmission: editTransmission,
         status: editStatus,
+        ...(editPhotoFile ? { imageUrl: newImageUrl } : {}),
       });
 
       setVehicle(updated);
@@ -315,7 +327,7 @@ export const ViewVehiclePage: React.FC = () => {
                 {/* Left: Studio Image */}
                 <div className="autocare-view-hero-media">
                   <img
-                    src={vehicle.imageUrl?.trim() || defaultHeroImg}
+                    src={resolveImageUrl(vehicle.imageUrl) || defaultHeroImg}
                     alt={`${vehicle.manufacturer} ${vehicle.model}`}
                     className="autocare-view-hero-img"
                     onError={(e) => {
@@ -886,6 +898,40 @@ export const ViewVehiclePage: React.FC = () => {
                     <option value="In Service">In Service</option>
                     <option value="Archived">Archived</option>
                   </select>
+                </div>
+
+                <div className="autocare-modal-field">
+                  <label className="autocare-modal-label">Update Vehicle Photo</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setEditPhotoFile(file);
+                        setEditPhotoPreview(URL.createObjectURL(file));
+                      }
+                    }}
+                    className="autocare-modal-input"
+                  />
+                  {editPhotoPreview ? (
+                    <div style={{ marginTop: '8px' }}>
+                      <img
+                        src={editPhotoPreview}
+                        alt="Preview"
+                        style={{ width: '120px', height: '70px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                      />
+                    </div>
+                  ) : vehicle.imageUrl ? (
+                    <div style={{ marginTop: '8px' }}>
+                      <span style={{ fontSize: '11px', color: '#64748b', display: 'block', marginBottom: '4px' }}>Current Photo:</span>
+                      <img
+                        src={resolveImageUrl(vehicle.imageUrl)}
+                        alt="Current vehicle"
+                        style={{ width: '120px', height: '70px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                      />
+                    </div>
+                  ) : null}
                 </div>
               </div>
 

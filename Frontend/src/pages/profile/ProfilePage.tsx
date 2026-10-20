@@ -373,7 +373,7 @@ export const ProfilePage: React.FC = () => {
                 {vehicles.map((v) => (
                   <div key={v._id} className="autocare-profile-vehicle-card">
                     <img
-                      src={v.imageUrl || defaultVehicleHeroImg}
+                      src={resolveImageUrl(v.imageUrl) || defaultVehicleHeroImg}
                       alt={`${v.manufacturer} ${v.model}`}
                       className="autocare-profile-vehicle-thumb"
                       onError={(e) => {
