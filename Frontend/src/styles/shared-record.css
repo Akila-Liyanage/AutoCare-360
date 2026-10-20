@@ -970,3 +970,37 @@
     gap: 10px;
   }
 }
+
+/* --------------------------------------------------------------------------
+   BR-07 Data Protection: Print Prevention & Dynamic Watermark Styles
+   -------------------------------------------------------------------------- */
+.autocare-shared-protected-area {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  .autocare-shared-page::before {
+    content: "SECURITY RESTRICTION (BR-07): Printing and export of this protected vehicle inspection passport are prohibited by owner security policy. All unauthorized capture attempts are logged on the AutoCare 360 tamper-proof audit ledger.";
+    visibility: visible !important;
+    display: block !important;
+    position: fixed !important;
+    top: 40px !important;
+    left: 40px !important;
+    right: 40px !important;
+    padding: 24px !important;
+    background: #fee2e2 !important;
+    border: 2px solid #ef4444 !important;
+    color: #991b1b !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    text-align: center !important;
+    border-radius: 8px !important;
+    font-family: sans-serif !important;
+  }
+}

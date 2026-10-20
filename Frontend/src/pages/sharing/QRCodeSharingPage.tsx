@@ -16,6 +16,12 @@ import {
 } from 'lucide-react';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
+import { getMyVehicles, type Vehicle } from '../../services/vehicleService';
+import {
+  createShareLink,
+  getShareLinks,
+  type ShareLinkPermissionLevel
+} from '../../services/shareLinkService';
 import '../../styles/qr-sharing.css';
 
 interface ToastState {
@@ -51,25 +57,58 @@ const INITIAL_RECENT_QR_CODES: RecentQRCodeItem[] = [
 export const QRCodeSharingPage: React.FC = () => {
   const navigate = useNavigate();
 
-  // Sharing Purpose state
+  // Registered vehicles state
+  const [vehiclesList, setVehiclesList] = useState<Vehicle[]>([]);
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string>('');
+
+  // Sharing Purpose state (BR-05)
   const [purpose, setPurpose] = useState<'Vehicle sale' | 'Insurance inspection' | 'Vehicle verification'>(
-    'Insurance inspection'
+    'Vehicle sale'
   );
 
-  // Vehicle & Record scope state
-  const [vehicle, setVehicle] = useState('WP ABC-1234 · Toyota Aqua');
-  const [records, setRecords] = useState('Complete service history · 6 verified entries');
+  // Vehicle & Record scope state (BR-06)
+  const [vehicle, setVehicle] = useState('WP CAA-1234 · Toyota Corolla');
+  const [permissionScope, setPermissionScope] = useState<ShareLinkPermissionLevel>('limited');
 
-  // Limits state
-  const [expiration, setExpiration] = useState('48 hours · 23 Sep 2026');
+  // Limits state (BR-05, BRULE-03)
+  const [durationHours, setDurationHours] = useState<number>(48);
   const [scanLimit, setScanLimit] = useState('10 scans');
-  const [authentication, setAuthentication] = useState('Viewer name + OTP');
+  const [recipientName, setRecipientName] = useState('Prospective Buyer');
 
   // Recent QR codes
   const [recentCodes, setRecentCodes] = useState<RecentQRCodeItem[]>(INITIAL_RECENT_QR_CODES);
 
   // Dynamic QR Payload state
-  const [qrToken, setQrToken] = useState('AC360-INS-9812-WPABC1234');
+  const [qrToken, setQrToken] = useState('AC360-SAMPLE-BUYER-QR');
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
+
+  // Load real user vehicles and recent share links on mount
+  React.useEffect(() => {
+    getMyVehicles()
+      .then((vehicles) => {
+        if (vehicles && vehicles.length > 0) {
+          setVehiclesList(vehicles);
+          setSelectedVehicleId(vehicles[0]._id);
+          setVehicle(`${vehicles[0].registrationNumber} · ${vehicles[0].manufacturer} ${vehicles[0].model}`);
+        }
+      })
+      .catch(() => {});
+
+    getShareLinks()
+      .then((links) => {
+        if (links && links.length > 0) {
+          const mapped: RecentQRCodeItem[] = links.slice(0, 5).map((l) => ({
+            id: l._id,
+            purpose: l.purpose || 'Vehicle verification',
+            date: new Date(l.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+            scans: `${l.viewCount} / ${l.maxViews || 10} scans`,
+            status: l.status === 'active' ? 'Active' : l.status === 'expired' ? 'Expired' : 'Revoked',
+          }));
+          setRecentCodes(mapped);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Toast feedback state
   const [toast, setToast] = useState<ToastState | null>(null);
@@ -86,28 +125,63 @@ export const QRCodeSharingPage: React.FC = () => {
 
   const handlePurposeSelect = (selected: 'Vehicle sale' | 'Insurance inspection' | 'Vehicle verification') => {
     setPurpose(selected);
+    if (selected === 'Vehicle sale') {
+      setRecipientName('Prospective Buyer');
+      setPermissionScope('limited');
+    } else if (selected === 'Insurance inspection') {
+      setRecipientName('Insurance Inspector');
+      setPermissionScope('limited');
+    } else {
+      setRecipientName('Verification Officer');
+      setPermissionScope('limited');
+    }
   };
 
   const handleSaveDraft = () => {
     showToast(`Draft QR configuration for ${vehicleNumber} (${purpose}) saved successfully.`, 'info');
   };
 
-  const handleGenerateQR = () => {
-    const randomSuffix = Math.random().toString(36).substring(2, 7).toUpperCase();
-    const newCode = `AC360-${purpose.slice(0, 3).toUpperCase()}-${randomSuffix}-${vehicleNumber.replace(/[^a-zA-Z0-9]/g, '')}`;
-    setQrToken(newCode);
+  const handleGenerateQR = async () => {
+    try {
+      setIsGenerating(true);
+      const targetVehicle = vehiclesList.find((v) => v._id === selectedVehicleId) || vehiclesList[0];
+      const parsedLimit = parseInt(scanLimit, 10) || 10;
+      const expiresDate = new Date(Date.now() + durationHours * 3600 * 1000).toISOString();
 
-    // Prepend to recent list
-    const newRecentItem: RecentQRCodeItem = {
-      id: `qr-${Date.now()}`,
-      purpose,
-      date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-      scans: `0 / ${scanLimit.split(' ')[0] || '10'} scans`,
-      status: 'Active',
-    };
-    setRecentCodes((prev) => [newRecentItem, ...prev.slice(0, 4)]);
+      if (targetVehicle) {
+        const res = await createShareLink({
+          vehicleId: targetVehicle._id,
+          recipientName: recipientName.trim() || (purpose === 'Vehicle sale' ? 'Prospective Buyer' : 'Verification Officer'),
+          purpose: purpose,
+          permissionLevel: permissionScope,
+          expiresAt: expiresDate,
+          maxViews: parsedLimit,
+        });
 
-    showToast(`Purpose-bound QR code generated for ${purpose}!`, 'success');
+        const token = res.rawToken;
+        setQrToken(token);
+
+        const newRecentItem: RecentQRCodeItem = {
+          id: res.shareLink._id,
+          purpose,
+          date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+          scans: `0 / ${parsedLimit} scans`,
+          status: 'Active',
+        };
+        setRecentCodes((prev) => [newRecentItem, ...prev.slice(0, 4)]);
+        showToast(`Purpose-bound QR code generated for ${purpose}!`, 'success');
+      } else {
+        const randomSuffix = Math.random().toString(36).substring(2, 7).toUpperCase();
+        const newCode = `AC360-${purpose.slice(0, 3).toUpperCase()}-${randomSuffix}-${vehicleNumber.replace(/[^a-zA-Z0-9]/g, '')}`;
+        setQrToken(newCode);
+        showToast(`Demo QR code generated for ${purpose}!`, 'success');
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to generate QR code.';
+      showToast(msg, 'info');
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleDownload = () => {
@@ -155,16 +229,14 @@ export const QRCodeSharingPage: React.FC = () => {
   };
 
   const handleShare = () => {
-    const verificationUrl = `https://autocare.lk/verify/qr?token=${qrToken}`;
+    const verificationUrl = `${window.location.origin}/buyer-qr?token=${qrToken}`;
     if (navigator?.clipboard?.writeText) {
       navigator.clipboard.writeText(verificationUrl).catch(() => {});
     }
     showToast(`QR verification link copied to clipboard: ${verificationUrl}`, 'success');
   };
 
-  const fullQrPayload = `https://autocare.lk/verify/qr?token=${qrToken}&purpose=${encodeURIComponent(
-    purpose
-  )}&vehicle=${encodeURIComponent(vehicleNumber)}`;
+  const fullQrPayload = `${window.location.origin}/buyer-qr?token=${qrToken}`;
 
   return (
     <div className="autocare-qr-page">
@@ -227,9 +299,11 @@ export const QRCodeSharingPage: React.FC = () => {
                 type="button"
                 className="autocare-qr-btn-generate"
                 onClick={handleGenerateQR}
+                disabled={isGenerating}
+                style={{ opacity: isGenerating ? 0.7 : 1, cursor: isGenerating ? 'not-allowed' : 'pointer' }}
               >
                 <QrCode size={16} />
-                <span>Generate QR code</span>
+                <span>{isGenerating ? 'Generating...' : 'Generate QR code'}</span>
               </button>
             </div>
           </header>
@@ -273,56 +347,80 @@ export const QRCodeSharingPage: React.FC = () => {
                 </div>
               </section>
 
-              {/* Card 2: Vehicle & record scope */}
+              {/* Card 2: Vehicle & record scope (BR-06) */}
               <section className="autocare-qr-card" aria-label="Vehicle and Record Scope">
-                <h2 className="autocare-qr-card-title">Vehicle &amp; record scope</h2>
+                <h2 className="autocare-qr-card-title">Vehicle &amp; Record Scope (BR-06)</h2>
 
                 <div className="autocare-qr-form-group">
-                  <label htmlFor="qr-vehicle-input" className="autocare-qr-label">
-                    Vehicle
+                  <label htmlFor="qr-vehicle-select" className="autocare-qr-label">
+                    Select Vehicle
                   </label>
-                  <input
-                    id="qr-vehicle-input"
-                    type="text"
-                    className="autocare-qr-input"
-                    value={vehicle}
-                    onChange={(e) => setVehicle(e.target.value)}
-                    placeholder="e.g. WP ABC-1234 · Toyota Aqua"
-                  />
+                  {vehiclesList.length > 0 ? (
+                    <select
+                      id="qr-vehicle-select"
+                      className="autocare-field-select"
+                      value={selectedVehicleId}
+                      onChange={(e) => {
+                        setSelectedVehicleId(e.target.value);
+                        const v = vehiclesList.find((item) => item._id === e.target.value);
+                        if (v) setVehicle(`${v.registrationNumber} · ${v.manufacturer} ${v.model}`);
+                      }}
+                    >
+                      {vehiclesList.map((v) => (
+                        <option key={v._id} value={v._id}>
+                          {v.registrationNumber} - {v.manufacturer} {v.model} ({v.manufacturingYear})
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      id="qr-vehicle-input"
+                      type="text"
+                      className="autocare-qr-input"
+                      value={vehicle}
+                      onChange={(e) => setVehicle(e.target.value)}
+                      placeholder="e.g. WP CAA-1234 · Toyota Corolla"
+                    />
+                  )}
                 </div>
 
                 <div className="autocare-qr-form-group has-spacing">
-                  <label htmlFor="qr-records-input" className="autocare-qr-label">
-                    Records
+                  <label htmlFor="qr-records-select" className="autocare-qr-label">
+                    Permission Scope (BR-06)
                   </label>
-                  <input
-                    id="qr-records-input"
-                    type="text"
-                    className="autocare-qr-input"
-                    value={records}
-                    onChange={(e) => setRecords(e.target.value)}
-                    placeholder="e.g. Complete service history · 6 verified entries"
-                  />
+                  <select
+                    id="qr-records-select"
+                    className="autocare-field-select"
+                    value={permissionScope}
+                    onChange={(e) => setPermissionScope(e.target.value as ShareLinkPermissionLevel)}
+                  >
+                    <option value="limited">Limited Access (Buyer Default - Costs &amp; Owner Masked)</option>
+                    <option value="full">Full Access (Complete History, Costs &amp; Documents)</option>
+                    <option value="selected">Selected Records (Specific milestones only)</option>
+                  </select>
                 </div>
               </section>
 
-              {/* Card 3: Limits */}
+              {/* Card 3: Limits (BR-05, BRULE-03) */}
               <section className="autocare-qr-card" aria-label="Access Limits">
-                <h2 className="autocare-qr-card-title">Limits</h2>
+                <h2 className="autocare-qr-card-title">Access Limits &amp; Expiry (BRULE-03)</h2>
 
                 <div className="autocare-qr-field-row-3">
                   <div className="autocare-qr-form-group">
-                    <label htmlFor="qr-expiration-input" className="autocare-qr-label">
-                      Expiration
+                    <label htmlFor="qr-expiration-select" className="autocare-qr-label">
+                      Expiration Duration
                     </label>
-                    <input
-                      id="qr-expiration-input"
-                      type="text"
-                      className="autocare-qr-input"
-                      value={expiration}
-                      onChange={(e) => setExpiration(e.target.value)}
-                      placeholder="e.g. 48 hours · 23 Sep 2026"
-                    />
+                    <select
+                      id="qr-expiration-select"
+                      className="autocare-field-select"
+                      value={durationHours}
+                      onChange={(e) => setDurationHours(Number(e.target.value))}
+                    >
+                      <option value={24}>24 Hours (1 Day)</option>
+                      <option value={48}>48 Hours (2 Days - Recommended)</option>
+                      <option value={168}>7 Days (1 Week)</option>
+                      <option value={720}>30 Days (1 Month)</option>
+                    </select>
                   </div>
 
                   <div className="autocare-qr-form-group">
@@ -340,16 +438,16 @@ export const QRCodeSharingPage: React.FC = () => {
                   </div>
 
                   <div className="autocare-qr-form-group">
-                    <label htmlFor="qr-auth-input" className="autocare-qr-label">
-                      Authentication
+                    <label htmlFor="qr-recipient-input" className="autocare-qr-label">
+                      Recipient / Buyer Name
                     </label>
                     <input
-                      id="qr-auth-input"
+                      id="qr-recipient-input"
                       type="text"
                       className="autocare-qr-input"
-                      value={authentication}
-                      onChange={(e) => setAuthentication(e.target.value)}
-                      placeholder="e.g. Viewer name + OTP"
+                      value={recipientName}
+                      onChange={(e) => setRecipientName(e.target.value)}
+                      placeholder="e.g. Prospective Buyer"
                     />
                   </div>
                 </div>
@@ -415,7 +513,7 @@ export const QRCodeSharingPage: React.FC = () => {
                   </button>
 
                   <Link
-                    to={`/shared/vehicle/${qrToken}`}
+                    to={`/buyer-qr?token=${qrToken}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="autocare-qr-btn-action"

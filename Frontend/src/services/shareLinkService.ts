@@ -137,10 +137,102 @@ export const deleteShareLink = async (id: string): Promise<void> => {
   await api.delete<ShareLinkActionResponse>(`/share-links/${id}`);
 };
 
+export interface PublicSharedRecordData {
+  shareSession: {
+    id: string;
+    permissionLevel: ShareLinkPermissionLevel;
+    allowedSections?: string[];
+    recipientName?: string;
+    recipientEmail?: string;
+    purpose?: string;
+    expiresAt: string;
+    viewCount: number;
+  };
+  vehicle: {
+    _id: string;
+    registrationNumber: string;
+    vin: string;
+    engineNumber?: string;
+    manufacturer: string;
+    model: string;
+    manufacturingYear: number;
+    vehicleType: string;
+    currentMileage: number;
+    fuelType?: string;
+    transmission?: string;
+    color?: string;
+    registrationJurisdiction?: string;
+    status: string;
+    imageUrl?: string;
+    ownerName?: string;
+  };
+  serviceRecords: Array<{
+    _id: string;
+    serviceDate: string;
+    mileage: number;
+    serviceType: string;
+    workPerformed: string;
+    garageName: string;
+    technicianName?: string;
+    recordSource?: string;
+    verificationStatus?: string;
+    cost?: number;
+  }>;
+  documents: Array<{
+    _id: string;
+    title: string;
+    documentType: string;
+    fileUrl?: string;
+    fileName?: string;
+    issueDate?: string;
+    expiryDate?: string;
+  }>;
+  watermark: {
+    recipientName: string;
+    accessId: string;
+    timestamp: string;
+    expiresAt: string;
+    purpose: string;
+  };
+  protection: {
+    allowDownload: boolean;
+    allowPrint: boolean;
+    allowCopy: boolean;
+    allowExport: boolean;
+    watermarkRequired: boolean;
+  };
+  healthAssessment?: {
+    trustScore: number;
+    trustLevel: string;
+    odometerIntegrity: string;
+    anomalyDetected: boolean;
+    verifiedChecks: string;
+    lastServiceMileage: number;
+  };
+}
+
+export interface PublicSharedRecordResponse {
+  success: boolean;
+  message: string;
+  data: PublicSharedRecordData;
+}
+
+/**
+ * Fetch public shared vehicle records using public secure token (BR-05, BR-06, BR-07, BR-08)
+ * GET /api/share-links/public/:token
+ */
+export const getPublicSharedRecord = async (
+  token: string
+): Promise<PublicSharedRecordData> => {
+  const response = await api.get<PublicSharedRecordResponse>(`/share-links/public/${token}`);
+  return response.data.data;
+};
+
 export default {
   createShareLink,
   getShareLinks,
   getShareLink,
   revokeShareLink,
   deleteShareLink,
+  getPublicSharedRecord,
 };
