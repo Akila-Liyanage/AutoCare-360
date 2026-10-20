@@ -72,9 +72,11 @@ export const App: React.FC = () => {
           {/* Data Protection / Configure Access Permissions */}
           <Route path="/sharing/protection" element={<ConfigureAccessPermissionsPage />} />
 
-          {/* Buyer / Public Shared Record View — Protected Passports & Verification */}
+          {/* Buyer / Public Shared Record View — Protected Passports & Verification (BR-05, BR-06, BR-07) */}
           <Route path="/buyer-qr" element={<BuyerSharedRecordViewPage />} />
           <Route path="/shared/vehicle/:token" element={<BuyerSharedRecordViewPage />} />
+          <Route path="/shared/:token" element={<BuyerSharedRecordViewPage />} />
+          <Route path="/verify/qr" element={<BuyerSharedRecordViewPage />} />
 
           {/* Verified Garage Service Management — BR-03 */}
           <Route path="/garage/dashboard" element={<GarageDashboardPage />} />
