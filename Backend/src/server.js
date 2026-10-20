@@ -38,6 +38,7 @@ const authRoutes = require('./routes/authRoutes');
 const vehicleRoutes = require('./routes/vehicleRoutes');
 const serviceRoutes = require('./routes/serviceRoutes');
 const documentRoutes = require('./routes/documentRoutes');
+const expenseRoutes = require('./routes/expenseRoutes');
 
 const app = express();
 
@@ -104,6 +105,10 @@ app.use('/api/vehicles/:vehicleId/documents', documentRoutes);
 
 // Static serving for uploaded documents
 app.use('/uploads/documents', express.static(path.join(__dirname, '../uploads/documents')));
+
+// Mount Vehicle Expense Tracking Routes
+app.use('/api/expenses', expenseRoutes);
+app.use('/api/vehicles/:vehicleId/expenses', expenseRoutes);
 
 // Mount Vehicle Digital Passport Routes
 app.use('/api/vehicles', vehicleRoutes);
