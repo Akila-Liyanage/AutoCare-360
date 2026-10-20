@@ -100,6 +100,29 @@ const qrShareSchema = new mongoose.Schema(
       default: '',
       trim: true,
     },
+    protection: {
+      allowDownload: {
+        type: Boolean,
+        default: false,
+      },
+      allowPrint: {
+        type: Boolean,
+        default: false,
+      },
+      allowCopy: {
+        type: Boolean,
+        default: false,
+      },
+      watermarkEnabled: {
+        type: Boolean,
+        default: true,
+      },
+      watermarkText: {
+        type: String,
+        default: 'AutoCare 360 - Confidential',
+        trim: true,
+      },
+    },
   },
   {
     timestamps: true,

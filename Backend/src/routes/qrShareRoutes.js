@@ -6,6 +6,7 @@ const {
   getQRShareById,
   revokeQRShare,
   deleteQRShare,
+  updateQRSharePermissions,
 } = require('../controllers/qrShareController');
 const { protect } = require('../middlewares/authMiddleware');
 
@@ -17,6 +18,9 @@ router
   .route('/')
   .post(createQRShare)
   .get(getOwnerQRShares);
+
+// Permissions update mutation route
+router.patch('/:id/permissions', updateQRSharePermissions);
 
 // Revocation status mutation route
 router.patch('/:id/revoke', revokeQRShare);

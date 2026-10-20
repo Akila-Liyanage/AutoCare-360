@@ -6,6 +6,7 @@ const {
   getShareLinkById,
   revokeShareLink,
   deleteShareLink,
+  updateShareLinkPermissions,
 } = require('../controllers/shareLinkController');
 const { protect } = require('../middlewares/authMiddleware');
 
@@ -17,6 +18,9 @@ router
   .route('/')
   .post(createShareLink)
   .get(getOwnerShareLinks);
+
+// Permissions update mutation route
+router.patch('/:id/permissions', updateShareLinkPermissions);
 
 // Revocation status mutation route
 router.patch('/:id/revoke', revokeShareLink);

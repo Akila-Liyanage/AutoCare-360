@@ -14,6 +14,14 @@ export interface ShareLinkVehicleInfo {
   currentMileage?: number;
 }
 
+export interface ShareProtectionSettings {
+  allowDownload: boolean;
+  allowPrint: boolean;
+  allowCopy: boolean;
+  watermarkEnabled: boolean;
+  watermarkText?: string;
+}
+
 export interface ShareLink {
   _id: string;
   vehicleId: ShareLinkVehicleInfo | string;
@@ -31,6 +39,7 @@ export interface ShareLink {
   createdBy: string;
   revokedAt?: string | null;
   notes?: string;
+  protection?: ShareProtectionSettings;
   createdAt: string;
   updatedAt: string;
 }
@@ -137,10 +146,34 @@ export const deleteShareLink = async (id: string): Promise<void> => {
   await api.delete<ShareLinkActionResponse>(`/share-links/${id}`);
 };
 
+/**
+ * Update permissions of an active share link
+ * PATCH /api/share-links/:id/permissions
+ */
+export interface UpdateShareLinkPermissionsPayload {
+  permissionLevel?: ShareLinkPermissionLevel;
+  allowedSections?: string[];
+  expiresAt?: string;
+  maxViews?: number | null;
+  protection?: Partial<ShareProtectionSettings>;
+}
+
+export const updateShareLinkPermissions = async (
+  id: string,
+  payload: UpdateShareLinkPermissionsPayload
+): Promise<ShareLink> => {
+  const response = await api.patch<ShareLinkActionResponse>(
+    `/share-links/${id}/permissions`,
+    payload
+  );
+  return response.data?.data?.shareLink as ShareLink;
+};
+
 export default {
   createShareLink,
   getShareLinks,
   getShareLink,
   revokeShareLink,
   deleteShareLink,
+  updateShareLinkPermissions,
 };

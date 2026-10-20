@@ -14,6 +14,14 @@ export interface QRShareVehicleInfo {
   currentMileage?: number;
 }
 
+export interface ShareProtectionSettings {
+  allowDownload: boolean;
+  allowPrint: boolean;
+  allowCopy: boolean;
+  watermarkEnabled: boolean;
+  watermarkText?: string;
+}
+
 export interface QRShare {
   _id: string;
   vehicleId: QRShareVehicleInfo | string;
@@ -31,6 +39,7 @@ export interface QRShare {
   createdBy: string;
   revokedAt?: string | null;
   notes?: string;
+  protection?: ShareProtectionSettings;
   createdAt: string;
   updatedAt: string;
 }
@@ -137,10 +146,34 @@ export const deleteQRShare = async (id: string): Promise<void> => {
   await api.delete<QRShareActionResponse>(`/qr-shares/${id}`);
 };
 
+/**
+ * Update permissions of an active QR share
+ * PATCH /api/qr-shares/:id/permissions
+ */
+export interface UpdateQRSharePermissionsPayload {
+  permissionLevel?: QRSharePermissionLevel;
+  allowedSections?: string[];
+  expiresAt?: string;
+  maxScans?: number | null;
+  protection?: Partial<ShareProtectionSettings>;
+}
+
+export const updateQRSharePermissions = async (
+  id: string,
+  payload: UpdateQRSharePermissionsPayload
+): Promise<QRShare> => {
+  const response = await api.patch<QRShareActionResponse>(
+    `/qr-shares/${id}/permissions`,
+    payload
+  );
+  return response.data?.data?.qrShare as QRShare;
+};
+
 export default {
   createQRShare,
   getQRShares,
   getQRShare,
   revokeQRShare,
   deleteQRShare,
+  updateQRSharePermissions,
 };
