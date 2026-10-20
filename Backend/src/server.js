@@ -40,6 +40,7 @@ const serviceRoutes = require('./routes/serviceRoutes');
 const documentRoutes = require('./routes/documentRoutes');
 const expenseRoutes = require('./routes/expenseRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const transferRoutes = require('./routes/transferRoutes');
 
 const app = express();
 
@@ -48,6 +49,8 @@ const allowedOrigins = [
   process.env.FRONTEND_URL || 'http://localhost:5173',
   'http://localhost:5173',
   'http://127.0.0.1:5173',
+  'http://localhost:5174',
+  'http://127.0.0.1:5174',
 ];
 
 app.use(
@@ -113,6 +116,9 @@ app.use('/api/vehicles/:vehicleId/expenses', expenseRoutes);
 
 // Mount Notifications Routes
 app.use('/api/notifications', notificationRoutes);
+
+// Mount Vehicle Ownership Transfer Routes
+app.use('/api/transfers', transferRoutes);
 
 // Mount Vehicle Digital Passport Routes
 app.use('/api/vehicles', vehicleRoutes);

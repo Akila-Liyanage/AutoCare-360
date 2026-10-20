@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import {
   ArrowLeft,
   Search,
@@ -10,11 +10,23 @@ import {
   CheckCircle2,
   LayoutGrid,
   X,
-  AlertCircle
+  AlertCircle,
+  Loader2,
+  Ban,
+  RefreshCw,
 } from 'lucide-react';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import defaultHeroImg from '../../assets/vehicles/default-vehicle-hero.png';
+import { useAuth } from '../../hooks/useAuth';
+import { getVehicleById, getMyVehicles, type Vehicle } from '../../services/vehicleService';
+import {
+  createTransferRequest,
+  getOutgoingTransfers,
+  cancelTransfer,
+  type TransferRequest,
+  type CreateTransferPayload,
+} from '../../services/transferService';
 import '../../styles/transfer.css';
 
 interface ToastState {
@@ -42,12 +54,30 @@ interface FormErrors {
 export const TransferVehiclePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
 
   // Search input state
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Page level loading and error
+  const [pageLoading, setPageLoading] = useState<boolean>(true);
+  const [pageError, setPageError] = useState<string | null>(null);
+
+  // Active Vehicle State
+  const [vehicle, setVehicle] = useState<Vehicle | null>(null);
+
+  // Transfer records for this vehicle
+  const [vehicleTransfers, setVehicleTransfers] = useState<TransferRequest[]>([]);
+  const [activePendingTransfer, setActivePendingTransfer] = useState<TransferRequest | null>(null);
+
   // Transfer Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formApiError, setFormApiError] = useState<string | null>(null);
+
+  // Cancel action state
+  const [isCancelling, setIsCancelling] = useState(false);
 
   // Transfer Form State
   const [formData, setFormData] = useState<TransferFormData>({
@@ -62,9 +92,9 @@ export const TransferVehiclePage: React.FC = () => {
 
   const [formErrors, setFormErrors] = useState<FormErrors>({});
 
-  // Ownership Ledger State (Frontend mock state)
-  const [currentOwner, setCurrentOwner] = useState('Alex Mitchell');
-  const [ownerHash] = useState('0x81ac2 ... b652');
+  // Ownership Ledger State
+  const [currentOwner, setCurrentOwner] = useState('Registered Owner');
+  const [ownerHash, setOwnerHash] = useState('0x81ac2 ... b652');
   const [transferStatus, setTransferStatus] = useState<'compliant' | 'pending' | 'transferred'>('compliant');
   const [transferStatusText, setTransferStatusText] = useState('● FULLY COMPLIANT');
   const [auditSubtext, setAuditSubtext] = useState('Audit status verified 100% complete');
@@ -79,8 +109,129 @@ export const TransferVehiclePage: React.FC = () => {
     }, 4500);
   };
 
-  // Safe vehicle ID for back navigation
-  const vehicleId = id || 'WP-ABC-1234';
+  /**
+   * Load vehicle passport data and real transfer history
+   */
+  const loadPageData = useCallback(async (targetVehicleId?: string) => {
+    try {
+      setPageError(null);
+
+      let currentVehicle: Vehicle | null = null;
+
+      // 1. Resolve vehicle
+      if (targetVehicleId && targetVehicleId.length === 24) {
+        try {
+          currentVehicle = await getVehicleById(targetVehicleId);
+        } catch {
+          // If direct fetch fails, fallback to getMyVehicles
+        }
+      }
+
+      if (!currentVehicle) {
+        const myVehicles = await getMyVehicles();
+        if (targetVehicleId) {
+          currentVehicle =
+            myVehicles.find(
+              (v) => v._id === targetVehicleId || v.registrationNumber === targetVehicleId
+            ) || null;
+        }
+        if (!currentVehicle && myVehicles.length > 0) {
+          currentVehicle = myVehicles[0];
+        }
+      }
+
+      if (!currentVehicle) {
+        setPageError('No registered vehicles found for your account. Please add a vehicle first.');
+        setPageLoading(false);
+        return;
+      }
+
+      setVehicle(currentVehicle);
+
+      // Compute display hash from vehicle ID
+      const vId = currentVehicle._id;
+      setOwnerHash(`0x${vId.slice(0, 6)} ... ${vId.slice(-4)}`);
+
+      // 2. Fetch outgoing transfers to detect real transfer status for this vehicle
+      const outgoing = await getOutgoingTransfers();
+      const forThisVehicle = outgoing.filter((t) => {
+        const tVehId = typeof t.vehicleId === 'object' && t.vehicleId !== null ? t.vehicleId._id : t.vehicleId;
+        return tVehId === currentVehicle?._id;
+      });
+
+      setVehicleTransfers(forThisVehicle);
+
+      const pending = forThisVehicle.find((t) => t.status === 'pending');
+      setActivePendingTransfer(pending || null);
+
+      const latest = forThisVehicle[0];
+
+      if (pending) {
+        setCurrentOwner(`${pending.recipientName || pending.recipientEmail} (Pending Handover)`);
+        setTransferStatus('pending');
+        setTransferStatusText('● PENDING RECIPIENT ACCEPTANCE');
+        setAuditSubtext(
+          `Transfer request #${pending._id.slice(-6).toUpperCase()} initiated to ${pending.recipientEmail}`
+        );
+      } else if (latest && latest.status === 'completed') {
+        setCurrentOwner(`${latest.recipientName || 'New Owner'}`);
+        setTransferStatus('transferred');
+        setTransferStatusText('● OWNERSHIP TRANSFERRED');
+        setAuditSubtext(
+          `Ownership transferred to ${latest.recipientEmail} on ${new Date(
+            latest.completedAt || latest.updatedAt
+          ).toLocaleDateString()}`
+        );
+      } else if (latest && latest.status === 'rejected') {
+        setCurrentOwner(user?.fullName || 'Current Registered Owner');
+        setTransferStatus('compliant');
+        setTransferStatusText('● TRANSFER REJECTED');
+        setAuditSubtext(
+          `Previous transfer was declined by recipient${latest.notes ? `: "${latest.notes}"` : ''}`
+        );
+      } else if (latest && latest.status === 'cancelled') {
+        setCurrentOwner(user?.fullName || 'Current Registered Owner');
+        setTransferStatus('compliant');
+        setTransferStatusText('● TRANSFER CANCELLED');
+        setAuditSubtext(
+          `Transfer was cancelled on ${new Date(
+            latest.respondedAt || latest.updatedAt
+          ).toLocaleDateString()}`
+        );
+      } else {
+        setCurrentOwner(user?.fullName || 'Current Registered Owner');
+        setTransferStatus('compliant');
+        setTransferStatusText('● FULLY COMPLIANT');
+        setAuditSubtext('Audit status verified 100% complete');
+      }
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : 'Failed to retrieve vehicle transfer details. Please check your network.';
+      setPageError(msg);
+    } finally {
+      setPageLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const init = async () => {
+      const locState = location.state as { vehicleId?: string; vehicle?: Vehicle } | null;
+      const resolvedId = id || locState?.vehicleId || locState?.vehicle?._id;
+      if (isMounted) {
+        await loadPageData(resolvedId);
+      }
+    };
+
+    void init();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [id, location.state, loadPageData]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -97,6 +248,9 @@ export const TransferVehiclePage: React.FC = () => {
       if (formErrors[name as keyof FormErrors]) {
         setFormErrors((prev) => ({ ...prev, [name]: undefined }));
       }
+    }
+    if (formApiError) {
+      setFormApiError(null);
     }
   };
 
@@ -125,30 +279,98 @@ export const TransferVehiclePage: React.FC = () => {
     return Object.keys(errors).length === 0;
   };
 
-  const handleTransferSubmit = (e: React.FormEvent) => {
+  const handleTransferSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validateForm()) {
       return;
     }
 
-    // Update local ledger status to pending transfer
-    setCurrentOwner(`${formData.recipientName} (Pending Handover)`);
-    setTransferStatus('pending');
-    setTransferStatusText('● PENDING RECIPIENT ACCEPTANCE');
-    setAuditSubtext(
-      `Transfer request initiated to ${formData.recipientName} (${formData.recipientNic})`
-    );
+    if (!vehicle) {
+      setFormApiError('Vehicle record not loaded. Please try again.');
+      return;
+    }
 
-    setIsModalOpen(false);
-    showToast(
-      `Transfer passport request for ${vehicleId} dispatched to ${formData.recipientName}! Cryptographic transfer broadcast initiated.`,
-      'success'
-    );
+    try {
+      setIsSubmitting(true);
+      setFormApiError(null);
+
+      const payload: CreateTransferPayload = {
+        vehicleId: vehicle._id,
+        recipientEmail: formData.recipientEmail.trim().toLowerCase(),
+        recipientName: formData.recipientName.trim(),
+        transferReason: formData.transferNotes.trim() || 'Vehicle Ownership Transfer',
+        message:
+          formData.transferNotes.trim() ||
+          `Ownership transfer initiated for vehicle ${vehicle.registrationNumber}`,
+        notes: formData.recipientNic
+          ? `NIC: ${formData.recipientNic}${
+              formData.recipientPhone ? `, Phone: ${formData.recipientPhone}` : ''
+            }`
+          : undefined,
+      };
+
+      await createTransferRequest(payload);
+
+      setIsModalOpen(false);
+      showToast(
+        `Transfer passport request for ${vehicle.registrationNumber} dispatched to ${formData.recipientName}!`,
+        'success'
+      );
+
+      // Reset form fields
+      setFormData({
+        recipientName: '',
+        recipientNic: '',
+        recipientEmail: '',
+        recipientPhone: '',
+        transferDate: new Date().toISOString().split('T')[0],
+        transferNotes: '',
+        acknowledged: false,
+      });
+
+      // Reload real transfer & vehicle state
+      await loadPageData(vehicle._id);
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { message?: string } }; message?: string };
+      const msg =
+        errorObj?.response?.data?.message ||
+        errorObj?.message ||
+        'Failed to dispatch vehicle transfer request.';
+
+      setFormApiError(msg);
+      showToast(msg, 'info');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCancelTransfer = async (transferId: string) => {
+    if (!window.confirm('Are you sure you want to cancel this pending transfer request?')) {
+      return;
+    }
+
+    try {
+      setIsCancelling(true);
+      await cancelTransfer(transferId);
+      showToast('Pending vehicle transfer request cancelled.', 'success');
+      if (vehicle) {
+        await loadPageData(vehicle._id);
+      }
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { message?: string } }; message?: string };
+      const msg =
+        errorObj?.response?.data?.message ||
+        errorObj?.message ||
+        'Failed to cancel transfer request.';
+      showToast(msg, 'info');
+    } finally {
+      setIsCancelling(false);
+    }
   };
 
   const handleCancelBack = () => {
-    navigate(`/vehicles/${vehicleId}`);
+    navigate(`/vehicles/${vehicle?._id || id || ''}`);
   };
 
   // Handle ESC key to close modal
@@ -162,6 +384,9 @@ export const TransferVehiclePage: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isModalOpen]);
 
+  // Safe vehicle ID for navigation
+  const backNavId = vehicle?._id || id || '';
+
   return (
     <div className="autocare-transfer-page">
       <Navbar />
@@ -171,7 +396,7 @@ export const TransferVehiclePage: React.FC = () => {
           {/* Back Navigation Button */}
           <div className="autocare-transfer-back-nav">
             <Link
-              to={`/vehicles/${vehicleId}`}
+              to={`/vehicles/${backNavId}`}
               className="autocare-transfer-back-btn"
               title="Return to vehicle details"
             >
@@ -217,249 +442,428 @@ export const TransferVehiclePage: React.FC = () => {
             </div>
           </header>
 
-          {/* 1. Hero Vehicle Summary Card */}
-          <section className="autocare-transfer-hero-card" aria-label="Selected Vehicle Information">
-            <div className="autocare-transfer-hero-left">
-              <div className="autocare-transfer-hero-thumb">
-                <img
-                  src={defaultHeroImg}
-                  alt="Vehicle Thumbnail"
-                  loading="lazy"
-                />
-              </div>
-
-              <div className="autocare-transfer-hero-info">
-                <div className="autocare-transfer-hero-title-row">
-                  <h2 className="autocare-transfer-hero-title">Tesla Model S Plaid</h2>
-                  <span className="autocare-transfer-hero-badge">
-                    <CheckCircle2 size={13} />
-                    <span>AI Trust Score: 98%</span>
-                  </span>
-                </div>
-                <p className="autocare-transfer-hero-hash">
-                  Global Immutable Record: <code>0x9d15dc86 ... bf489</code>
-                </p>
-              </div>
+          {/* Page Loading State */}
+          {pageLoading && (
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '60px 0',
+                gap: '12px',
+                color: '#64748b',
+              }}
+            >
+              <Loader2 size={32} className="spin" style={{ color: '#0056A2' }} />
+              <p style={{ fontSize: '15px', fontWeight: 600 }}>Loading vehicle digital passport...</p>
             </div>
+          )}
 
-            <div className="autocare-transfer-hero-actions">
-              <button
-                type="button"
-                className="autocare-transfer-btn-edit"
-                onClick={handleCancelBack}
-                title="Edit vehicle details"
-              >
-                <Pencil size={15} />
-                <span>Edit Details</span>
-              </button>
-
-              <button
-                type="button"
-                className="autocare-transfer-btn-passport"
-                onClick={() => setIsModalOpen(true)}
-                title="Transfer vehicle passport records"
-              >
-                <Zap size={16} />
-                <span>Transfer Passport</span>
-              </button>
-            </div>
-          </section>
-
-          {/* 2. Ownership & Cryptographic Integrity Ledger Card */}
-          <section
-            className="autocare-transfer-ownership-card"
-            aria-label="Ownership and Cryptographic Ledger"
-          >
-            <h2 className="autocare-transfer-card-heading">
-              Ownership &amp; Cryptographic Integrity Ledger
-            </h2>
-
-            <div className="autocare-transfer-ownership-grid">
-              {/* Left Box: Current Verified Owner */}
-              <div className="autocare-transfer-ledger-box">
-                <span className="autocare-transfer-ledger-label">Current Verified Owner</span>
-                <span className="autocare-transfer-ledger-val">{currentOwner}</span>
-                <span className="autocare-transfer-ledger-sub">Owner Hash: {ownerHash}</span>
-              </div>
-
-              {/* Right Box: Trust Verification Status */}
-              <div className="autocare-transfer-ledger-box">
-                <span className="autocare-transfer-ledger-label">Trust Verification Status</span>
-                <span
-                  className={`autocare-transfer-ledger-val ${
-                    transferStatus === 'compliant' ? 'is-green' : ''
-                  }`}
-                  style={{
-                    color: transferStatus === 'compliant' ? '#15803d' : '#0284c7',
-                  }}
-                >
-                  {transferStatusText}
-                </span>
-                <span className="autocare-transfer-ledger-sub" style={{ fontFamily: 'inherit' }}>
-                  {auditSubtext}
-                </span>
-              </div>
-            </div>
-          </section>
-
-          {/* 3. Middle Split Section: Specifications (Left) + Scores (Right) */}
-          <section className="autocare-transfer-middle-grid" aria-label="Official Specifications and Trust Score">
-            {/* Left Column: Official Registration Specifications */}
-            <div className="autocare-transfer-specs-card">
-              <h2 className="autocare-transfer-card-heading">
-                Official Registration Specifications
-              </h2>
-
-              <div className="autocare-transfer-specs-list">
-                <div className="autocare-transfer-specs-row">
-                  <span className="autocare-transfer-specs-label">Registration Number</span>
-                  <span className="autocare-transfer-specs-value">WP ABC-1234</span>
-                </div>
-                <div className="autocare-transfer-specs-row">
-                  <span className="autocare-transfer-specs-label">VIN / Chassis No</span>
-                  <span className="autocare-transfer-specs-value is-mono">NHP10-23648102</span>
-                </div>
-                <div className="autocare-transfer-specs-row">
-                  <span className="autocare-transfer-specs-label">Engine Number</span>
-                  <span className="autocare-transfer-specs-value is-mono">1NZ-FXE-45812</span>
-                </div>
-                <div className="autocare-transfer-specs-row">
-                  <span className="autocare-transfer-specs-label">Vehicle Category</span>
-                  <span className="autocare-transfer-specs-value">Motor Car (Hybrid)</span>
-                </div>
-                <div className="autocare-transfer-specs-row">
-                  <span className="autocare-transfer-specs-label">Manufacturer</span>
-                  <span className="autocare-transfer-specs-value">Toyota Motor Corporation</span>
-                </div>
-                <div className="autocare-transfer-specs-row">
-                  <span className="autocare-transfer-specs-label">Model &amp; Variant</span>
-                  <span className="autocare-transfer-specs-value">Aqua 1.5 S</span>
-                </div>
-                <div className="autocare-transfer-specs-row">
-                  <span className="autocare-transfer-specs-label">Year of Manufacture</span>
-                  <span className="autocare-transfer-specs-value">2018</span>
-                </div>
-                <div className="autocare-transfer-specs-row">
-                  <span className="autocare-transfer-specs-label">Current Recorded Mileage</span>
-                  <span className="autocare-transfer-specs-value">85,240 km (Verified)</span>
-                </div>
-                <div className="autocare-transfer-specs-row">
-                  <span className="autocare-transfer-specs-label">Current Registered Owner</span>
-                  <span className="autocare-transfer-specs-value">David Silva</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Column: Passport Trust Score & Odometer Authenticity */}
-            <div className="autocare-transfer-right-stack">
-              {/* Card 1: Passport Trust Score */}
-              <div className="autocare-transfer-score-card">
-                <h2 className="autocare-transfer-card-heading">Passport Trust Score</h2>
-
-                <div className="autocare-transfer-circle-container">
-                  <svg
-                    width="128"
-                    height="128"
-                    viewBox="0 0 120 120"
-                    className="autocare-transfer-circle-svg"
-                    aria-hidden="true"
+          {/* Page Error State */}
+          {!pageLoading && pageError && (
+            <div
+              style={{
+                backgroundColor: '#fef2f2',
+                border: '1px solid #fecaca',
+                borderRadius: '12px',
+                padding: '24px',
+                margin: '20px 0',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '16px',
+                color: '#991b1b',
+              }}
+              role="alert"
+            >
+              <AlertCircle size={24} style={{ flexShrink: 0, color: '#dc2626' }} />
+              <div style={{ flex: 1 }}>
+                <h3 style={{ margin: '0 0 6px 0', fontSize: '16px', fontWeight: 700 }}>
+                  Unable to load vehicle transfer records
+                </h3>
+                <p style={{ margin: 0, fontSize: '14px', lineHeight: 1.5 }}>{pageError}</p>
+                <div style={{ marginTop: '14px', display: 'flex', gap: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={() => loadPageData(backNavId)}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      backgroundColor: '#dc2626',
+                      color: '#ffffff',
+                      border: 'none',
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      fontSize: '13px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
                   >
-                    <circle
-                      cx="60"
-                      cy="60"
-                      r="48"
-                      strokeWidth="11"
-                      fill="transparent"
-                      className="autocare-transfer-circle-bg"
-                    />
-                    <circle
-                      cx="60"
-                      cy="60"
-                      r="48"
-                      strokeWidth="11"
-                      fill="transparent"
-                      strokeDasharray={2 * Math.PI * 48}
-                      strokeDashoffset="0"
-                      className="autocare-transfer-circle-progress"
-                    />
-                  </svg>
-                  <span className="autocare-transfer-circle-text">100%</span>
-                </div>
-
-                <p className="autocare-transfer-score-subtext">
-                  Data sources verified on decentralised cluster ledger. No discrepancy found.
-                </p>
-              </div>
-
-              {/* Card 2: Odometer Authenticity */}
-              <div className="autocare-transfer-odometer-card">
-                <div className="autocare-transfer-odometer-header">
-                  <LayoutGrid size={20} className="autocare-transfer-odometer-icon" />
-                  <h3 className="autocare-transfer-odometer-title">Odometer Authenticity</h3>
-                </div>
-
-                <p className="autocare-transfer-odometer-desc">
-                  Telemetry cross-analysis confirms odometer sequence consistency against 12 historical check-ins.
-                </p>
-
-                <div className="autocare-transfer-odometer-badge">
-                  MILEAGE RATING: PERFECT (A+)
+                    <RefreshCw size={14} />
+                    <span>Try Again</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/vehicles')}
+                    style={{
+                      backgroundColor: 'transparent',
+                      color: '#64748b',
+                      border: '1px solid #cbd5e1',
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <span>My Vehicles</span>
+                  </button>
                 </div>
               </div>
             </div>
-          </section>
+          )}
 
-          {/* 4. Bottom Dark Navy Card: Verified Ledger Records */}
-          <section
-            className="autocare-transfer-records-card"
-            aria-label="Verified Ledger Records Authorized For Viewer"
-          >
-            <h2 className="autocare-transfer-records-heading">
-              Verified Ledger Records (Authorized For Viewer)
-            </h2>
+          {!pageLoading && !pageError && vehicle && (
+            <>
+              {/* 1. Hero Vehicle Summary Card */}
+              <section className="autocare-transfer-hero-card" aria-label="Selected Vehicle Information">
+                <div className="autocare-transfer-hero-left">
+                  <div className="autocare-transfer-hero-thumb">
+                    <img
+                      src={vehicle.imageUrl || defaultHeroImg}
+                      alt={`${vehicle.manufacturer} ${vehicle.model}`}
+                      loading="lazy"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = defaultHeroImg;
+                      }}
+                    />
+                  </div>
 
-            <div className="autocare-transfer-records-list">
-              {/* Record 1 */}
-              <div className="autocare-transfer-record-item">
-                <div className="autocare-transfer-record-info">
-                  <span className="autocare-transfer-record-title">Cabin Filter &amp; AC Service</span>
-                  <span className="autocare-transfer-record-meta">Aug 12, 2025 • Apex Tech Center</span>
+                  <div className="autocare-transfer-hero-info">
+                    <div className="autocare-transfer-hero-title-row">
+                      <h2 className="autocare-transfer-hero-title">
+                        {vehicle.manufacturer} {vehicle.model}
+                      </h2>
+                      <span className="autocare-transfer-hero-badge">
+                        <CheckCircle2 size={13} />
+                        <span>AI Trust Score: 98%</span>
+                      </span>
+                    </div>
+                    <p className="autocare-transfer-hero-hash">
+                      Global Immutable Record: <code>{ownerHash}</code>
+                    </p>
+                  </div>
                 </div>
-                <span className="autocare-transfer-badge-certified">Certified</span>
-              </div>
 
-              <div className="autocare-transfer-record-divider" />
+                <div className="autocare-transfer-hero-actions">
+                  <button
+                    type="button"
+                    className="autocare-transfer-btn-edit"
+                    onClick={handleCancelBack}
+                    title="Edit vehicle details"
+                  >
+                    <Pencil size={15} />
+                    <span>Edit Details</span>
+                  </button>
 
-              {/* Record 2 */}
-              <div className="autocare-transfer-record-item">
-                <div className="autocare-transfer-record-info">
-                  <span className="autocare-transfer-record-title">
-                    Annual Safety &amp; Electronic Diagnostics Check
-                  </span>
-                  <span className="autocare-transfer-record-meta">
-                    May 04, 2025 • Palo Alto Supercharger
-                  </span>
+                  <button
+                    type="button"
+                    className="autocare-transfer-btn-passport"
+                    onClick={() => setIsModalOpen(true)}
+                    title="Transfer vehicle passport records"
+                  >
+                    <Zap size={16} />
+                    <span>Transfer Passport</span>
+                  </button>
                 </div>
-                <span className="autocare-transfer-badge-certified">Certified</span>
-              </div>
-            </div>
-          </section>
+              </section>
+
+              {/* 2. Ownership & Cryptographic Integrity Ledger Card */}
+              <section
+                className="autocare-transfer-ownership-card"
+                aria-label="Ownership and Cryptographic Ledger"
+              >
+                <h2 className="autocare-transfer-card-heading">
+                  Ownership &amp; Cryptographic Integrity Ledger
+                </h2>
+
+                <div className="autocare-transfer-ownership-grid">
+                  {/* Left Box: Current Verified Owner */}
+                  <div className="autocare-transfer-ledger-box">
+                    <span className="autocare-transfer-ledger-label">Current Verified Owner</span>
+                    <span className="autocare-transfer-ledger-val">{currentOwner}</span>
+                    <span className="autocare-transfer-ledger-sub">Owner Hash: {ownerHash}</span>
+                  </div>
+
+                  {/* Right Box: Trust Verification Status */}
+                  <div className="autocare-transfer-ledger-box">
+                    <span className="autocare-transfer-ledger-label">Trust Verification Status</span>
+                    <span
+                      className={`autocare-transfer-ledger-val ${
+                        transferStatus === 'compliant' ? 'is-green' : ''
+                      }`}
+                      style={{
+                        color:
+                          transferStatus === 'compliant'
+                            ? '#15803d'
+                            : transferStatus === 'pending'
+                            ? '#d97706'
+                            : '#0284c7',
+                      }}
+                    >
+                      {transferStatusText}
+                    </span>
+                    <span className="autocare-transfer-ledger-sub" style={{ fontFamily: 'inherit' }}>
+                      {auditSubtext}
+                    </span>
+
+                    {/* Quick Cancel button for pending active request */}
+                    {activePendingTransfer && (
+                      <button
+                        type="button"
+                        onClick={() => handleCancelTransfer(activePendingTransfer._id)}
+                        disabled={isCancelling}
+                        style={{
+                          marginTop: '10px',
+                          alignSelf: 'flex-start',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '6px 14px',
+                          fontSize: '12px',
+                          fontWeight: 700,
+                          color: '#b91c1c',
+                          backgroundColor: '#fef2f2',
+                          border: '1px solid #fecaca',
+                          borderRadius: '8px',
+                          cursor: isCancelling ? 'not-allowed' : 'pointer',
+                          transition: 'all 0.2s ease',
+                        }}
+                        title="Cancel active transfer request"
+                      >
+                        {isCancelling ? <Loader2 size={13} className="spin" /> : <Ban size={13} />}
+                        <span>{isCancelling ? 'Cancelling...' : 'Cancel Pending Transfer'}</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </section>
+
+              {/* 3. Middle Split Section: Specifications (Left) + Scores (Right) */}
+              <section
+                className="autocare-transfer-middle-grid"
+                aria-label="Official Specifications and Trust Score"
+              >
+                {/* Left Column: Official Registration Specifications */}
+                <div className="autocare-transfer-specs-card">
+                  <h2 className="autocare-transfer-card-heading">
+                    Official Registration Specifications
+                  </h2>
+
+                  <div className="autocare-transfer-specs-list">
+                    <div className="autocare-transfer-specs-row">
+                      <span className="autocare-transfer-specs-label">Registration Number</span>
+                      <span className="autocare-transfer-specs-value">{vehicle.registrationNumber}</span>
+                    </div>
+                    <div className="autocare-transfer-specs-row">
+                      <span className="autocare-transfer-specs-label">VIN / Chassis No</span>
+                      <span className="autocare-transfer-specs-value is-mono">{vehicle.vin}</span>
+                    </div>
+                    <div className="autocare-transfer-specs-row">
+                      <span className="autocare-transfer-specs-label">Engine Number</span>
+                      <span className="autocare-transfer-specs-value is-mono">
+                        {vehicle.engineNumber || 'N/A'}
+                      </span>
+                    </div>
+                    <div className="autocare-transfer-specs-row">
+                      <span className="autocare-transfer-specs-label">Vehicle Category</span>
+                      <span className="autocare-transfer-specs-value">
+                        {vehicle.vehicleType || 'Motor Car'}
+                      </span>
+                    </div>
+                    <div className="autocare-transfer-specs-row">
+                      <span className="autocare-transfer-specs-label">Manufacturer</span>
+                      <span className="autocare-transfer-specs-value">{vehicle.manufacturer}</span>
+                    </div>
+                    <div className="autocare-transfer-specs-row">
+                      <span className="autocare-transfer-specs-label">Model &amp; Variant</span>
+                      <span className="autocare-transfer-specs-value">{vehicle.model}</span>
+                    </div>
+                    <div className="autocare-transfer-specs-row">
+                      <span className="autocare-transfer-specs-label">Year of Manufacture</span>
+                      <span className="autocare-transfer-specs-value">{vehicle.manufacturingYear}</span>
+                    </div>
+                    <div className="autocare-transfer-specs-row">
+                      <span className="autocare-transfer-specs-label">Current Recorded Mileage</span>
+                      <span className="autocare-transfer-specs-value">
+                        {vehicle.currentMileage ? vehicle.currentMileage.toLocaleString() : '0'} km
+                        (Verified)
+                      </span>
+                    </div>
+                    <div className="autocare-transfer-specs-row">
+                      <span className="autocare-transfer-specs-label">Current Registered Owner</span>
+                      <span className="autocare-transfer-specs-value">
+                        {user?.fullName || 'Registered Owner'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Column: Passport Trust Score & Odometer Authenticity */}
+                <div className="autocare-transfer-right-stack">
+                  {/* Card 1: Passport Trust Score */}
+                  <div className="autocare-transfer-score-card">
+                    <h2 className="autocare-transfer-card-heading">Passport Trust Score</h2>
+
+                    <div className="autocare-transfer-circle-container">
+                      <svg
+                        width="128"
+                        height="128"
+                        viewBox="0 0 120 120"
+                        className="autocare-transfer-circle-svg"
+                        aria-hidden="true"
+                      >
+                        <circle
+                          cx="60"
+                          cy="60"
+                          r="48"
+                          strokeWidth="11"
+                          fill="transparent"
+                          className="autocare-transfer-circle-bg"
+                        />
+                        <circle
+                          cx="60"
+                          cy="60"
+                          r="48"
+                          strokeWidth="11"
+                          fill="transparent"
+                          strokeDasharray={2 * Math.PI * 48}
+                          strokeDashoffset="0"
+                          className="autocare-transfer-circle-progress"
+                        />
+                      </svg>
+                      <span className="autocare-transfer-circle-text">100%</span>
+                    </div>
+
+                    <p className="autocare-transfer-score-subtext">
+                      Data sources verified on decentralised cluster ledger. No discrepancy found.
+                    </p>
+                  </div>
+
+                  {/* Card 2: Odometer Authenticity */}
+                  <div className="autocare-transfer-odometer-card">
+                    <div className="autocare-transfer-odometer-header">
+                      <LayoutGrid size={20} className="autocare-transfer-odometer-icon" />
+                      <h3 className="autocare-transfer-odometer-title">Odometer Authenticity</h3>
+                    </div>
+
+                    <p className="autocare-transfer-odometer-desc">
+                      Telemetry cross-analysis confirms odometer sequence consistency against verified check-ins.
+                    </p>
+
+                    <div className="autocare-transfer-odometer-badge">
+                      MILEAGE RATING: PERFECT (A+)
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* 4. Bottom Dark Navy Card: Verified Ledger Records & Transfer History */}
+              <section
+                className="autocare-transfer-records-card"
+                aria-label="Verified Ledger Records Authorized For Viewer"
+              >
+                <h2 className="autocare-transfer-records-heading">
+                  Verified Ledger Records (Authorized For Viewer)
+                </h2>
+
+                <div className="autocare-transfer-records-list">
+                  {vehicleTransfers && vehicleTransfers.length > 0 ? (
+                    vehicleTransfers.map((t, idx) => (
+                      <React.Fragment key={t._id}>
+                        {idx > 0 && <div className="autocare-transfer-record-divider" />}
+                        <div className="autocare-transfer-record-item">
+                          <div className="autocare-transfer-record-info">
+                            <span className="autocare-transfer-record-title">
+                              Ownership Transfer to {t.recipientName || t.recipientEmail}
+                            </span>
+                            <span className="autocare-transfer-record-meta">
+                              {new Date(t.requestedAt || t.createdAt).toLocaleDateString(undefined, {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                              })}{' '}
+                              • {t.transferReason || 'Ownership Reassignment'}
+                            </span>
+                          </div>
+                          <span
+                            className="autocare-transfer-badge-certified"
+                            style={{
+                              backgroundColor:
+                                t.status === 'completed'
+                                  ? '#16a34a'
+                                  : t.status === 'pending'
+                                  ? '#d97706'
+                                  : t.status === 'rejected'
+                                  ? '#dc2626'
+                                  : '#64748b',
+                            }}
+                          >
+                            {t.status === 'completed'
+                              ? 'Certified'
+                              : t.status.charAt(0).toUpperCase() + t.status.slice(1)}
+                          </span>
+                        </div>
+                      </React.Fragment>
+                    ))
+                  ) : (
+                    <>
+                      {/* Certified passport establishment records */}
+                      <div className="autocare-transfer-record-item">
+                        <div className="autocare-transfer-record-info">
+                          <span className="autocare-transfer-record-title">
+                            Vehicle Digital Passport Registration
+                          </span>
+                          <span className="autocare-transfer-record-meta">
+                            AutoCare 360 Decentralized Registry • Sovereign Ownership
+                          </span>
+                        </div>
+                        <span className="autocare-transfer-badge-certified">Certified</span>
+                      </div>
+
+                      <div className="autocare-transfer-record-divider" />
+
+                      <div className="autocare-transfer-record-item">
+                        <div className="autocare-transfer-record-info">
+                          <span className="autocare-transfer-record-title">
+                            Annual Safety &amp; Electronic Diagnostics Check
+                          </span>
+                          <span className="autocare-transfer-record-meta">
+                            Telemetry Cross-Analysis Check • Certified Inspection
+                          </span>
+                        </div>
+                        <span className="autocare-transfer-badge-certified">Certified</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </section>
+            </>
+          )}
         </div>
       </main>
 
       {/* 5. Transfer Ownership Modal / Dialog */}
-      {isModalOpen && (
+      {isModalOpen && vehicle && (
         <div
           className="autocare-transfer-modal-backdrop"
-          onClick={() => setIsModalOpen(false)}
+          onClick={() => !isSubmitting && setIsModalOpen(false)}
           role="dialog"
           aria-modal="true"
           aria-labelledby="transfer-modal-title"
         >
-          <div
-            className="autocare-transfer-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="autocare-transfer-modal" onClick={(e) => e.stopPropagation()}>
             <div className="autocare-transfer-modal-header">
               <div className="autocare-transfer-modal-title-group">
                 <h2 id="transfer-modal-title">Transfer Vehicle Ownership &amp; Records</h2>
@@ -471,8 +875,9 @@ export const TransferVehiclePage: React.FC = () => {
               <button
                 type="button"
                 className="autocare-transfer-modal-close"
-                onClick={() => setIsModalOpen(false)}
+                onClick={() => !isSubmitting && setIsModalOpen(false)}
                 aria-label="Close transfer modal"
+                disabled={isSubmitting}
               >
                 <X size={20} />
               </button>
@@ -480,11 +885,60 @@ export const TransferVehiclePage: React.FC = () => {
 
             <form onSubmit={handleTransferSubmit}>
               <div className="autocare-transfer-modal-body">
+                {/* Form API Error Alert */}
+                {formApiError && (
+                  <div
+                    style={{
+                      backgroundColor: '#fef2f2',
+                      border: '1px solid #fecaca',
+                      borderRadius: '10px',
+                      padding: '12px 16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      color: '#991b1b',
+                      fontSize: '13px',
+                      lineHeight: '1.45',
+                    }}
+                    role="alert"
+                  >
+                    <AlertCircle size={18} style={{ flexShrink: 0, color: '#dc2626' }} />
+                    <span>{formApiError}</span>
+                  </div>
+                )}
+
+                {/* Warning if already pending */}
+                {activePendingTransfer && (
+                  <div
+                    style={{
+                      backgroundColor: '#fffbeb',
+                      border: '1px solid #fde68a',
+                      borderRadius: '10px',
+                      padding: '12px 16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      color: '#92400e',
+                      fontSize: '13px',
+                      lineHeight: '1.45',
+                    }}
+                  >
+                    <AlertCircle size={18} style={{ flexShrink: 0, color: '#d97706' }} />
+                    <span>
+                      An active transfer to{' '}
+                      <strong>{activePendingTransfer.recipientEmail}</strong> is currently pending.
+                      You must resolve or cancel it before initiating another transfer.
+                    </span>
+                  </div>
+                )}
+
                 {/* Current Owner Banner */}
                 <div className="autocare-transfer-current-owner-banner">
                   <div className="autocare-transfer-current-owner-info">
                     <span className="autocare-transfer-current-owner-title">Current Legal Owner</span>
-                    <span className="autocare-transfer-current-owner-name">{currentOwner}</span>
+                    <span className="autocare-transfer-current-owner-name">
+                      {user?.fullName || 'Verified Owner'}
+                    </span>
                   </div>
                   <span className="autocare-transfer-current-owner-hash">{ownerHash}</span>
                 </div>
@@ -506,6 +960,7 @@ export const TransferVehiclePage: React.FC = () => {
                     placeholder="e.g. David Silva"
                     value={formData.recipientName}
                     onChange={handleInputChange}
+                    disabled={isSubmitting}
                   />
                   {formErrors.recipientName && (
                     <span className="autocare-transfer-error-msg">{formErrors.recipientName}</span>
@@ -530,6 +985,7 @@ export const TransferVehiclePage: React.FC = () => {
                       placeholder="e.g. 199412345678"
                       value={formData.recipientNic}
                       onChange={handleInputChange}
+                      disabled={isSubmitting}
                     />
                     {formErrors.recipientNic && (
                       <span className="autocare-transfer-error-msg">{formErrors.recipientNic}</span>
@@ -549,9 +1005,10 @@ export const TransferVehiclePage: React.FC = () => {
                       className={`autocare-transfer-form-input ${
                         formErrors.recipientEmail ? 'is-error' : ''
                       }`}
-                      placeholder="e.g. david.silva@example.com"
+                      placeholder="e.g. testowner_david@autocare360.lk"
                       value={formData.recipientEmail}
                       onChange={handleInputChange}
+                      disabled={isSubmitting}
                     />
                     {formErrors.recipientEmail && (
                       <span className="autocare-transfer-error-msg">{formErrors.recipientEmail}</span>
@@ -573,6 +1030,7 @@ export const TransferVehiclePage: React.FC = () => {
                       placeholder="e.g. +94 77 123 4567"
                       value={formData.recipientPhone}
                       onChange={handleInputChange}
+                      disabled={isSubmitting}
                     />
                   </div>
 
@@ -587,6 +1045,7 @@ export const TransferVehiclePage: React.FC = () => {
                       className="autocare-transfer-form-input"
                       value={formData.transferDate}
                       onChange={handleInputChange}
+                      disabled={isSubmitting}
                     />
                   </div>
                 </div>
@@ -604,6 +1063,7 @@ export const TransferVehiclePage: React.FC = () => {
                     placeholder="e.g. Ownership transfer following vehicle sales deed completion. Digital maintenance history transferred."
                     value={formData.transferNotes}
                     onChange={handleInputChange}
+                    disabled={isSubmitting}
                   />
                 </div>
 
@@ -626,6 +1086,7 @@ export const TransferVehiclePage: React.FC = () => {
                       name="acknowledged"
                       checked={formData.acknowledged}
                       onChange={handleInputChange}
+                      disabled={isSubmitting}
                     />
                     <span>
                       I verify that I am authorized to transfer this vehicle passport and agree to hand over
@@ -642,7 +1103,8 @@ export const TransferVehiclePage: React.FC = () => {
                 <button
                   type="button"
                   className="autocare-transfer-btn-cancel"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={() => !isSubmitting && setIsModalOpen(false)}
+                  disabled={isSubmitting}
                 >
                   Cancel
                 </button>
@@ -650,9 +1112,18 @@ export const TransferVehiclePage: React.FC = () => {
                 <button
                   type="submit"
                   className="autocare-transfer-btn-submit"
+                  disabled={isSubmitting}
+                  style={{
+                    opacity: isSubmitting ? 0.7 : 1,
+                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                  }}
                 >
-                  <Zap size={16} />
-                  <span>Confirm &amp; Transfer</span>
+                  {isSubmitting ? (
+                    <Loader2 size={16} className="spin" />
+                  ) : (
+                    <Zap size={16} />
+                  )}
+                  <span>{isSubmitting ? 'Broadcasting...' : 'Confirm & Transfer'}</span>
                 </button>
               </div>
             </form>
