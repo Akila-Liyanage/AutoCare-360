@@ -41,6 +41,7 @@ const documentRoutes = require('./routes/documentRoutes');
 const expenseRoutes = require('./routes/expenseRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const transferRoutes = require('./routes/transferRoutes');
+const shareLinkRoutes = require('./routes/shareLinkRoutes');
 
 const app = express();
 
@@ -119,6 +120,9 @@ app.use('/api/notifications', notificationRoutes);
 
 // Mount Vehicle Ownership Transfer Routes
 app.use('/api/transfers', transferRoutes);
+
+// Mount Secure Vehicle Link Sharing Routes
+app.use('/api/share-links', shareLinkRoutes);
 
 // Mount Vehicle Digital Passport Routes
 app.use('/api/vehicles', vehicleRoutes);
