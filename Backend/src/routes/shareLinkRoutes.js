@@ -6,10 +6,14 @@ const {
   getShareLinkById,
   revokeShareLink,
   deleteShareLink,
+  getPublicSharedRecord,
 } = require('../controllers/shareLinkController');
 const { protect } = require('../middlewares/authMiddleware');
 
-// All share-link endpoints require an authenticated session
+// Public route to view shared vehicle records (No login required - token validated)
+router.get('/public/:token', getPublicSharedRecord);
+
+// All protected share-link endpoints require an authenticated owner session
 router.use(protect);
 
 // Base collection routes

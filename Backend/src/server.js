@@ -42,6 +42,8 @@ const expenseRoutes = require('./routes/expenseRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const transferRoutes = require('./routes/transferRoutes');
 const shareLinkRoutes = require('./routes/shareLinkRoutes');
+const garageRoutes = require('./routes/garageRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
 
@@ -126,6 +128,12 @@ app.use('/api/share-links', shareLinkRoutes);
 
 // Mount Vehicle Digital Passport Routes
 app.use('/api/vehicles', vehicleRoutes);
+
+// Mount Verified Garage Operations & Dashboard Routes (BR-03)
+app.use('/api/garage', garageRoutes);
+
+// Mount System Administrator & Audit Trail Routes (FR-05, BR-08)
+app.use('/api/admin', adminRoutes);
 
 // 404 JSON Handler for unmatched routes
 app.use((req, res) => {

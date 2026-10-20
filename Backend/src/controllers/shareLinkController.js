@@ -2,6 +2,9 @@ const crypto = require('crypto');
 const mongoose = require('mongoose');
 const ShareLink = require('../models/ShareLink');
 const Vehicle = require('../models/Vehicle');
+const ServiceRecord = require('../models/ServiceRecord');
+const VehicleDocument = require('../models/VehicleDocument');
+const AuditLog = require('../models/AuditLog');
 
 // Helper to generate a 32-byte cryptographically secure random token (64 hex characters)
 const generateSecureToken = () => {
@@ -429,10 +432,230 @@ const deleteShareLink = async (req, res, next) => {
   }
 };
 
+// @desc    View shared vehicle records using public secure token (BR-05, BR-06, BR-07, BR-08)
+// @route   GET /api/share-links/public/:token
+// @access  Public (Token verification)
+const getPublicSharedRecord = async (req, res, next) => {
+  try {
+    const { token } = req.params;
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: 'Share token is required.',
+      });
+    }
+
+    const tokenHash = hashToken(token);
+    const shareLink = await ShareLink.findOne({ tokenHash })
+      .populate('vehicleId')
+      .populate('ownerId', 'fullName email phone displayName');
+
+    if (!shareLink) {
+      return res.status(404).json({
+        success: false,
+        message: 'Invalid share link or token not found.',
+      });
+    }
+
+    const now = new Date();
+
+    // Check expiration
+    if (shareLink.status === 'expired' || shareLink.expiresAt <= now) {
+      if (shareLink.status !== 'expired') {
+        shareLink.status = 'expired';
+        await shareLink.save();
+      }
+
+      await AuditLog.create({
+        action: 'PUBLIC_SHARE_LINK_EXPIRED_ACCESS_ATTEMPT',
+        vehicleId: shareLink.vehicleId?._id || null,
+        shareLinkId: shareLink._id,
+        actorRole: 'guest',
+        actorName: shareLink.recipientName || 'External Viewer',
+        recipientInfo: shareLink.recipientEmail || shareLink.recipientName || '',
+        ipAddress: req.ip || '',
+        userAgent: req.headers['user-agent'] || '',
+        status: 'denied',
+        details: { tokenPrefix: token.substring(0, 8), expiredAt: shareLink.expiresAt },
+      });
+
+      return res.status(410).json({
+        success: false,
+        message: 'This secure share link has expired and is no longer accessible.',
+        data: {
+          expiredAt: shareLink.expiresAt,
+          status: 'expired',
+        },
+      });
+    }
+
+    // Check revocation
+    if (shareLink.status === 'revoked') {
+      await AuditLog.create({
+        action: 'PUBLIC_SHARE_LINK_REVOKED_ACCESS_ATTEMPT',
+        vehicleId: shareLink.vehicleId?._id || null,
+        shareLinkId: shareLink._id,
+        actorRole: 'guest',
+        actorName: shareLink.recipientName || 'External Viewer',
+        recipientInfo: shareLink.recipientEmail || shareLink.recipientName || '',
+        ipAddress: req.ip || '',
+        userAgent: req.headers['user-agent'] || '',
+        status: 'denied',
+      });
+
+      return res.status(403).json({
+        success: false,
+        message: 'This share link has been revoked by the vehicle owner.',
+        data: {
+          revokedAt: shareLink.revokedAt,
+          status: 'revoked',
+        },
+      });
+    }
+
+    // Check view count limits if configured
+    if (shareLink.maxViews && shareLink.viewCount >= shareLink.maxViews) {
+      return res.status(403).json({
+        success: false,
+        message: 'The maximum allowed view count for this share link has been reached.',
+      });
+    }
+
+    // Record view & access timestamp
+    shareLink.viewCount += 1;
+    shareLink.lastAccessedAt = now;
+    await shareLink.save();
+
+    const vehicle = shareLink.vehicleId;
+    if (!vehicle) {
+      return res.status(404).json({
+        success: false,
+        message: 'Associated vehicle record no longer exists.',
+      });
+    }
+
+    // Filter vehicle data according to permission level (BR-06)
+    const permission = shareLink.permissionLevel || 'limited';
+
+    let serviceRecords = [];
+    let documents = [];
+
+    if (permission === 'full') {
+      serviceRecords = await ServiceRecord.find({ vehicleId: vehicle._id }).sort({ serviceDate: -1 });
+      documents = await VehicleDocument.find({ vehicleId: vehicle._id, status: 'active' }).select('-fileData');
+    } else if (permission === 'limited') {
+      const rawRecords = await ServiceRecord.find({ vehicleId: vehicle._id }).sort({ serviceDate: -1 });
+      // Limited scope: strip costs, invoices, internal notes
+      serviceRecords = rawRecords.map((r) => ({
+        _id: r._id,
+        serviceDate: r.serviceDate,
+        mileage: r.mileage,
+        serviceType: r.serviceType,
+        workPerformed: r.workPerformed,
+        garageName: r.garageName,
+        technicianName: r.technicianName,
+        recordSource: r.recordSource,
+        verificationStatus: r.verificationStatus,
+      }));
+      documents = []; // Hide sensitive vehicle documents in limited mode
+    } else if (permission === 'selected') {
+      const allowed = shareLink.allowedSections || [];
+      if (allowed.includes('services') || allowed.includes('service_history')) {
+        const rawRecords = await ServiceRecord.find({ vehicleId: vehicle._id }).sort({ serviceDate: -1 });
+        serviceRecords = rawRecords.map((r) => ({
+          _id: r._id,
+          serviceDate: r.serviceDate,
+          mileage: r.mileage,
+          serviceType: r.serviceType,
+          workPerformed: r.workPerformed,
+          garageName: r.garageName,
+          verificationStatus: r.verificationStatus,
+        }));
+      }
+      if (allowed.includes('documents')) {
+        documents = await VehicleDocument.find({ vehicleId: vehicle._id, documentType: { $ne: 'other' } });
+      }
+    }
+
+    // Audit Log (BR-08)
+    await AuditLog.create({
+      action: 'PUBLIC_RECORD_VIEW',
+      vehicleId: vehicle._id,
+      shareLinkId: shareLink._id,
+      actorRole: 'guest',
+      actorName: shareLink.recipientName || 'External Viewer',
+      recipientInfo: shareLink.recipientEmail || shareLink.recipientName || '',
+      ipAddress: req.ip || '',
+      userAgent: req.headers['user-agent'] || '',
+      status: 'success',
+      details: {
+        permissionLevel: permission,
+        viewCount: shareLink.viewCount,
+        purpose: shareLink.purpose,
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Vehicle records retrieved successfully under authorized permission scope.',
+      data: {
+        shareSession: {
+          id: shareLink._id,
+          permissionLevel: permission,
+          allowedSections: shareLink.allowedSections,
+          recipientName: shareLink.recipientName,
+          recipientEmail: shareLink.recipientEmail,
+          purpose: shareLink.purpose,
+          expiresAt: shareLink.expiresAt,
+          viewCount: shareLink.viewCount,
+        },
+        vehicle: {
+          _id: vehicle._id,
+          registrationNumber: vehicle.registrationNumber,
+          vin: vehicle.vin,
+          engineNumber: vehicle.engineNumber,
+          manufacturer: vehicle.manufacturer,
+          model: vehicle.model,
+          manufacturingYear: vehicle.manufacturingYear,
+          vehicleType: vehicle.vehicleType,
+          currentMileage: vehicle.currentMileage,
+          fuelType: vehicle.fuelType,
+          transmission: vehicle.transmission,
+          color: vehicle.color,
+          registrationJurisdiction: vehicle.registrationJurisdiction,
+          status: vehicle.status,
+          imageUrl: vehicle.imageUrl,
+          ownerName: shareLink.ownerId?.displayName || shareLink.ownerId?.fullName || 'Verified Owner',
+        },
+        serviceRecords,
+        documents,
+        // Watermark protection data (BR-07)
+        watermark: {
+          recipientName: shareLink.recipientName || 'Authorized Inspection Copy',
+          accessId: `ACC-${String(shareLink._id).slice(-8).toUpperCase()}`,
+          timestamp: now.toISOString(),
+          expiresAt: shareLink.expiresAt,
+          purpose: shareLink.purpose || 'Verification Inspection',
+        },
+        protection: {
+          allowDownload: false,
+          allowPrint: false,
+          allowCopy: false,
+          allowExport: false,
+          watermarkRequired: true,
+        },
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createShareLink,
   getOwnerShareLinks,
   getShareLinkById,
   revokeShareLink,
   deleteShareLink,
+  getPublicSharedRecord,
 };

@@ -178,8 +178,9 @@ const getVehicleById = async (req, res, next) => {
       });
     }
 
-    // Tenant isolation: Owner can only access their own vehicle
-    if (vehicle.ownerId.toString() !== req.user._id.toString()) {
+    // Tenant isolation: Owner can only access their own vehicle; verified garages and admins can inspect
+    const isOwner = req.user.role === 'owner';
+    if (isOwner && vehicle.ownerId.toString() !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
         message: 'Access denied. You do not have permission to view this vehicle passport.',
@@ -329,9 +330,56 @@ const updateVehicle = async (req, res, next) => {
   }
 };
 
+// @desc    Lookup vehicle by registration number or VIN (BR-03: Garage vehicle search)
+// @route   GET /api/vehicles/lookup
+// @access  Private (Owner, Garage, Admin)
+const lookupVehicle = async (req, res, next) => {
+  try {
+    const { regNumber, registrationNumber, vin, query } = req.query;
+    const searchTerm = (regNumber || registrationNumber || vin || query || '').trim();
+
+    if (!searchTerm) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a registration number or VIN to look up.',
+      });
+    }
+
+    const cleanTerm = searchTerm.replace(/\s+/g, '').toUpperCase();
+    const regex = new RegExp(searchTerm.trim(), 'i');
+
+    const vehicle = await Vehicle.findOne({
+      $or: [
+        { registrationNumber: regex },
+        { registrationNumber: cleanTerm },
+        { vin: cleanTerm },
+        { vin: regex },
+      ],
+    }).populate('ownerId', 'fullName email phone displayName');
+
+    if (!vehicle) {
+      return res.status(404).json({
+        success: false,
+        message: `No vehicle found matching identifier "${searchTerm}".`,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Vehicle passport retrieved successfully.',
+      data: {
+        vehicle,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createVehicle,
   getMyVehicles,
   getVehicleById,
   updateVehicle,
+  lookupVehicle,
 };
