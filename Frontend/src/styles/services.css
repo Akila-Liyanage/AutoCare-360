@@ -1,0 +1,727 @@
+/* AutoCare 360 - services.css
+   Dedicated Stylesheet for Maintenance & Service Records History page
+   Aligned with Figma: Maintenance & Service Records History.png
+*/
+
+@import './variables.css';
+@import './home.css';
+
+/* --------------------------------------------------------------------------
+   Page Layout & Container
+   -------------------------------------------------------------------------- */
+.autocare-services-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f8fafc;
+}
+
+.autocare-services-main {
+  flex: 1;
+  padding: 32px 0 72px 0;
+}
+
+.autocare-services-container {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* --------------------------------------------------------------------------
+   Top Header Row (Title + Search + Bell + Blockchain Status)
+   -------------------------------------------------------------------------- */
+.autocare-services-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.autocare-services-title {
+  font-size: 28px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.4px;
+}
+
+.autocare-services-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Search Box Pill */
+.autocare-services-search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background-color: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 9999px;
+  padding: 0 16px;
+  height: 42px;
+  width: 320px;
+  transition: all 0.2s ease;
+}
+
+.autocare-services-search-box:focus-within {
+  background-color: #ffffff;
+  border-color: var(--autocare-blue);
+  box-shadow: 0 0 0 3px rgba(0, 86, 162, 0.12);
+}
+
+.autocare-services-search-icon {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.autocare-services-search-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 13.5px;
+  color: #1e293b;
+  width: 100%;
+  margin-left: 8px;
+  font-family: inherit;
+}
+
+.autocare-services-search-input::placeholder {
+  color: #94a3b8;
+}
+
+/* Bell Button */
+.autocare-services-bell-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.autocare-services-bell-btn:hover {
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
+  color: var(--autocare-blue);
+}
+
+/* Blockchain Secured Badge */
+.autocare-services-security-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #ecfdf5;
+  border: 1px solid #d1fae5;
+  border-radius: 9999px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #15803d;
+  white-space: nowrap;
+}
+
+.autocare-services-security-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #22c55e;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+  display: inline-block;
+}
+
+/* Header Divider */
+.autocare-services-divider {
+  height: 1px;
+  background-color: #e2e8f0;
+  margin: 20px 0 24px 0;
+  border: none;
+}
+
+/* --------------------------------------------------------------------------
+   Controls Bar (Tabs + Add Manual Record Button)
+   -------------------------------------------------------------------------- */
+.autocare-services-controls-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.autocare-services-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.autocare-services-tab-btn {
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+}
+
+.autocare-services-tab-btn.is-active {
+  background-color: #0056A2;
+  color: #ffffff;
+  border-color: #0056A2;
+  box-shadow: 0 2px 6px rgba(0, 86, 162, 0.2);
+}
+
+.autocare-services-tab-btn:not(.is-active) {
+  background-color: #ffffff;
+  color: #475569;
+  border-color: #e2e8f0;
+}
+
+.autocare-services-tab-btn:not(.is-active):hover {
+  background-color: #f8fafc;
+  color: #1e293b;
+  border-color: #cbd5e1;
+}
+
+.autocare-btn-add-manual {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #22c55e;
+  color: #ffffff;
+  padding: 9px 20px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.25);
+  font-family: inherit;
+}
+
+.autocare-btn-add-manual:hover {
+  background-color: #16a34a;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.35);
+}
+
+/* --------------------------------------------------------------------------
+   Two-Column Main Content Grid
+   -------------------------------------------------------------------------- */
+.autocare-services-grid {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+/* --------------------------------------------------------------------------
+   Left Column: Service Records Stack
+   -------------------------------------------------------------------------- */
+.autocare-services-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 720px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* Clean Custom Scrollbar for list */
+.autocare-services-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.autocare-services-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.autocare-services-list::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 3px;
+}
+
+.autocare-services-list::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
+}
+
+/* Service Record Item Card */
+.autocare-service-card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 18px 20px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid #e2e8f0;
+  text-align: left;
+  width: 100%;
+  display: block;
+  font-family: inherit;
+  position: relative;
+}
+
+.autocare-service-card:hover {
+  border-color: #93c5fd;
+  box-shadow: 0 4px 14px rgba(0, 86, 162, 0.06);
+}
+
+.autocare-service-card.is-selected {
+  border: 2px solid #0056A2;
+  box-shadow: 0 6px 18px rgba(0, 86, 162, 0.12);
+  background-color: #ffffff;
+}
+
+.autocare-service-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.autocare-service-card-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.35;
+}
+
+.autocare-service-card-cost {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0056A2;
+  white-space: nowrap;
+}
+
+.autocare-service-card-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.autocare-service-card-meta {
+  font-size: 12.5px;
+  color: #64748b;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* Card Verification Badge */
+.autocare-service-pill-verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background-color: #ecfdf5;
+  color: #16a34a;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+.autocare-service-pill-self {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background-color: #fffbeb;
+  color: #b45309;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+/* Empty State in Left Column */
+.autocare-services-empty {
+  background-color: #ffffff;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 36px 20px;
+  text-align: center;
+  color: #64748b;
+}
+
+/* --------------------------------------------------------------------------
+   Right Column: Service Detail Panel
+   -------------------------------------------------------------------------- */
+.autocare-service-detail-panel {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 32px 36px;
+  box-shadow: 0 8px 30px -4px rgba(0, 86, 162, 0.05);
+}
+
+.autocare-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.autocare-detail-title-group {
+  flex: 1;
+  min-width: 260px;
+}
+
+.autocare-detail-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 6px 0;
+  letter-spacing: -0.3px;
+}
+
+.autocare-detail-ledger-id {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+}
+
+/* Cryptographically Certified Badge */
+.autocare-badge-certified {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #ecfdf5;
+  border: 1px solid #bbf7d0;
+  color: #16a34a;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+.autocare-badge-self-detail {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #b45309;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+.autocare-detail-divider {
+  height: 1px;
+  background-color: #f1f5f9;
+  margin: 18px 0 24px 0;
+  border: none;
+}
+
+/* Garage / Technician Card */
+.autocare-garage-info-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.autocare-garage-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background-color: #0056A2;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 86, 162, 0.2);
+}
+
+.autocare-garage-text {
+  flex: 1;
+}
+
+.autocare-garage-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 3px 0;
+}
+
+.autocare-garage-sub {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+}
+
+/* Work Performed Section */
+.autocare-section-eyebrow {
+  font-size: 11.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #64748b;
+  margin: 0 0 12px 0;
+}
+
+.autocare-work-items-box {
+  background-color: #f8fafc;
+  border: 1px solid #f1f5f9;
+  border-radius: 10px;
+  padding: 6px 20px;
+}
+
+.autocare-work-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.autocare-work-item-row:last-child {
+  border-bottom: none;
+}
+
+.autocare-work-task {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.autocare-work-cert {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+  margin: 0;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Billing & Payment Status */
+.autocare-billing-section {
+  margin-top: 28px;
+}
+
+.autocare-billing-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.autocare-billing-amount-group {
+  flex: 1;
+  min-width: 240px;
+}
+
+.autocare-billing-amount {
+  font-size: 26px;
+  font-weight: 800;
+  color: #0056A2;
+  margin: 0 0 4px 0;
+  letter-spacing: -0.4px;
+}
+
+.autocare-billing-total-label {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0056A2;
+  margin-left: 6px;
+}
+
+.autocare-billing-meta {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+}
+
+/* Invoice Document Card */
+.autocare-invoice-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background-color: #f0f9ff;
+  border: 1px solid #e0f2fe;
+  border-radius: 12px;
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.autocare-invoice-card:hover {
+  background-color: #e0f2fe;
+  border-color: #bae6fd;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.12);
+}
+
+.autocare-invoice-icon-box {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background-color: #e0f2fe;
+  color: #0284c7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.autocare-invoice-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.autocare-invoice-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 2px 0;
+}
+
+.autocare-invoice-sub {
+  font-size: 12px;
+  color: #64748b;
+  margin: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Toast Banner (For Notice/Feedback)
+   -------------------------------------------------------------------------- */
+.autocare-services-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background-color: #0f172a;
+  color: #ffffff;
+  border-radius: 10px;
+  padding: 14px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 2000;
+  animation: toastFadeIn 0.25s ease-out;
+}
+
+.autocare-services-toast-icon {
+  color: #38bdf8;
+  flex-shrink: 0;
+}
+
+.autocare-services-toast-close {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+  margin-left: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.autocare-services-toast-close:hover {
+  color: #ffffff;
+}
+
+@keyframes toastFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Responsive Breakpoints
+   -------------------------------------------------------------------------- */
+@media (max-width: 1024px) {
+  .autocare-services-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .autocare-services-list {
+    max-height: 400px;
+  }
+}
+
+@media (max-width: 768px) {
+  .autocare-services-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .autocare-services-toolbar {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .autocare-services-search-box {
+    width: 100%;
+  }
+
+  .autocare-services-controls-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .autocare-services-tabs {
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .autocare-service-detail-panel {
+    padding: 24px 20px;
+  }
+
+  .autocare-work-item-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .autocare-work-cert {
+    text-align: left;
+  }
+
+  .autocare-billing-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .autocare-invoice-card {
+    width: 100%;
+  }
+}

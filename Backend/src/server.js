@@ -1,10 +1,47 @@
 require('dotenv').config();
+const dns = require('dns');
+
+// Reliable DNS resolution fallback for Windows/hotspot environments
+try {
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+} catch (e) {}
+
+const originalLookup = dns.lookup;
+dns.lookup = function (hostname, options, callback) {
+  if (typeof options === 'function') {
+    callback = options;
+    options = {};
+  }
+  originalLookup(hostname, options, (err, address, family) => {
+    if (err && (err.code === 'ENOTFOUND' || err.code === 'EAI_AGAIN')) {
+      dns.resolve4(hostname, (resErr, addresses) => {
+        if (!resErr && addresses && addresses.length > 0) {
+          if (options && options.all) {
+            return callback(null, addresses.map((a) => ({ address: a, family: 4 })));
+          }
+          return callback(null, addresses[0], 4);
+        }
+        return callback(err, address, family);
+      });
+    } else {
+      return callback(err, address, family);
+    }
+  });
+};
+
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const vehicleRoutes = require('./routes/vehicleRoutes');
+const serviceRoutes = require('./routes/serviceRoutes');
+const documentRoutes = require('./routes/documentRoutes');
+const expenseRoutes = require('./routes/expenseRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
+const transferRoutes = require('./routes/transferRoutes');
+const shareLinkRoutes = require('./routes/shareLinkRoutes');
 
 const app = express();
 
@@ -13,6 +50,8 @@ const allowedOrigins = [
   process.env.FRONTEND_URL || 'http://localhost:5173',
   'http://localhost:5173',
   'http://127.0.0.1:5173',
+  'http://localhost:5174',
+  'http://127.0.0.1:5174',
 ];
 
 app.use(
@@ -60,6 +99,30 @@ app.use('/api', (req, res, next) => {
 
 // Mount Authentication Routes
 app.use('/api/auth', authRoutes);
+
+// Mount Service & Maintenance Records Routes
+app.use('/api/services', serviceRoutes);
+app.use('/api/vehicles/:vehicleId/services', serviceRoutes);
+
+// Mount Vehicle Documents Routes
+app.use('/api/documents', documentRoutes);
+app.use('/api/vehicles/:vehicleId/documents', documentRoutes);
+
+// Static serving for uploaded documents
+app.use('/uploads/documents', express.static(path.join(__dirname, '../uploads/documents')));
+
+// Mount Vehicle Expense Tracking Routes
+app.use('/api/expenses', expenseRoutes);
+app.use('/api/vehicles/:vehicleId/expenses', expenseRoutes);
+
+// Mount Notifications Routes
+app.use('/api/notifications', notificationRoutes);
+
+// Mount Vehicle Ownership Transfer Routes
+app.use('/api/transfers', transferRoutes);
+
+// Mount Secure Vehicle Link Sharing Routes
+app.use('/api/share-links', shareLinkRoutes);
 
 // Mount Vehicle Digital Passport Routes
 app.use('/api/vehicles', vehicleRoutes);

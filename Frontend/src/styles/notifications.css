@@ -1,0 +1,480 @@
+/* AutoCare 360 - notifications.css
+   Dedicated Stylesheet for Notifications Page
+   Aligned strictly with Figma: Notification.png
+*/
+
+@import './variables.css';
+@import './home.css';
+
+/* --------------------------------------------------------------------------
+   Page Container & Layout
+   -------------------------------------------------------------------------- */
+.autocare-notifications-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f8fafc;
+}
+
+.autocare-notifications-main {
+  flex: 1;
+  padding: 36px 0 80px 0;
+}
+
+.autocare-notifications-container {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* --------------------------------------------------------------------------
+   Top Header Row (Title + Actions)
+   -------------------------------------------------------------------------- */
+.autocare-notif-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+
+.autocare-notif-title-group {
+  flex: 1;
+  min-width: 280px;
+}
+
+.autocare-notif-title {
+  font-size: 32px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 6px 0;
+  letter-spacing: -0.4px;
+}
+
+.autocare-notif-subtitle {
+  font-size: 15px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.autocare-notif-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.autocare-btn-notif-settings {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #0f172a;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.autocare-btn-notif-settings:hover {
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
+  color: var(--autocare-blue);
+}
+
+.autocare-btn-schedule-notif {
+  background-color: #0056A2;
+  color: #ffffff;
+  font-weight: 600;
+  padding: 10px 22px;
+  border-radius: 8px;
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 86, 162, 0.25);
+  font-family: inherit;
+}
+
+.autocare-btn-schedule-notif:hover {
+  background-color: #004684;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 86, 162, 0.35);
+}
+
+/* --------------------------------------------------------------------------
+   Search & Filter Row
+   -------------------------------------------------------------------------- */
+.autocare-notif-search-section {
+  margin-bottom: 20px;
+}
+
+.autocare-notif-search-label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+.autocare-notif-search-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.autocare-notif-search-input {
+  flex: 1;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px 18px;
+  font-size: 14px;
+  color: #0f172a;
+  outline: none;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.autocare-notif-search-input::placeholder {
+  color: #94a3b8;
+}
+
+.autocare-notif-search-input:focus {
+  border-color: var(--autocare-blue);
+  box-shadow: 0 0 0 3px rgba(0, 86, 162, 0.12);
+}
+
+.autocare-notif-filters-btn {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.autocare-notif-filters-btn:hover {
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.autocare-notif-filters-btn.is-active {
+  background-color: #e8f4fc;
+  border-color: var(--autocare-blue);
+  color: var(--autocare-blue);
+}
+
+/* --------------------------------------------------------------------------
+   Filter Chips / Tabs Row
+   -------------------------------------------------------------------------- */
+.autocare-notif-chips-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+
+.autocare-notif-chip {
+  padding: 6px 16px;
+  border-radius: 9999px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.autocare-notif-chip.is-active {
+  background-color: #0056A2;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 86, 162, 0.2);
+}
+
+.autocare-notif-chip:not(.is-active) {
+  background-color: #f1f5f9;
+  color: #475569;
+}
+
+.autocare-notif-chip:not(.is-active):hover {
+  background-color: #e2e8f0;
+  color: #0f172a;
+}
+
+/* --------------------------------------------------------------------------
+   Notification Card Sections (Today, Earlier)
+   -------------------------------------------------------------------------- */
+.autocare-notif-card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 28px 32px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03);
+}
+
+.autocare-notif-card-header {
+  margin-bottom: 16px;
+}
+
+.autocare-notif-card-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 4px 0;
+}
+
+.autocare-notif-card-count {
+  font-size: 13.5px;
+  color: #64748b;
+  margin: 0;
+}
+
+/* Notification Rows List */
+.autocare-notif-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.autocare-notif-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 8px;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  border-radius: 8px;
+  background: transparent;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+}
+
+.autocare-notif-row:last-child {
+  border-bottom: none;
+}
+
+.autocare-notif-row:hover {
+  background-color: #f8fafc;
+}
+
+.autocare-notif-row.is-unread {
+  background-color: rgba(248, 250, 252, 0.6);
+}
+
+.autocare-notif-row-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Blue Unread Dot */
+.autocare-notif-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #00B4EB;
+  box-shadow: 0 0 0 2px rgba(0, 180, 235, 0.2);
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.autocare-notif-dot-spacer {
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.autocare-notif-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.autocare-notif-item-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 3px 0;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.autocare-notif-item-sub {
+  font-size: 13.5px;
+  color: #64748b;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.autocare-notif-row-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+/* Priority & Status Badges */
+.autocare-notif-badge {
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  display: inline-block;
+  line-height: 1.4;
+}
+
+.autocare-notif-badge.is-high-priority {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.autocare-notif-badge.is-verified {
+  background-color: #ecfdf5;
+  color: #16a34a;
+}
+
+.autocare-notif-badge.is-success {
+  background-color: #e0f2fe;
+  color: #0284c7;
+}
+
+.autocare-notif-badge.is-reminder {
+  background-color: #fef3c7;
+  color: #d97706;
+}
+
+.autocare-notif-badge.is-action-required {
+  background-color: #ffedd5;
+  color: #ea580c;
+}
+
+.autocare-notif-timestamp {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+  min-width: 68px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Empty State */
+.autocare-notif-empty {
+  text-align: center;
+  padding: 48px 20px;
+  color: #64748b;
+  background-color: #ffffff;
+  border: 1px dashed #cbd5e1;
+  border-radius: 16px;
+}
+
+/* --------------------------------------------------------------------------
+   Toast Banner
+   -------------------------------------------------------------------------- */
+.autocare-notif-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background-color: #0f172a;
+  color: #ffffff;
+  border-radius: 10px;
+  padding: 14px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 2000;
+  animation: toastFadeIn 0.25s ease-out;
+}
+
+.autocare-notif-toast-icon {
+  color: #38bdf8;
+  flex-shrink: 0;
+}
+
+.autocare-notif-toast-close {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+  margin-left: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.autocare-notif-toast-close:hover {
+  color: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive Breakpoints
+   -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  .autocare-notif-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .autocare-notif-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .autocare-notif-search-bar-row {
+    flex-direction: column;
+  }
+
+  .autocare-notif-filters-btn {
+    width: 100%;
+  }
+
+  .autocare-notif-card {
+    padding: 20px 16px;
+  }
+
+  .autocare-notif-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .autocare-notif-row-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .autocare-notif-timestamp {
+    text-align: right;
+  }
+}

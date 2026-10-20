@@ -1,6 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
-import { Clock } from 'lucide-react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AuthProvider from './context/AuthContext';
 import HomePage from './pages/home/HomePage';
 import LoginPage from './pages/auth/LoginPage';
@@ -8,83 +7,24 @@ import RegisterPage from './pages/auth/RegisterPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import VerifyCodePage from './pages/auth/VerifyCodePage';
 import ResetPasswordPage from './pages/auth/ResetPasswordPage';
-import Navbar from './components/layout/Navbar';
-import Footer from './components/layout/Footer';
 import MyVehiclesPage from './pages/vehicles/MyVehiclesPage';
 import AddVehiclePage from './pages/vehicles/AddVehiclePage';
 import ViewVehiclePage from './pages/vehicles/ViewVehiclePage';
+import TransferVehiclePage from './pages/vehicles/TransferVehiclePage';
+import VehicleDocumentsPage from './pages/vehicles/VehicleDocumentsPage';
 import ProfilePage from './pages/profile/ProfilePage';
 import EditProfilePage from './pages/profile/EditProfilePage';
+import ServiceHistoryPage from './pages/services/ServiceHistoryPage';
+import NotificationsPage from './pages/notifications/NotificationsPage';
+import CreateNotificationPage from './pages/notifications/CreateNotificationPage';
+import ExpenseTrackingPage from './pages/expenses/ExpenseTrackingPage';
+import SecureLinkSharingPage from './pages/sharing/SecureLinkSharingPage';
+import QRCodeSharingPage from './pages/sharing/QRCodeSharingPage';
+import AccessPermissionManagementPage from './pages/sharing/AccessPermissionManagementPage';
+import ConfigureAccessPermissionsPage from './pages/sharing/ConfigureAccessPermissionsPage';
+import BuyerSharedRecordViewPage from './pages/sharing/BuyerSharedRecordViewPage';
+import GarageDashboardPage from './pages/garage/GarageDashboardPage';
 import './App.css';
-
-// Lightweight Shell Component for Upcoming Phase Routes
-const RoutePlaceholder: React.FC<{ title: string; subtitle: string; phase: string }> = ({
-  title,
-  subtitle,
-  phase
-}) => (
-  <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#f8fafc' }}>
-    <Navbar />
-    <main style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '64px 24px' }}>
-      <div style={{
-        background: '#ffffff',
-        border: '1px solid #e2e8f0',
-        borderRadius: '16px',
-        padding: '44px 36px',
-        maxWidth: '520px',
-        textAlign: 'center',
-        boxShadow: '0 12px 28px -6px rgba(0, 86, 162, 0.08)'
-      }}>
-        <div style={{
-          display: 'inline-flex',
-          padding: '14px',
-          background: 'var(--autocare-blue-light)',
-          color: 'var(--autocare-blue)',
-          borderRadius: '14px',
-          marginBottom: '18px'
-        }}>
-          <Clock size={32} />
-        </div>
-        <span style={{
-          display: 'block',
-          fontSize: '11px',
-          fontWeight: 700,
-          color: 'var(--autocare-blue)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.8px',
-          marginBottom: '8px'
-        }}>
-          {phase}
-        </span>
-        <h2 style={{ fontSize: '22px', fontWeight: 800, color: '#0b2545', margin: '0 0 10px 0' }}>
-          {title}
-        </h2>
-        <p style={{ fontSize: '14.5px', color: '#64748b', lineHeight: 1.6, margin: '0 0 24px 0' }}>
-          {subtitle}
-        </p>
-        <Link
-          to="/"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '10px 22px',
-            background: 'var(--autocare-blue)',
-            color: '#ffffff',
-            borderRadius: '8px',
-            textDecoration: 'none',
-            fontWeight: 700,
-            fontSize: '14px',
-            boxShadow: '0 2px 6px rgba(0, 86, 162, 0.25)'
-          }}
-        >
-          Return to Home Overview
-        </Link>
-      </div>
-    </main>
-    <Footer />
-  </div>
-);
 
 export const App: React.FC = () => {
   return (
@@ -105,18 +45,41 @@ export const App: React.FC = () => {
           {/* Vehicle Digital Passport — Phase 2E View Flow */}
           <Route path="/vehicles" element={<MyVehiclesPage />} />
           <Route path="/vehicles/:id" element={<ViewVehiclePage />} />
+          <Route path="/vehicles/:id/transfer" element={<TransferVehiclePage />} />
+          <Route path="/vehicles/:id/documents" element={<VehicleDocumentsPage />} />
           <Route path="/vehicles/add" element={<AddVehiclePage />} />
 
-          <Route
-            path="/buyer-qr"
-            element={
-              <RoutePlaceholder
-                title="Buyer QR Verification View"
-                subtitle="Protected public vehicle inspection and dynamic watermark view will be integrated in subsequent phases."
-                phase="Phase 2B Route Shell"
-              />
-            }
-          />
+          {/* Maintenance & Service Records History */}
+          <Route path="/service-history" element={<ServiceHistoryPage />} />
+          <Route path="/services" element={<ServiceHistoryPage />} />
+
+          {/* Notifications */}
+          <Route path="/notifications" element={<NotificationsPage />} />
+          <Route path="/notifications/create" element={<CreateNotificationPage />} />
+
+          {/* Expense Tracking */}
+          <Route path="/expenses" element={<ExpenseTrackingPage />} />
+
+          {/* Secure Link Sharing — BR-05 */}
+          <Route path="/sharing/secure-link" element={<SecureLinkSharingPage />} />
+
+          {/* QR Code Sharing — BR-06 */}
+          <Route path="/sharing/qr" element={<QRCodeSharingPage />} />
+
+          {/* Access Permission Management — BR-06 */}
+          <Route path="/sharing/permissions" element={<AccessPermissionManagementPage />} />
+
+          {/* Data Protection / Configure Access Permissions */}
+          <Route path="/sharing/protection" element={<ConfigureAccessPermissionsPage />} />
+
+          {/* Buyer / Public Shared Record View — Protected Passports & Verification */}
+          <Route path="/buyer-qr" element={<BuyerSharedRecordViewPage />} />
+          <Route path="/shared/vehicle/:token" element={<BuyerSharedRecordViewPage />} />
+
+          {/* Verified Garage Service Management — BR-03 */}
+          <Route path="/garage/dashboard" element={<GarageDashboardPage />} />
+          <Route path="/garage" element={<Navigate to="/garage/dashboard" replace />} />
+
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/profile/edit" element={<EditProfilePage />} />
 

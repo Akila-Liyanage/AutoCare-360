@@ -1,0 +1,757 @@
+/* AutoCare 360 - expenses.css
+   Dedicated Stylesheet for Expense Tracking Page
+   Aligned with Figma: Expense tracking.png
+*/
+
+@import './variables.css';
+@import './home.css';
+
+/* --------------------------------------------------------------------------
+   Page Container & Layout
+   -------------------------------------------------------------------------- */
+.autocare-expenses-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f8fafc;
+}
+
+.autocare-expenses-main {
+  flex: 1;
+  padding: 32px 0 80px 0;
+}
+
+.autocare-expenses-container {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* --------------------------------------------------------------------------
+   Top Header Row (Eyebrow + Title + Actions)
+   -------------------------------------------------------------------------- */
+.autocare-expenses-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+
+.autocare-expenses-title-group {
+  flex: 1;
+  min-width: 280px;
+}
+
+.autocare-expenses-eyebrow {
+  display: inline-block;
+  font-size: 11.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  color: #0056A2;
+  margin-bottom: 6px;
+}
+
+.autocare-expenses-title {
+  font-size: 32px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 6px 0;
+  letter-spacing: -0.4px;
+}
+
+.autocare-expenses-subtitle {
+  font-size: 15px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.autocare-expenses-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.autocare-btn-export-csv {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.autocare-btn-export-csv:hover {
+  background-color: #f1f5f9;
+  border-color: #94a3b8;
+  color: #0056A2;
+}
+
+.autocare-btn-add-expense {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #0056A2;
+  color: #ffffff;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 86, 162, 0.25);
+  font-family: inherit;
+}
+
+.autocare-btn-add-expense:hover {
+  background-color: #004482;
+  box-shadow: 0 4px 10px rgba(0, 86, 162, 0.35);
+  transform: translateY(-1px);
+}
+
+/* --------------------------------------------------------------------------
+   Top Summary Metric Cards (4 Columns)
+   -------------------------------------------------------------------------- */
+.autocare-expenses-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.autocare-expense-metric-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 22px 24px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.autocare-expense-metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 86, 162, 0.06);
+}
+
+.autocare-expense-metric-label {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+.autocare-expense-metric-value {
+  font-size: 26px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.5px;
+  margin-bottom: 8px;
+  line-height: 1.2;
+}
+
+.autocare-expense-metric-subtext {
+  font-size: 12.5px;
+  font-weight: 600;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.autocare-expense-metric-subtext.is-blue {
+  color: #0056A2;
+}
+
+.autocare-expense-metric-subtext.is-green {
+  color: #16a34a;
+}
+
+.autocare-expense-metric-subtext.is-amber {
+  color: #d97706;
+}
+
+/* --------------------------------------------------------------------------
+   Middle Row Grid (Spend by Category + Recurring & Budget)
+   -------------------------------------------------------------------------- */
+.autocare-expenses-middle-grid {
+  display: grid;
+  grid-template-columns: 1.55fr 1fr;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.autocare-expenses-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 24px 26px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.autocare-expenses-card-header {
+  margin-bottom: 20px;
+}
+
+.autocare-expenses-card-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 4px 0;
+}
+
+.autocare-expenses-card-subtitle {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+}
+
+/* Category Progress Rows */
+.autocare-spend-category-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.autocare-spend-category-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.autocare-spend-category-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.autocare-spend-category-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.autocare-spend-category-amount {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.autocare-spend-progress-track {
+  width: 100%;
+  height: 8px;
+  background-color: #f1f5f9;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.autocare-spend-progress-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Right Column Stack */
+.autocare-expenses-right-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Recurring & Upcoming items */
+.autocare-recurring-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.autocare-recurring-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.autocare-recurring-item:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.autocare-recurring-left {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.autocare-recurring-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.autocare-recurring-sub {
+  font-size: 12.5px;
+  color: #64748b;
+}
+
+.autocare-recurring-amount {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+  white-space: nowrap;
+}
+
+/* Annual Maintenance Budget Card */
+.autocare-budget-card {
+  background: #f0f8ff;
+  border: 1px solid #c7e0f9;
+  border-radius: 14px;
+  padding: 22px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.autocare-budget-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+.autocare-budget-figures {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.autocare-budget-spent {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.autocare-budget-total {
+  font-size: 14px;
+  font-weight: 500;
+  color: #475569;
+}
+
+.autocare-budget-progress-track {
+  width: 100%;
+  height: 8px;
+  background-color: #dbeafe;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.autocare-budget-progress-fill {
+  height: 100%;
+  background-color: #0056A2;
+  border-radius: 9999px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.autocare-budget-footer-text {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* --------------------------------------------------------------------------
+   Itemized Expense Ledger Section
+   -------------------------------------------------------------------------- */
+.autocare-ledger-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 26px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.autocare-ledger-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+}
+
+.autocare-ledger-title-group {
+  flex: 1;
+  min-width: 280px;
+}
+
+.autocare-ledger-title {
+  font-size: 19px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 4px 0;
+}
+
+.autocare-ledger-subtitle {
+  font-size: 13.5px;
+  color: #64748b;
+  margin: 0;
+}
+
+.autocare-btn-download-invoices {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+  font-weight: 600;
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.autocare-btn-download-invoices:hover {
+  background-color: #f1f5f9;
+  border-color: #94a3b8;
+  color: #0056A2;
+}
+
+/* Ledger Filters Row */
+.autocare-ledger-filters-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.autocare-ledger-search-box {
+  flex: 1;
+  min-width: 260px;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.autocare-ledger-search-icon {
+  position: absolute;
+  left: 14px;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.autocare-ledger-search-input {
+  width: 100%;
+  padding: 9px 36px 9px 40px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: #0f172a;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.autocare-ledger-search-input:focus {
+  outline: none;
+  background-color: #ffffff;
+  border-color: #0056A2;
+  box-shadow: 0 0 0 3px rgba(0, 86, 162, 0.12);
+}
+
+.autocare-ledger-search-clear {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 2px;
+}
+
+.autocare-ledger-search-clear:hover {
+  color: #0f172a;
+}
+
+.autocare-ledger-select {
+  padding: 9px 32px 9px 14px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #0f172a;
+  font-family: inherit;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 16px;
+  transition: all 0.2s ease;
+}
+
+.autocare-ledger-select:focus {
+  outline: none;
+  border-color: #0056A2;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(0, 86, 162, 0.12);
+}
+
+/* Ledger Table */
+.autocare-ledger-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #f1f5f9;
+  border-radius: 10px;
+}
+
+.autocare-ledger-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13.5px;
+}
+
+.autocare-ledger-table th {
+  background-color: #f8fafc;
+  color: #64748b;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  padding: 13px 18px;
+  border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.autocare-ledger-table td {
+  padding: 15px 18px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.autocare-ledger-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.autocare-ledger-table tbody tr:hover {
+  background-color: #fafcff;
+}
+
+.autocare-col-date {
+  color: #475569;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.autocare-col-service {
+  min-width: 240px;
+}
+
+.autocare-service-main {
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 3px;
+  line-height: 1.3;
+}
+
+.autocare-service-provider {
+  font-size: 12.5px;
+  color: #64748b;
+}
+
+.autocare-col-category {
+  color: #475569;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.autocare-invoice-link {
+  color: #0056A2;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.autocare-invoice-link:hover {
+  text-decoration: underline;
+  color: #003c72;
+}
+
+/* Payment Status Badges */
+.autocare-payment-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.autocare-payment-badge.is-paid,
+.autocare-payment-badge.is-auto-paid {
+  background-color: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.autocare-payment-badge.is-pending {
+  background-color: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.autocare-col-amount {
+  text-align: right;
+  font-weight: 800;
+  color: #0f172a;
+  font-size: 14.5px;
+  white-space: nowrap;
+}
+
+.autocare-ledger-table th:last-child {
+  text-align: right;
+}
+
+/* Empty State */
+.autocare-ledger-empty {
+  padding: 48px 24px;
+  text-align: center;
+  color: #64748b;
+}
+
+.autocare-ledger-empty-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 12px 0 6px 0;
+}
+
+.autocare-ledger-empty-sub {
+  font-size: 13.5px;
+  margin: 0 0 16px 0;
+}
+
+.autocare-btn-reset-filters {
+  background-color: #f1f5f9;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.autocare-btn-reset-filters:hover {
+  background-color: #e2e8f0;
+}
+
+/* --------------------------------------------------------------------------
+   Toast Notice
+   -------------------------------------------------------------------------- */
+.autocare-expenses-toast {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  background-color: #0f172a;
+  color: #ffffff;
+  padding: 14px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 9999;
+  animation: autocareSlideUpFade 0.25s ease-out;
+}
+
+.autocare-expenses-toast.is-success {
+  background-color: #064e3b;
+  border: 1px solid #059669;
+}
+
+.autocare-expenses-toast.is-info {
+  background-color: #0f172a;
+  border: 1px solid #334155;
+}
+
+@keyframes autocareSlideUpFade {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Responsive Breakpoints
+   -------------------------------------------------------------------------- */
+@media (max-width: 1024px) {
+  .autocare-expenses-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .autocare-expenses-middle-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .autocare-expenses-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .autocare-expenses-header-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .autocare-expenses-actions {
+    justify-content: flex-start;
+  }
+
+  .autocare-btn-export-csv,
+  .autocare-btn-add-expense {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .autocare-ledger-filters-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .autocare-ledger-select {
+    width: 100%;
+  }
+}

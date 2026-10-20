@@ -1,0 +1,581 @@
+/* AutoCare 360 - protection.css
+   Dedicated Stylesheet for Data Protection / Configure Access Permissions
+   Aligned strictly with Figma: Data Protection Requirements.png
+*/
+
+@import './variables.css';
+@import './home.css';
+
+/* --------------------------------------------------------------------------
+   Page Layout & Container
+   -------------------------------------------------------------------------- */
+.autocare-protect-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f8fafc;
+}
+
+.autocare-protect-main {
+  flex: 1;
+  padding: 32px 0 72px 0;
+}
+
+.autocare-protect-container {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* --------------------------------------------------------------------------
+   Breadcrumb / Back Navigation
+   -------------------------------------------------------------------------- */
+.autocare-protect-back-nav {
+  margin-bottom: 20px;
+}
+
+.autocare-protect-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  color: #0056A2;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.autocare-protect-back-btn:hover {
+  background: #eff6ff;
+  color: #004684;
+}
+
+/* --------------------------------------------------------------------------
+   Header Block matching Figma
+   -------------------------------------------------------------------------- */
+.autocare-protect-header {
+  margin-bottom: 28px;
+}
+
+.autocare-protect-context-tag {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.autocare-protect-tag-blue {
+  color: #0056A2;
+}
+
+.autocare-protect-tag-dot {
+  color: #94a3b8;
+}
+
+.autocare-protect-tag-muted {
+  color: #64748b;
+  font-weight: 700;
+}
+
+.autocare-protect-title {
+  font-size: 32px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 10px 0;
+  letter-spacing: -0.6px;
+}
+
+.autocare-protect-subtitle {
+  font-size: 14.5px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.55;
+  max-width: 980px;
+}
+
+/* --------------------------------------------------------------------------
+   2-Column Layout Grid
+   -------------------------------------------------------------------------- */
+.autocare-protect-grid {
+  display: grid;
+  grid-template-columns: 1.45fr 1fr;
+  gap: 28px;
+  align-items: start;
+}
+
+/* --------------------------------------------------------------------------
+   Left Column: Configuration Card
+   -------------------------------------------------------------------------- */
+.autocare-protect-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 28px 30px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+}
+
+.autocare-protect-section {
+  margin-bottom: 32px;
+}
+
+.autocare-protect-section:last-child {
+  margin-bottom: 0;
+}
+
+.autocare-protect-section-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 16px 0;
+  letter-spacing: -0.2px;
+}
+
+/* Segmented Control Bar (Secure URL Key vs QR Authorization) */
+.autocare-protect-segmented-bar {
+  display: flex;
+  background-color: #f1f5f9;
+  padding: 4px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  gap: 4px;
+}
+
+.autocare-protect-segment-btn {
+  flex: 1;
+  padding: 9px 16px;
+  font-size: 13.5px;
+  font-weight: 700;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.autocare-protect-segment-btn.is-active {
+  background-color: #ffffff;
+  color: #0056A2;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.autocare-protect-segment-btn:hover:not(.is-active) {
+  color: #334155;
+}
+
+/* Form Groups */
+.autocare-protect-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+
+.autocare-protect-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.autocare-protect-input {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 11px 14px;
+  font-size: 14px;
+  color: #0f172a;
+  background-color: #f8fafc;
+  outline: none;
+  transition: all 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.autocare-protect-input:focus {
+  border-color: #0056A2;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(0, 86, 162, 0.12);
+}
+
+/* Expiry Row with 2 Side-by-Side Inputs */
+.autocare-protect-expiry-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.autocare-protect-input-icon-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.autocare-protect-input-icon-wrap .autocare-protect-input {
+  padding-right: 36px;
+}
+
+.autocare-protect-input-icon {
+  position: absolute;
+  right: 12px;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.autocare-protect-input-alert {
+  color: #dc2626 !important;
+  font-weight: 600;
+}
+
+/* Data Visibility Scope Cards Grid */
+.autocare-protect-scope-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.autocare-protect-scope-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px 14px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.autocare-protect-scope-card:hover {
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+}
+
+.autocare-protect-scope-card.is-selected {
+  background-color: #e0f2fe;
+  border-color: #0056A2;
+  box-shadow: 0 2px 8px rgba(0, 86, 162, 0.08);
+}
+
+.autocare-protect-scope-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+.autocare-protect-scope-desc {
+  font-size: 12px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Checkboxes Group */
+.autocare-protect-checkboxes-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.autocare-protect-checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 13.5px;
+  color: #334155;
+  font-weight: 500;
+  user-select: none;
+}
+
+.autocare-protect-checkbox-item input[type='checkbox'] {
+  width: 17px;
+  height: 17px;
+  accent-color: #0056A2;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+/* --------------------------------------------------------------------------
+   Right Column: Live Preview & Credentials Key
+   -------------------------------------------------------------------------- */
+.autocare-protect-right-col {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Live Passport Preview Card */
+.autocare-protect-preview-card {
+  background-color: #0c1a30;
+  border: 1px solid #1e293b;
+  border-radius: 18px;
+  padding: 24px 26px;
+  box-shadow: 0 8px 24px -4px rgba(12, 26, 48, 0.2);
+  color: #ffffff;
+}
+
+.autocare-protect-preview-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.autocare-protect-preview-label {
+  font-size: 12px;
+  font-weight: 800;
+  color: #38bdf8;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.autocare-protect-badge-protected {
+  display: inline-block;
+  background-color: #7f1d1d;
+  border: 1px solid #991b1b;
+  color: #fca5a5;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* Inner Vehicle Passport Box with Watermark */
+.autocare-protect-passport-box {
+  background: #14223d;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.autocare-protect-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-16deg);
+  font-size: 24px;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.08);
+  letter-spacing: 2.5px;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+  text-transform: uppercase;
+}
+
+.autocare-protect-passport-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 10px 0;
+}
+
+.autocare-protect-passport-specs {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12.5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: #94a3b8;
+}
+
+.autocare-protect-spec-highlight {
+  color: #38bdf8;
+}
+
+.autocare-protect-preview-note {
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.45;
+  margin: 0 0 20px 0;
+}
+
+.autocare-protect-btn-generate {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: #22c55e;
+  color: #ffffff;
+  border: none;
+  font-size: 14.5px;
+  font-weight: 800;
+  padding: 12px 24px;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  box-shadow: 0 2px 10px rgba(34, 197, 94, 0.3);
+}
+
+.autocare-protect-btn-generate:hover {
+  background-color: #16a34a;
+  transform: translateY(-1px);
+}
+
+/* Active Credentials Key Card */
+.autocare-protect-creds-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 22px 24px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+}
+
+.autocare-protect-creds-title {
+  font-size: 15.5px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 14px 0;
+  letter-spacing: -0.2px;
+}
+
+.autocare-protect-creds-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.autocare-protect-creds-input {
+  flex: 1;
+  background-color: #f0f7ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #0056A2;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  outline: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.autocare-protect-btn-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #0056A2;
+  color: #ffffff;
+  border: none;
+  font-size: 13.5px;
+  font-weight: 700;
+  padding: 10px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.autocare-protect-btn-copy:hover {
+  background-color: #004684;
+}
+
+/* --------------------------------------------------------------------------
+   Toast Banner
+   -------------------------------------------------------------------------- */
+.autocare-protect-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  font-weight: 600;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  animation: slideProtectToast 0.3s ease;
+}
+
+@keyframes slideProtectToast {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.autocare-protect-toast.is-success {
+  background-color: #0f172a;
+  color: #ffffff;
+  border-left: 4px solid #16a34a;
+}
+
+.autocare-protect-toast.is-info {
+  background-color: #0f172a;
+  color: #ffffff;
+  border-left: 4px solid #0284c7;
+}
+
+.autocare-protect-toast-close {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.autocare-protect-toast-close:hover {
+  color: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive Breakpoints
+   -------------------------------------------------------------------------- */
+@media (max-width: 992px) {
+  .autocare-protect-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .autocare-protect-scope-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .autocare-protect-title {
+    font-size: 26px;
+  }
+
+  .autocare-protect-expiry-row {
+    grid-template-columns: 1fr;
+  }
+
+  .autocare-protect-creds-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .autocare-protect-btn-copy {
+    justify-content: center;
+  }
+}
