@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import {
   Download,
   Plus,
@@ -10,7 +10,8 @@ import {
   ExternalLink,
   Receipt,
   RefreshCw,
-  AlertTriangle
+  AlertTriangle,
+  ArrowLeft
 } from 'lucide-react';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
@@ -432,6 +433,18 @@ export const ExpenseTrackingPage: React.FC = () => {
 
       <main className="autocare-expenses-main">
         <div className="autocare-expenses-container">
+          {/* Back Navigation */}
+          <div className="autocare-docs-back-nav">
+            <Link
+              to={selectedVehicleId ? `/vehicles/${selectedVehicleId}` : '/vehicles'}
+              className="autocare-docs-back-btn"
+              title="Return to vehicle details"
+            >
+              <ArrowLeft size={16} />
+              <span>{selectedVehicleId ? 'Back to vehicle details' : 'Back to My Vehicles'}</span>
+            </Link>
+          </div>
+
           {/* Top Header Row */}
           <div className="autocare-expenses-header-row">
             <div className="autocare-expenses-title-group">

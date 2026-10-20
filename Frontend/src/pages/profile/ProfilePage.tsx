@@ -12,7 +12,6 @@ import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import { useAuth } from '../../hooks/useAuth';
 import { getMyVehicles, type Vehicle } from '../../services/vehicleService';
-import defaultVehicleHeroImg from '../../assets/vehicles/default-vehicle-hero.png';
 import '../../styles/profile.css';
 
 const resolveImageUrl = (img?: string): string | undefined => {
@@ -372,14 +371,32 @@ export const ProfilePage: React.FC = () => {
               <div className="autocare-profile-vehicles-grid">
                 {vehicles.map((v) => (
                   <div key={v._id} className="autocare-profile-vehicle-card">
-                    <img
-                      src={v.imageUrl || defaultVehicleHeroImg}
-                      alt={`${v.manufacturer} ${v.model}`}
-                      className="autocare-profile-vehicle-thumb"
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).src = defaultVehicleHeroImg;
-                      }}
-                    />
+                    {resolveImageUrl(v.imageUrl) ? (
+                      <img
+                        src={resolveImageUrl(v.imageUrl)}
+                        alt={`${v.manufacturer} ${v.model}`}
+                        className="autocare-profile-vehicle-thumb"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <div
+                        className="autocare-profile-vehicle-thumb"
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          backgroundColor: '#f1f5f9',
+                          color: '#64748b',
+                          gap: '4px'
+                        }}
+                      >
+                        <Car size={24} style={{ color: '#94a3b8' }} />
+                        <span style={{ fontSize: '11px', fontWeight: 600 }}>No image</span>
+                      </div>
+                    )}
                     <div className="autocare-profile-vehicle-info">
                       <div className="autocare-profile-vehicle-top">
                         <h4 className="autocare-profile-vehicle-name">

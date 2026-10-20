@@ -1,3 +1,5 @@
+const path = require('path');
+const fs = require('fs');
 const mongoose = require('mongoose');
 const Vehicle = require('../models/Vehicle');
 
@@ -169,7 +171,7 @@ const getVehicleById = async (req, res, next) => {
       });
     }
 
-    const vehicle = await Vehicle.findById(id);
+    const vehicle = await Vehicle.findById(id).populate('ownerId', 'fullName email phone');
 
     if (!vehicle) {
       return res.status(404).json({
@@ -179,7 +181,8 @@ const getVehicleById = async (req, res, next) => {
     }
 
     // Tenant isolation: Owner can only access their own vehicle
-    if (vehicle.ownerId.toString() !== req.user._id.toString()) {
+    const ownerIdStr = vehicle.ownerId?._id ? vehicle.ownerId._id.toString() : vehicle.ownerId?.toString();
+    if (ownerIdStr !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
         message: 'Access denied. You do not have permission to view this vehicle passport.',
@@ -309,12 +312,13 @@ const updateVehicle = async (req, res, next) => {
     }
 
     await vehicle.save();
+    const populated = await Vehicle.findById(vehicle._id).populate('ownerId', 'fullName email phone');
 
     return res.status(200).json({
       success: true,
       message: 'Vehicle digital passport updated successfully.',
       data: {
-        vehicle,
+        vehicle: populated,
       },
     });
   } catch (error) {
@@ -329,9 +333,77 @@ const updateVehicle = async (req, res, next) => {
   }
 };
 
+// @desc    Upload vehicle image (multipart/form-data)
+// @route   POST /api/vehicles/:id/image
+// @access  Private (Owner Only)
+const uploadVehicleImage = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid vehicle ID format.',
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No image file was provided. Please choose a JPG, PNG, or WEBP image.',
+      });
+    }
+
+    const vehicle = await Vehicle.findById(id);
+    if (!vehicle) {
+      return res.status(404).json({
+        success: false,
+        message: 'Vehicle passport not found.',
+      });
+    }
+
+    if (vehicle.ownerId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. You do not have permission to modify this vehicle.',
+      });
+    }
+
+    // Clean up previous image if stored locally
+    if (vehicle.imageUrl && vehicle.imageUrl.includes('/uploads/vehicles/')) {
+      try {
+        const oldFilename = path.basename(vehicle.imageUrl);
+        const oldFilePath = path.join(__dirname, '../../uploads/vehicles', oldFilename);
+        if (fs.existsSync(oldFilePath)) {
+          fs.unlinkSync(oldFilePath);
+        }
+      } catch (cleanErr) {
+        console.warn('[Vehicle Image Cleanup Notice]:', cleanErr.message);
+      }
+    }
+
+    const imageUrl = `${req.protocol}://${req.get('host')}/uploads/vehicles/${req.file.filename}`;
+    vehicle.imageUrl = imageUrl;
+    await vehicle.save();
+
+    const populated = await Vehicle.findById(vehicle._id).populate('ownerId', 'fullName email phone');
+
+    return res.status(200).json({
+      success: true,
+      message: 'Vehicle image uploaded successfully.',
+      data: {
+        vehicle: populated,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createVehicle,
   getMyVehicles,
   getVehicleById,
   updateVehicle,
+  uploadVehicleImage,
 };

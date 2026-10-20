@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { useLocation, useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams, Link } from 'react-router-dom';
 import {
   Search,
   Bell,
@@ -12,7 +12,8 @@ import {
   Clock,
   X,
   Loader2,
-  RotateCw
+  RotateCw,
+  ArrowLeft
 } from 'lucide-react';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
@@ -350,6 +351,31 @@ export const ServiceHistoryPage: React.FC = () => {
 
       <main className="autocare-services-main">
         <div className="autocare-services-container">
+          {/* Back Navigation */}
+          <div style={{ marginBottom: '14px' }}>
+            <Link
+              to={currentVehicle ? `/vehicles/${currentVehicle._id}` : '/vehicles'}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: 'transparent',
+                border: 'none',
+                color: '#0056A2',
+                fontSize: '13.5px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                textDecoration: 'none',
+                padding: '6px 12px',
+                borderRadius: '8px',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <ArrowLeft size={16} />
+              <span>{currentVehicle ? 'Back to vehicle details' : 'Back to My Vehicles'}</span>
+            </Link>
+          </div>
+
           {/* Top Header Row (Title + Vehicle Identity + Toolbar) */}
           <div className="autocare-services-header-row">
             <div>

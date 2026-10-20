@@ -113,6 +113,9 @@ app.use('/api/vehicles/:vehicleId/documents', documentRoutes);
 // Static serving for uploaded documents
 app.use('/uploads/documents', express.static(path.join(__dirname, '../uploads/documents')));
 
+// Static serving for uploaded vehicle images
+app.use('/uploads/vehicles', express.static(path.join(__dirname, '../uploads/vehicles')));
+
 // Mount Vehicle Expense Tracking Routes
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/vehicles/:vehicleId/expenses', expenseRoutes);

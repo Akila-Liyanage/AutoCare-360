@@ -104,10 +104,26 @@ export const updateVehicle = async (
   return response.data?.data?.vehicle;
 };
 
+/**
+ * Upload vehicle image (multipart/form-data)
+ * POST /api/vehicles/:id/image
+ */
+export const uploadVehicleImage = async (id: string, file: File): Promise<Vehicle> => {
+  const formData = new FormData();
+  formData.append('image', file);
+  const response = await api.post<CreateVehicleResponse>(`/vehicles/${id}/image`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data?.data?.vehicle;
+};
+
 export default {
   getMyVehicles,
   getVehicleById,
   createVehicle,
   updateVehicle,
+  uploadVehicleImage,
 };
 

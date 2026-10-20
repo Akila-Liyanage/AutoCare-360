@@ -14,12 +14,19 @@ import {
   Loader2,
   Ban,
   RefreshCw,
+  Car,
 } from 'lucide-react';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
-import defaultHeroImg from '../../assets/vehicles/default-vehicle-hero.png';
 import { useAuth } from '../../hooks/useAuth';
 import { getVehicleById, getMyVehicles, type Vehicle } from '../../services/vehicleService';
+
+const resolveImageUrl = (img?: string): string | undefined => {
+  if (!img) return undefined;
+  if (img.startsWith('http://') || img.startsWith('https://') || img.startsWith('blob:')) return img;
+  const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '');
+  return `${base}${img.startsWith('/') ? '' : '/'}${img}`;
+};
 import {
   createTransferRequest,
   getOutgoingTransfers,
@@ -166,6 +173,11 @@ export const TransferVehiclePage: React.FC = () => {
 
       const latest = forThisVehicle[0];
 
+      const realOwnerName =
+        typeof currentVehicle.ownerId === 'object' && currentVehicle.ownerId !== null && (currentVehicle.ownerId as { fullName?: string }).fullName
+          ? (currentVehicle.ownerId as { fullName?: string }).fullName || user?.fullName || 'Current Registered Owner'
+          : user?.fullName || 'Current Registered Owner';
+
       if (pending) {
         setCurrentOwner(`${pending.recipientName || pending.recipientEmail} (Pending Handover)`);
         setTransferStatus('pending');
@@ -183,14 +195,14 @@ export const TransferVehiclePage: React.FC = () => {
           ).toLocaleDateString()}`
         );
       } else if (latest && latest.status === 'rejected') {
-        setCurrentOwner(user?.fullName || 'Current Registered Owner');
+        setCurrentOwner(realOwnerName);
         setTransferStatus('compliant');
         setTransferStatusText('● TRANSFER REJECTED');
         setAuditSubtext(
           `Previous transfer was declined by recipient${latest.notes ? `: "${latest.notes}"` : ''}`
         );
       } else if (latest && latest.status === 'cancelled') {
-        setCurrentOwner(user?.fullName || 'Current Registered Owner');
+        setCurrentOwner(realOwnerName);
         setTransferStatus('compliant');
         setTransferStatusText('● TRANSFER CANCELLED');
         setAuditSubtext(
@@ -199,7 +211,7 @@ export const TransferVehiclePage: React.FC = () => {
           ).toLocaleDateString()}`
         );
       } else {
-        setCurrentOwner(user?.fullName || 'Current Registered Owner');
+        setCurrentOwner(realOwnerName);
         setTransferStatus('compliant');
         setTransferStatusText('● FULLY COMPLIANT');
         setAuditSubtext('Audit status verified 100% complete');
@@ -530,14 +542,35 @@ export const TransferVehiclePage: React.FC = () => {
               <section className="autocare-transfer-hero-card" aria-label="Selected Vehicle Information">
                 <div className="autocare-transfer-hero-left">
                   <div className="autocare-transfer-hero-thumb">
-                    <img
-                      src={vehicle.imageUrl || defaultHeroImg}
-                      alt={`${vehicle.manufacturer} ${vehicle.model}`}
-                      loading="lazy"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = defaultHeroImg;
-                      }}
-                    />
+                    {resolveImageUrl(vehicle.imageUrl) ? (
+                      <img
+                        src={resolveImageUrl(vehicle.imageUrl)}
+                        alt={`${vehicle.manufacturer} ${vehicle.model}`}
+                        loading="lazy"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: '100%',
+                          height: '100%',
+                          backgroundColor: '#f1f5f9',
+                          color: '#64748b',
+                          gap: '4px',
+                          textAlign: 'center',
+                          padding: '12px'
+                        }}
+                      >
+                        <Car size={32} style={{ color: '#94a3b8' }} />
+                        <span style={{ fontSize: '11px', fontWeight: 600 }}>No vehicle image</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="autocare-transfer-hero-info">
