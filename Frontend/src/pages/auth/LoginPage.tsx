@@ -98,7 +98,10 @@ export const LoginPage: React.FC = () => {
 
       // Smooth brief transition to authenticated workspace
       setTimeout(() => {
-        if (selectedRole === 'garage' || response.data?.user?.role === 'garage') {
+        const userRole = response.data?.user?.role;
+        if (userRole === 'admin') {
+          navigate('/admin/garages');
+        } else if (selectedRole === 'garage' || userRole === 'garage') {
           navigate('/garage/dashboard');
         } else {
           navigate('/dashboard');

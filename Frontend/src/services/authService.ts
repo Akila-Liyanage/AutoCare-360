@@ -45,6 +45,10 @@ export interface RegisterPayload {
   phone: string;
   password: string;
   role: 'owner' | 'garage';
+  workshopName?: string;
+  businessRegNumber?: string;
+  city?: string;
+  address?: string;
 }
 
 export interface LoginPayload {

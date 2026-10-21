@@ -23,6 +23,10 @@ import QRCodeSharingPage from './pages/sharing/QRCodeSharingPage';
 import AccessPermissionManagementPage from './pages/sharing/AccessPermissionManagementPage';
 import ConfigureAccessPermissionsPage from './pages/sharing/ConfigureAccessPermissionsPage';
 import BuyerSharedRecordViewPage from './pages/sharing/BuyerSharedRecordViewPage';
+
+// Verified Garage Service Management — BR-03
+import GarageProtectedRoute from './components/auth/GarageProtectedRoute';
+import GarageVerificationPendingPage from './pages/garage/GarageVerificationPendingPage';
 import GarageDashboardPage from './pages/garage/GarageDashboardPage';
 import GarageVehiclesPage from './pages/garage/GarageVehiclesPage';
 import GarageVehicleDetailsPage from './pages/garage/GarageVehicleDetailsPage';
@@ -31,6 +35,17 @@ import GarageDocumentsPage from './pages/garage/GarageDocumentsPage';
 import GarageSharingPage from './pages/garage/GarageSharingPage';
 import GarageAuditTrailPage from './pages/garage/GarageAuditTrailPage';
 import AddMaintenanceRecordPage from './pages/garage/AddMaintenanceRecordPage';
+import GarageQuotationsListPage from './pages/garage/GarageQuotationsListPage';
+import GarageQuotationPage from './pages/garage/GarageQuotationPage';
+import GarageInvoicesListPage from './pages/garage/GarageInvoicesListPage';
+import GarageInvoicePage from './pages/garage/GarageInvoicePage';
+import GarageNotificationsPage from './pages/garage/GarageNotificationsPage';
+import GarageProfilePage from './pages/garage/GarageProfilePage';
+
+// Admin Garage Verification — FR-04
+import AdminProtectedRoute from './components/auth/AdminProtectedRoute';
+import AdminGarageVerificationPage from './pages/admin/AdminGarageVerificationPage';
+import AdminGarageDetailsPage from './pages/admin/AdminGarageDetailsPage';
 import './App.css';
 
 export const App: React.FC = () => {
@@ -83,17 +98,146 @@ export const App: React.FC = () => {
           <Route path="/buyer-qr" element={<BuyerSharedRecordViewPage />} />
           <Route path="/shared/vehicle/:token" element={<BuyerSharedRecordViewPage />} />
 
-          {/* Verified Garage Service Management — BR-03 */}
-          <Route path="/garage/dashboard" element={<GarageDashboardPage />} />
-          <Route path="/garage/vehicles" element={<GarageVehiclesPage />} />
-          <Route path="/garage/vehicles/:id" element={<GarageVehicleDetailsPage />} />
-          <Route path="/garage/service-records" element={<GarageServiceRecordsPage />} />
-          <Route path="/garage/maintenance/new" element={<AddMaintenanceRecordPage />} />
-          <Route path="/garage/services/new" element={<Navigate to="/garage/maintenance/new" replace />} />
-          <Route path="/garage/documents" element={<GarageDocumentsPage />} />
-          <Route path="/garage/sharing" element={<GarageSharingPage />} />
-          <Route path="/garage/audit" element={<GarageAuditTrailPage />} />
+          {/* Garage Partner Verification Pending (Publicly accessible post-register) */}
+          <Route path="/garage/verification-pending" element={<GarageVerificationPendingPage />} />
+
+          {/* Verified Garage Service Management — BR-03 (Protected Routes) */}
+          <Route
+            path="/garage/dashboard"
+            element={
+              <GarageProtectedRoute>
+                <GarageDashboardPage />
+              </GarageProtectedRoute>
+            }
+          />
+          <Route
+            path="/garage/vehicles"
+            element={
+              <GarageProtectedRoute>
+                <GarageVehiclesPage />
+              </GarageProtectedRoute>
+            }
+          />
+          <Route
+            path="/garage/vehicles/:id"
+            element={
+              <GarageProtectedRoute>
+                <GarageVehicleDetailsPage />
+              </GarageProtectedRoute>
+            }
+          />
+          <Route
+            path="/garage/service-records"
+            element={
+              <GarageProtectedRoute>
+                <GarageServiceRecordsPage />
+              </GarageProtectedRoute>
+            }
+          />
+          <Route
+            path="/garage/maintenance/new"
+            element={
+              <GarageProtectedRoute>
+                <AddMaintenanceRecordPage />
+              </GarageProtectedRoute>
+            }
+          />
+          <Route
+            path="/garage/services/new"
+            element={<Navigate to="/garage/maintenance/new" replace />}
+          />
+          <Route
+            path="/garage/quotations"
+            element={
+              <GarageProtectedRoute>
+                <GarageQuotationsListPage />
+              </GarageProtectedRoute>
+            }
+          />
+          <Route
+            path="/garage/quotation/new"
+            element={
+              <GarageProtectedRoute>
+                <GarageQuotationPage />
+              </GarageProtectedRoute>
+            }
+          />
+          <Route
+            path="/garage/invoices"
+            element={
+              <GarageProtectedRoute>
+                <GarageInvoicesListPage />
+              </GarageProtectedRoute>
+            }
+          />
+          <Route
+            path="/garage/invoice/new"
+            element={
+              <GarageProtectedRoute>
+                <GarageInvoicePage />
+              </GarageProtectedRoute>
+            }
+          />
+          <Route
+            path="/garage/notifications"
+            element={
+              <GarageProtectedRoute>
+                <GarageNotificationsPage />
+              </GarageProtectedRoute>
+            }
+          />
+          <Route
+            path="/garage/documents"
+            element={
+              <GarageProtectedRoute>
+                <GarageDocumentsPage />
+              </GarageProtectedRoute>
+            }
+          />
+          <Route
+            path="/garage/sharing"
+            element={
+              <GarageProtectedRoute>
+                <GarageSharingPage />
+              </GarageProtectedRoute>
+            }
+          />
+          <Route
+            path="/garage/audit"
+            element={
+              <GarageProtectedRoute>
+                <GarageAuditTrailPage />
+              </GarageProtectedRoute>
+            }
+          />
+          <Route
+            path="/garage/profile"
+            element={
+              <GarageProtectedRoute>
+                <GarageProfilePage />
+              </GarageProtectedRoute>
+            }
+          />
           <Route path="/garage" element={<Navigate to="/garage/dashboard" replace />} />
+
+          {/* Admin Minimal Module — Garage Verification Only */}
+          <Route
+            path="/admin/garages"
+            element={
+              <AdminProtectedRoute>
+                <AdminGarageVerificationPage />
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/garages/:id"
+            element={
+              <AdminProtectedRoute>
+                <AdminGarageDetailsPage />
+              </AdminProtectedRoute>
+            }
+          />
+          <Route path="/admin" element={<Navigate to="/admin/garages" replace />} />
 
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/profile/edit" element={<EditProfilePage />} />

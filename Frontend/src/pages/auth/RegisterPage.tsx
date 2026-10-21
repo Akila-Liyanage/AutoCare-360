@@ -208,6 +208,9 @@ export const RegisterPage: React.FC = () => {
         phone: formData.phone.trim(),
         password: formData.password,
         role: selectedRole,
+        workshopName: formData.workshopName.trim(),
+        businessRegNumber: formData.businessRegNumber.trim(),
+        city: formData.city.trim(),
       });
 
       setApiSuccess(
@@ -217,9 +220,30 @@ export const RegisterPage: React.FC = () => {
             : 'Vehicle owner account registered successfully.')
       );
 
-      // Transition to authenticated workspace placeholder
+      if (selectedRole === 'garage') {
+        const pendingData = {
+          workshopName: formData.workshopName.trim() || formData.fullName.trim(),
+          businessRegNumber: formData.businessRegNumber.trim(),
+          city: formData.city.trim(),
+          email: formData.email.trim(),
+        };
+        localStorage.setItem('autocare_pending_garage', JSON.stringify(pendingData));
+      }
+
+      // Transition to appropriate workspace
       setTimeout(() => {
-        navigate('/dashboard');
+        if (selectedRole === 'garage') {
+          navigate('/garage/verification-pending', {
+            state: {
+              workshopName: formData.workshopName.trim() || formData.fullName.trim(),
+              businessRegNumber: formData.businessRegNumber.trim(),
+              city: formData.city.trim(),
+              email: formData.email.trim(),
+            },
+          });
+        } else {
+          navigate('/dashboard');
+        }
       }, 900);
     } catch (err: unknown) {
       const errorMessage =
