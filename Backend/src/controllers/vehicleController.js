@@ -200,7 +200,7 @@ const getVehicleById = async (req, res, next) => {
       });
     }
 
-    const vehicle = await Vehicle.findById(id);
+    const vehicle = await Vehicle.findById(id).populate('ownerId', 'fullName email phone');
 
     if (!vehicle) {
       return res.status(404).json({
@@ -211,7 +211,8 @@ const getVehicleById = async (req, res, next) => {
 
     // Tenant isolation: Owner can only access their own vehicle; verified garages and admins can inspect
     const isOwner = req.user.role === 'owner';
-    if (isOwner && vehicle.ownerId.toString() !== req.user._id.toString()) {
+    const ownerIdStr = vehicle.ownerId?._id ? vehicle.ownerId._id.toString() : vehicle.ownerId?.toString();
+    if (isOwner && ownerIdStr !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
         message: 'Access denied. You do not have permission to view this vehicle passport.',
@@ -355,12 +356,13 @@ const updateVehicle = async (req, res, next) => {
     }
 
     await vehicle.save();
+    const populated = await Vehicle.findById(vehicle._id).populate('ownerId', 'fullName email phone');
 
     return res.status(200).json({
       success: true,
       message: 'Vehicle digital passport updated successfully.',
       data: {
-        vehicle,
+        vehicle: populated,
       },
     });
   } catch (error) {
@@ -452,7 +454,8 @@ const getVehicleAuditLogs = async (req, res, next) => {
     }
 
     // Owner authorization: owners can only inspect their own vehicle logs
-    if (req.user.role === 'owner' && vehicle.ownerId.toString() !== req.user._id.toString()) {
+    const ownerIdStr = vehicle.ownerId?._id ? vehicle.ownerId._id.toString() : vehicle.ownerId?.toString();
+    if (req.user.role === 'owner' && ownerIdStr !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
         message: 'Access denied. You do not have permission to view audit logs for this vehicle.',
@@ -516,6 +519,13 @@ const updateVehiclePhoto = async (req, res, next) => {
       });
     }
 
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid vehicle image file (JPG, PNG, WEBP).',
+      });
+    }
+
     const vehicle = await Vehicle.findById(id);
     if (!vehicle) {
       cleanupUploadedFile(req.file);
@@ -525,7 +535,8 @@ const updateVehiclePhoto = async (req, res, next) => {
       });
     }
 
-    if (vehicle.ownerId.toString() !== req.user._id.toString()) {
+    const ownerIdStr = vehicle.ownerId?._id ? vehicle.ownerId._id.toString() : vehicle.ownerId?.toString();
+    if (ownerIdStr !== req.user._id.toString()) {
       cleanupUploadedFile(req.file);
       return res.status(403).json({
         success: false,
@@ -533,14 +544,7 @@ const updateVehiclePhoto = async (req, res, next) => {
       });
     }
 
-    if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please provide a vehicle photo to upload.',
-      });
-    }
-
-    // Clean up previous uploaded image if one existed
+    // Clean up previous uploaded image if one existed locally
     if (vehicle.imageUrl && vehicle.imageUrl.includes('/uploads/vehicles/')) {
       try {
         const oldFilename = path.basename(vehicle.imageUrl);
@@ -557,11 +561,13 @@ const updateVehiclePhoto = async (req, res, next) => {
     vehicle.imageUrl = imageUrl;
     await vehicle.save();
 
+    const populated = await Vehicle.findById(vehicle._id).populate('ownerId', 'fullName email phone');
+
     return res.status(200).json({
       success: true,
       message: 'Vehicle photo updated successfully.',
       data: {
-        vehicle,
+        vehicle: populated || vehicle,
         imageUrl,
       },
     });
@@ -580,5 +586,6 @@ module.exports = {
   getVehicleAuditLogs,
   uploadVehiclePhoto,
   updateVehiclePhoto,
+  uploadVehicleImage: updateVehiclePhoto,
 };
 

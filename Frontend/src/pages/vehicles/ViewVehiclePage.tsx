@@ -15,7 +15,10 @@ import {
   Clock,
   X,
   RefreshCw,
-  ArrowLeft
+  ArrowLeft,
+  Car,
+  Upload,
+  Trash2
 } from 'lucide-react';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
@@ -31,10 +34,6 @@ import {
   getVehicleServiceRecords,
   type BackendServiceRecord
 } from '../../services/serviceService';
-
-// Cropped default asset extracted directly from Figma reference
-import defaultHeroImg from '../../assets/vehicles/default-vehicle-hero.png';
-import fallbackVehicleImg from '../../assets/auth/vehicle_owner_bg.jpg';
 
 export const ViewVehiclePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -58,10 +57,12 @@ export const ViewVehiclePage: React.FC = () => {
   const [editColor, setEditColor] = useState<string>('');
   const [editTransmission, setEditTransmission] = useState<string>('Automatic');
   const [editStatus, setEditStatus] = useState<'Active' | 'In Service' | 'Archived'>('Active');
-  const [editPhotoFile, setEditPhotoFile] = useState<File | null>(null);
-  const [editPhotoPreview, setEditPhotoPreview] = useState<string | null>(null);
+  const [editImageFile, setEditImageFile] = useState<File | null>(null);
+  const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
+  const [removeCurrentImage, setRemoveCurrentImage] = useState<boolean>(false);
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
+  const [failedHeroImgUrl, setFailedHeroImgUrl] = useState<string | null>(null);
 
   // Recent service history records
   const [recentServices, setRecentServices] = useState<BackendServiceRecord[]>([]);
@@ -117,33 +118,39 @@ export const ViewVehiclePage: React.FC = () => {
     setEditColor(vehicle.color || '');
     setEditTransmission(vehicle.transmission || 'Automatic');
     setEditStatus(vehicle.status || 'Active');
-    setEditPhotoFile(null);
-    setEditPhotoPreview(null);
+    setEditImageFile(null);
+    setEditImagePreview(vehicle.imageUrl ? resolveImageUrl(vehicle.imageUrl) || null : null);
+    setRemoveCurrentImage(false);
     setUpdateError(null);
     setIsEditModalOpen(true);
   };
 
-  // Submit PATCH to /api/vehicles/:id
+  // Submit PATCH to /api/vehicles/:id and optional image upload
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!vehicle) return;
+
+    const mileageNum = Number(editMileage);
+    if (isNaN(mileageNum) || mileageNum < 0) {
+      setUpdateError('Current mileage must be a non-negative number.');
+      return;
+    }
 
     try {
       setIsUpdating(true);
       setUpdateError(null);
 
-      let newImageUrl = vehicle.imageUrl;
-      if (editPhotoFile) {
-        newImageUrl = await uploadVehicleImage(editPhotoFile);
-      }
-
-      const updated = await updateVehicle(vehicle._id, {
-        currentMileage: Number(editMileage) || 0,
+      let updated = await updateVehicle(vehicle._id, {
+        currentMileage: mileageNum,
         color: editColor.trim(),
         transmission: editTransmission,
         status: editStatus,
-        ...(editPhotoFile ? { imageUrl: newImageUrl } : {}),
+        ...(removeCurrentImage ? { imageUrl: '' } : {}),
       });
+
+      if (editImageFile) {
+        updated = await uploadVehicleImage(vehicle._id, editImageFile);
+      }
 
       setVehicle(updated);
       setIsEditModalOpen(false);
@@ -211,6 +218,25 @@ export const ViewVehiclePage: React.FC = () => {
             </span>
           </div>
 
+          {/* Back Navigation Bar */}
+          <div style={{ marginBottom: '16px' }}>
+            <Link
+              to="/vehicles"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                color: '#0056A2',
+                textDecoration: 'none',
+                fontSize: '13.5px',
+                fontWeight: 600,
+              }}
+            >
+              <ArrowLeft size={16} />
+              <span>Back to My Vehicles</span>
+            </Link>
+          </div>
+
           {/* Page Header Row */}
           <div className="autocare-view-header-row">
             <div className="autocare-view-header-left">
@@ -222,7 +248,7 @@ export const ViewVehiclePage: React.FC = () => {
 
             <div className="autocare-view-header-actions">
               <Link
-                to="/sharing/secure-link"
+                to={{ pathname: '/sharing/secure-link', search: `?vehicleId=${vehicle?._id || id}` }}
                 className="autocare-btn-share-records"
                 style={{ textDecoration: 'none' }}
                 title="Create a controlled, auditable secure link to share vehicle records"
@@ -231,16 +257,15 @@ export const ViewVehiclePage: React.FC = () => {
                 <span>Share records</span>
               </Link>
 
-              <button
-                type="button"
+              <Link
+                to={`/service-history?vehicleId=${id}&action=add`}
+                state={{ vehicleId: id, vehicle, openAddModal: true }}
                 className="autocare-btn-add-record"
-                onClick={() =>
-                  showToast('Service record logging by verified workshops will be available in Phase 3.')
-                }
+                style={{ textDecoration: 'none' }}
               >
                 <Plus size={16} />
                 <span>Add service record</span>
-              </button>
+              </Link>
             </div>
           </div>
 
@@ -324,16 +349,47 @@ export const ViewVehiclePage: React.FC = () => {
             <>
               {/* SECTION: Vehicle Hero Card */}
               <section className="autocare-view-hero-card" aria-label="Vehicle Hero Information">
-                {/* Left: Studio Image */}
+                {/* Left: Studio Image or Neutral Explicit Placeholder */}
                 <div className="autocare-view-hero-media">
-                  <img
-                    src={resolveImageUrl(vehicle.imageUrl) || defaultHeroImg}
-                    alt={`${vehicle.manufacturer} ${vehicle.model}`}
-                    className="autocare-view-hero-img"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = fallbackVehicleImg;
-                    }}
-                  />
+                  {(() => {
+                    const resolvedHeroImg = resolveImageUrl(vehicle.imageUrl);
+                    const showHeroImg = !!resolvedHeroImg && failedHeroImgUrl !== resolvedHeroImg;
+                    return showHeroImg ? (
+                      <img
+                        src={resolvedHeroImg}
+                        alt={`${vehicle.manufacturer} ${vehicle.model}`}
+                        className="autocare-view-hero-img"
+                        onError={() => setFailedHeroImgUrl(resolvedHeroImg || '')}
+                      />
+                    ) : (
+                      <div
+                        className="autocare-view-no-image-placeholder"
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: '100%',
+                          height: '100%',
+                          minHeight: '220px',
+                          backgroundColor: '#f1f5f9',
+                          borderRadius: '12px',
+                          color: '#64748b',
+                          padding: '24px',
+                          textAlign: 'center',
+                          border: '1px dashed #cbd5e1',
+                        }}
+                      >
+                        <Car size={46} style={{ marginBottom: '10px', color: '#94a3b8' }} />
+                        <span style={{ fontSize: '14.5px', fontWeight: 700, color: '#334155' }}>
+                          No vehicle image
+                        </span>
+                        <span style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>
+                          Upload a photo via Edit Vehicle
+                        </span>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Right: Identity & Specs */}
@@ -462,7 +518,8 @@ export const ViewVehiclePage: React.FC = () => {
 
                 {/* Metric 4: Lifetime Service Cost */}
                 <Link
-                  to="/expenses"
+                  to={`/expenses?vehicleId=${id}`}
+                  state={{ vehicleId: id, vehicle }}
                   className="autocare-view-metric-card"
                   style={{ textDecoration: 'none', color: 'inherit' }}
                   title="View detailed expense tracking"
@@ -500,7 +557,9 @@ export const ViewVehiclePage: React.FC = () => {
                         <span className="autocare-view-integrity-label">Registered owner</span>
                         <div className="autocare-view-integrity-val-wrap">
                           <span className="autocare-view-integrity-val">
-                            {user?.fullName || 'David Silva'}
+                            {typeof vehicle.ownerId === 'object' && (vehicle.ownerId as { fullName?: string })?.fullName
+                              ? (vehicle.ownerId as { fullName?: string }).fullName
+                              : user?.fullName || 'Verified Owner'}
                           </span>
                           <span className="autocare-badge-verified">VERIFIED</span>
                         </div>
@@ -594,13 +653,24 @@ export const ViewVehiclePage: React.FC = () => {
                         Certified records appended by verified garages.
                       </p>
                     </div>
-                    <Link
-                      to="/service-history"
-                      state={{ vehicleId: id, vehicle }}
-                      className="autocare-view-card-link"
-                    >
-                      View complete history
-                    </Link>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                      <Link
+                        to={`/service-history?vehicleId=${id}&action=add`}
+                        state={{ vehicleId: id, vehicle, openAddModal: true }}
+                        className="autocare-view-card-link"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}
+                      >
+                        <Plus size={14} />
+                        <span>Add record</span>
+                      </Link>
+                      <Link
+                        to={`/service-history?vehicleId=${id}`}
+                        state={{ vehicleId: id, vehicle }}
+                        className="autocare-view-card-link"
+                      >
+                        View complete history
+                      </Link>
+                    </div>
                   </div>
 
                   <div className="autocare-view-service-list">
@@ -835,6 +905,100 @@ export const ViewVehiclePage: React.FC = () => {
                   </div>
                 )}
 
+                {/* Vehicle Photo Edit / Replace / Remove */}
+                <div className="autocare-modal-field">
+                  <label className="autocare-modal-label">Vehicle Photo</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginTop: '6px' }}>
+                    <div
+                      style={{
+                        width: '84px',
+                        height: '62px',
+                        borderRadius: '8px',
+                        backgroundColor: '#f1f5f9',
+                        border: '1px solid #cbd5e1',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        overflow: 'hidden',
+                        flexShrink: 0,
+                      }}
+                    >
+                      {editImagePreview && !removeCurrentImage ? (
+                        <img
+                          src={editImagePreview}
+                          alt="Vehicle preview"
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      ) : (
+                        <Car size={26} style={{ color: '#94a3b8' }} />
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          backgroundColor: '#f8fafc',
+                          border: '1px solid #cbd5e1',
+                          padding: '6px 12px',
+                          borderRadius: '6px',
+                          fontSize: '12.5px',
+                          fontWeight: 600,
+                          color: '#0f172a',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <Upload size={14} />
+                        <span>{editImagePreview && !removeCurrentImage ? 'Change photo' : 'Upload photo'}</span>
+                        <input
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp"
+                          style={{ display: 'none' }}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              if (file.size > 5 * 1024 * 1024) {
+                                setUpdateError('Image must be less than 5 MB.');
+                                return;
+                              }
+                              setEditImageFile(file);
+                              setEditImagePreview(URL.createObjectURL(file));
+                              setRemoveCurrentImage(false);
+                              setUpdateError(null);
+                            }
+                          }}
+                        />
+                      </label>
+                      {editImagePreview && !removeCurrentImage && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditImageFile(null);
+                            setEditImagePreview(null);
+                            setRemoveCurrentImage(true);
+                          }}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#dc2626',
+                            fontSize: '12px',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            padding: 0,
+                            textAlign: 'left',
+                          }}
+                        >
+                          <Trash2 size={12} />
+                          <span>Remove photo</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 <div className="autocare-modal-field">
                   <label htmlFor={mileageInputId} className="autocare-modal-label">
                     Current Mileage (km)
@@ -898,40 +1062,6 @@ export const ViewVehiclePage: React.FC = () => {
                     <option value="In Service">In Service</option>
                     <option value="Archived">Archived</option>
                   </select>
-                </div>
-
-                <div className="autocare-modal-field">
-                  <label className="autocare-modal-label">Update Vehicle Photo</label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        setEditPhotoFile(file);
-                        setEditPhotoPreview(URL.createObjectURL(file));
-                      }
-                    }}
-                    className="autocare-modal-input"
-                  />
-                  {editPhotoPreview ? (
-                    <div style={{ marginTop: '8px' }}>
-                      <img
-                        src={editPhotoPreview}
-                        alt="Preview"
-                        style={{ width: '120px', height: '70px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-                      />
-                    </div>
-                  ) : vehicle.imageUrl ? (
-                    <div style={{ marginTop: '8px' }}>
-                      <span style={{ fontSize: '11px', color: '#64748b', display: 'block', marginBottom: '4px' }}>Current Photo:</span>
-                      <img
-                        src={resolveImageUrl(vehicle.imageUrl)}
-                        alt="Current vehicle"
-                        style={{ width: '120px', height: '70px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-                      />
-                    </div>
-                  ) : null}
                 </div>
               </div>
 

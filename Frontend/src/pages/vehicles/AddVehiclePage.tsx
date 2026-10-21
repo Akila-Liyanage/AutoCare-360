@@ -9,7 +9,8 @@ import {
   Edit3, 
   Check, 
   X,
-  Zap
+  Zap,
+  Car
 } from 'lucide-react';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
@@ -22,9 +23,6 @@ import {
   type CreateVehiclePayload 
 } from '../../services/vehicleService';
 import { resolveImageUrl } from '../../utils/imageUrl';
-
-// Approved Local Fallback Image
-import fallbackVehicleImg from '../../assets/auth/vehicle_owner_bg.jpg';
 
 export const AddVehiclePage: React.FC = () => {
   const { user } = useAuth();
@@ -58,6 +56,7 @@ export const AddVehiclePage: React.FC = () => {
   // Local Image Upload Preview State (Object URL for memory safety and zero network bloat)
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const imagePreviewRef = useRef<string | null>(null);
 
   // Validation & Submission States
@@ -137,6 +136,7 @@ export const AddVehiclePage: React.FC = () => {
         URL.revokeObjectURL(imagePreview);
       }
 
+      setSelectedImageFile(file);
       const objectUrl = URL.createObjectURL(file);
       setImagePreview(objectUrl);
       setSelectedFile(file);
@@ -192,6 +192,12 @@ export const AddVehiclePage: React.FC = () => {
       setSubmitError('Model & Specification Trim is required.');
       return;
     }
+    const currentYear = new Date().getFullYear();
+    const yearNum = Number(formData.manufacturingYear);
+    if (isNaN(yearNum) || yearNum < 1900 || yearNum > currentYear + 1) {
+      setSubmitError(`Manufacturing Year must be between 1900 and ${currentYear + 1}.`);
+      return;
+    }
     if (!formData.vin.trim()) {
       setVinError('Vehicle Identification Number (VIN) is required.');
       return;
@@ -205,7 +211,7 @@ export const AddVehiclePage: React.FC = () => {
       setSubmitError('License Plate / Registration is required.');
       return;
     }
-    if (formData.currentMileage === '' || Number(formData.currentMileage) < 0) {
+    if (formData.currentMileage === '' || isNaN(Number(formData.currentMileage)) || Number(formData.currentMileage) < 0) {
       setSubmitError('Current Odometer Mileage must be a valid non-negative number.');
       return;
     }
@@ -214,9 +220,10 @@ export const AddVehiclePage: React.FC = () => {
 
     setSubmitting(true);
     try {
+      const fileToUpload = selectedFile || selectedImageFile;
       let uploadedImageUrl = '';
-      if (selectedFile) {
-        uploadedImageUrl = await uploadVehicleImage(selectedFile);
+      if (fileToUpload) {
+        uploadedImageUrl = await uploadVehicleImage(fileToUpload);
       }
 
       const payload: CreateVehiclePayload = {
@@ -246,6 +253,13 @@ export const AddVehiclePage: React.FC = () => {
     } catch (err: unknown) {
       let msg = err instanceof Error ? err.message : 'Unable to create vehicle passport. Please try again.';
       if (
+        msg.includes('11000') ||
+        msg.toLowerCase().includes('duplicate') ||
+        msg.toLowerCase().includes('already registered') ||
+        msg.toLowerCase().includes('already exists')
+      ) {
+        msg = 'A vehicle with this VIN or Registration Number is already registered in the system.';
+      } else if (
         msg.toLowerCase().includes('entity too large') ||
         msg.toLowerCase().includes('payload too large') ||
         msg.includes('413')
@@ -300,19 +314,38 @@ export const AddVehiclePage: React.FC = () => {
                   const seed = (v.manufacturingYear || 2022) + (v.model?.length || 0);
                   const isHigh = seed % 2 === 0;
                   const score = isHigh ? 92 : 78;
-                  const img = resolveImageUrl(v.imageUrl) || fallbackVehicleImg;
+                  const resolvedImg = resolveImageUrl(v.imageUrl?.trim());
 
                   return (
                     <div key={v._id} className="autocare-vehicle-card">
                       <div className="autocare-card-image-wrapper">
-                        <img 
-                          src={img} 
-                          alt={`${v.manufacturer} ${v.model}`} 
-                          className="autocare-card-img"
-                          onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).src = fallbackVehicleImg;
-                          }}
-                        />
+                        {resolvedImg ? (
+                          <img 
+                            src={resolvedImg} 
+                            alt={`${v.manufacturer} ${v.model}`} 
+                            className="autocare-card-img"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              width: '100%',
+                              height: '100%',
+                              backgroundColor: '#f1f5f9',
+                              color: '#64748b',
+                              gap: '6px'
+                            }}
+                          >
+                            <Car size={32} style={{ color: '#94a3b8' }} />
+                            <span style={{ fontSize: '12px', fontWeight: 600 }}>No vehicle image</span>
+                          </div>
+                        )}
                         <button
                           type="button"
                           className="autocare-card-remove-btn"

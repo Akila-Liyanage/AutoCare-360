@@ -13,6 +13,13 @@ import {
 import { useAuth } from '../../hooks/useAuth';
 import logoImg from '../../assets/auth/download (27) (1) 2.png';
 
+const resolveImageUrl = (img?: string): string | undefined => {
+  if (!img) return undefined;
+  if (img.startsWith('http://') || img.startsWith('https://') || img.startsWith('blob:')) return img;
+  const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '');
+  return `${base}${img.startsWith('/') ? '' : '/'}${img}`;
+};
+
 export const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const location = useLocation();
@@ -21,6 +28,10 @@ export const Navbar: React.FC = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const [failedAvatarUrl, setFailedAvatarUrl] = useState<string | null>(null);
+  const userAvatarUrl = resolveImageUrl(user?.profileImage || user?.avatar);
+  const showUserAvatar = !!userAvatarUrl && failedAvatarUrl !== userAvatarUrl;
 
   // Close profile dropdown on outside click
   useEffect(() => {
@@ -116,7 +127,23 @@ export const Navbar: React.FC = () => {
                   aria-haspopup="true"
                 >
                   <div className="autocare-nav-avatar">
-                    {getInitials(user.fullName)}
+                    {showUserAvatar ? (
+                      <img
+                        key={userAvatarUrl}
+                        src={userAvatarUrl}
+                        alt={user.fullName || 'User'}
+                        className="autocare-nav-avatar-img"
+                        onError={() => setFailedAvatarUrl(userAvatarUrl || '')}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          borderRadius: '50%',
+                        }}
+                      />
+                    ) : (
+                      getInitials(user.fullName)
+                    )}
                   </div>
                   <div className="autocare-nav-user-meta">
                     <span className="autocare-nav-user-name">
@@ -139,8 +166,26 @@ export const Navbar: React.FC = () => {
                 {dropdownOpen && (
                   <div className="autocare-profile-menu">
                     <div className="autocare-profile-menu-header">
-                      <p className="autocare-profile-menu-name">{user.fullName}</p>
-                      <p className="autocare-profile-menu-email">{user.email}</p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                        <div
+                          className="autocare-nav-avatar"
+                          style={{ width: '38px', height: '38px', flexShrink: 0 }}
+                        >
+                          {showUserAvatar ? (
+                            <img
+                              src={userAvatarUrl}
+                              alt={user.fullName || 'User'}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                            />
+                          ) : (
+                            getInitials(user.fullName)
+                          )}
+                        </div>
+                        <div style={{ overflow: 'hidden' }}>
+                          <p className="autocare-profile-menu-name" style={{ margin: 0 }}>{user.fullName}</p>
+                          <p className="autocare-profile-menu-email" style={{ margin: 0 }}>{user.email}</p>
+                        </div>
+                      </div>
                       <span className="autocare-profile-role-tag">
                         <ShieldCheck size={12} />
                         {user.role.toUpperCase()}
@@ -224,8 +269,25 @@ export const Navbar: React.FC = () => {
               </Link>
             ))}
 
-            {isAuthenticated ? (
+            {isAuthenticated && user ? (
               <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', borderBottom: '1px solid #e2e8f0', marginBottom: '8px' }}>
+                  <div className="autocare-nav-avatar" style={{ width: '36px', height: '36px', flexShrink: 0 }}>
+                    {showUserAvatar ? (
+                      <img
+                        src={userAvatarUrl}
+                        alt={user.fullName || 'User'}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                      />
+                    ) : (
+                      getInitials(user.fullName)
+                    )}
+                  </div>
+                  <div style={{ overflow: 'hidden' }}>
+                    <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '13.5px' }}>{user.fullName}</div>
+                    <div style={{ fontSize: '12px', color: '#64748b' }}>{user.email}</div>
+                  </div>
+                </div>
                 <Link
                   to="/profile"
                   className="autocare-mobile-link"

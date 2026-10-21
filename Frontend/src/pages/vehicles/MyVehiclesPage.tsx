@@ -15,9 +15,6 @@ import Footer from '../../components/layout/Footer';
 import { getMyVehicles, type Vehicle } from '../../services/vehicleService';
 import { resolveImageUrl } from '../../utils/imageUrl';
 
-// Approved Local Project Fallback Vehicle Asset
-import fallbackVehicleImg from '../../assets/auth/vehicle_owner_bg.jpg';
-
 export const MyVehiclesPage: React.FC = () => {
   const navigate = useNavigate();
 
@@ -187,7 +184,7 @@ export const MyVehiclesPage: React.FC = () => {
               <div className="autocare-vehicles-grid">
                 {vehicles.map((vehicle) => {
                   const trust = getDisplayTrustScore(vehicle);
-                  const vehicleImg = resolveImageUrl(vehicle.imageUrl) || fallbackVehicleImg;
+                  const resolvedImg = resolveImageUrl(vehicle.imageUrl?.trim());
 
                   return (
                     <div
@@ -206,14 +203,33 @@ export const MyVehiclesPage: React.FC = () => {
                     >
                       {/* Top: Image Area with Red Remove Button */}
                       <div className="autocare-card-image-wrapper">
-                        <img
-                          src={vehicleImg}
-                          alt={`${vehicle.manufacturer} ${vehicle.model}`}
-                          className="autocare-card-img"
-                          onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).src = fallbackVehicleImg;
-                          }}
-                        />
+                        {resolvedImg ? (
+                          <img
+                            src={resolvedImg}
+                            alt={`${vehicle.manufacturer} ${vehicle.model}`}
+                            className="autocare-card-img"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              width: '100%',
+                              height: '100%',
+                              backgroundColor: '#f1f5f9',
+                              color: '#64748b',
+                              gap: '6px'
+                            }}
+                          >
+                            <Car size={34} style={{ color: '#94a3b8' }} />
+                            <span style={{ fontSize: '13px', fontWeight: 600 }}>No vehicle image</span>
+                          </div>
+                        )}
 
                         {/* Top-Right: Red Remove Button */}
                         <button

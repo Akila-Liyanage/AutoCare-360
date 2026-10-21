@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Check, Clock, X } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Check, Clock, X, ArrowLeft } from 'lucide-react';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import { getMyVehicles, type Vehicle } from '../../services/vehicleService';
@@ -172,6 +172,31 @@ export const CreateNotificationPage: React.FC = () => {
 
       <main className="autocare-create-notif-main">
         <div className="autocare-create-notif-container">
+          {/* Back Navigation */}
+          <div style={{ marginBottom: '14px' }}>
+            <Link
+              to="/notifications"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: 'transparent',
+                border: 'none',
+                color: '#0056A2',
+                fontSize: '13.5px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                textDecoration: 'none',
+                padding: '6px 12px',
+                borderRadius: '8px',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <ArrowLeft size={16} />
+              <span>Back to Notifications</span>
+            </Link>
+          </div>
+
           {/* Header Row */}
           <div className="autocare-create-notif-header">
             <div className="autocare-create-notif-title-group">
