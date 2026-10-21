@@ -60,7 +60,7 @@ export const GarageLayout: React.FC<GarageLayoutProps> = ({
     { id: 'Documents', label: 'Documents', path: '/garage/documents' },
     { id: 'Sharing & access', label: 'Sharing & access', path: '/garage/sharing' },
     { id: 'Audit trail', label: 'Audit trail', path: '/garage/audit' },
-    { id: 'Notifications', label: 'Notifications', path: '/notifications' },
+    { id: 'Notifications', label: 'Notifications', path: '/garage/notifications' },
   ];
 
   // Determine current active item from prop or URL
@@ -76,7 +76,7 @@ export const GarageLayout: React.FC<GarageLayoutProps> = ({
       ? 'Sharing & access'
       : location.pathname.startsWith('/garage/audit')
       ? 'Audit trail'
-      : location.pathname.startsWith('/notifications')
+      : location.pathname.startsWith('/garage/notifications') || location.pathname.startsWith('/notifications')
       ? 'Notifications'
       : 'Overview');
 
@@ -172,7 +172,7 @@ export const GarageLayout: React.FC<GarageLayoutProps> = ({
 
           <div className="autocare-garage-topbar-actions">
             <Link
-              to="/notifications"
+              to="/garage/notifications"
               className="autocare-garage-notify-btn"
               aria-label="Garage Notifications"
               title="Notifications"

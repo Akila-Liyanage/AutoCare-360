@@ -31,6 +31,7 @@ import GarageDocumentsPage from './pages/garage/GarageDocumentsPage';
 import GarageSharingPage from './pages/garage/GarageSharingPage';
 import GarageAuditTrailPage from './pages/garage/GarageAuditTrailPage';
 import AddMaintenanceRecordPage from './pages/garage/AddMaintenanceRecordPage';
+import GarageNotificationsPage from './pages/garage/GarageNotificationsPage';
 import './App.css';
 
 export const App: React.FC = () => {
@@ -95,6 +96,7 @@ export const App: React.FC = () => {
           <Route path="/garage/documents" element={<GarageDocumentsPage />} />
           <Route path="/garage/sharing" element={<GarageSharingPage />} />
           <Route path="/garage/audit" element={<GarageAuditTrailPage />} />
+          <Route path="/garage/notifications" element={<GarageNotificationsPage />} />
           <Route path="/garage" element={<Navigate to="/garage/dashboard" replace />} />
 
           <Route path="/profile" element={<ProfilePage />} />

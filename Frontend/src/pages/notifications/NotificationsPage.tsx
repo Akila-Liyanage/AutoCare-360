@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { Clock, X, RefreshCw, AlertTriangle, ArrowLeft } from 'lucide-react';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
+import { useAuth } from '../../hooks/useAuth';
 import {
   type NotificationItem,
   type NotificationCategory,
@@ -125,6 +126,13 @@ const mapBackendNotification = (doc: BackendNotification): NotificationItem => {
 };
 
 export const NotificationsPage: React.FC = () => {
+  const { user } = useAuth();
+
+  // If authenticated as garage, seamlessly redirect to garage notifications portal
+  if (user?.role === 'garage') {
+    return <Navigate to="/garage/notifications" replace />;
+  }
+
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [activeChip, setActiveChip] = useState<FilterChip>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
