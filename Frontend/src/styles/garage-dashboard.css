@@ -852,6 +852,153 @@
   padding: 4px;
 }
 
+/* Reusable Responsive Table Container */
+.autocare-garage-table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 8px;
+}
+
+/* User Profile Dropdown Menu in Topbar */
+.autocare-garage-user-wrapper {
+  position: relative;
+}
+
+.autocare-garage-user-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  min-width: 200px;
+  padding: 6px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.autocare-garage-user-dropdown-header {
+  padding: 8px 12px;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 4px;
+}
+
+.autocare-garage-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 6px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #334155;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.autocare-garage-dropdown-item:hover {
+  background: #f1f5f9;
+  color: #003874;
+}
+
+.autocare-garage-dropdown-item.is-logout {
+  color: #dc2626;
+  border-top: 1px solid #f1f5f9;
+  margin-top: 2px;
+}
+
+.autocare-garage-dropdown-item.is-logout:hover {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+/* Notification Badge in Topbar */
+.autocare-garage-notify-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #003874;
+  text-decoration: none;
+  transition: all 0.18s ease;
+}
+
+.autocare-garage-notify-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.autocare-garage-notify-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 10.5px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #ffffff;
+  line-height: 1;
+}
+
+/* Sidebar Toggle Button */
+.autocare-garage-sidebar-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #003874;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.autocare-garage-sidebar-toggle:hover {
+  background: #f1f5f9;
+}
+
+/* Sidebar Close Button on Mobile Drawer */
+.autocare-garage-sidebar-close {
+  display: none;
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  padding: 4px;
+}
+
+/* Mobile Backdrop Overlay */
+.autocare-garage-mobile-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(2px);
+  z-index: 998;
+}
+
 /* ==========================================================================
    Responsive Adaptations
    ========================================================================== */
@@ -866,35 +1013,33 @@
 }
 
 @media (max-width: 900px) {
-  .autocare-garage-layout {
-    flex-direction: column;
+  .autocare-garage-sidebar-toggle {
+    display: inline-flex !important;
+  }
+
+  .autocare-garage-sidebar-close {
+    display: inline-flex !important;
   }
 
   .autocare-garage-sidebar {
-    width: 100%;
-    min-width: 100%;
-    box-sizing: border-box;
-    padding: 16px 20px;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: -300px;
+    width: 270px;
+    min-width: 270px;
+    height: 100vh;
+    z-index: 1000;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25);
   }
 
-  .autocare-garage-logo-card {
-    margin-bottom: 16px;
-  }
-
-  .autocare-garage-menu {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .autocare-garage-menu-item {
-    width: auto;
-    padding: 8px 12px;
-    font-size: 13px;
+  .autocare-garage-sidebar.is-mobile-open {
+    left: 0;
   }
 
   .autocare-garage-content {
-    padding: 20px 16px 32px 16px;
+    padding: 16px 14px 28px 14px;
   }
 
   .autocare-garage-hero-card {
@@ -910,17 +1055,36 @@
   .autocare-garage-title-row {
     flex-direction: column;
     align-items: flex-start;
+    gap: 12px;
   }
 
-  .autocare-garage-records-table {
-    display: block;
-    overflow-x: auto;
-    white-space: nowrap;
+  .autocare-garage-topbar {
+    padding: 12px 14px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .autocare-garage-breadcrumb {
+    font-size: 13px;
+    gap: 6px;
+  }
+
+  .autocare-garage-modal {
+    max-width: 95vw !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
   }
 }
 
 @media (max-width: 640px) {
   .autocare-garage-kpis-grid {
     grid-template-columns: 1fr;
+  }
+
+  .autocare-garage-crumb-parent {
+    display: none;
+  }
+  .autocare-garage-crumb-separator:first-of-type {
+    display: none;
   }
 }
