@@ -353,6 +353,27 @@ const getInvoices = async (req, res, next) => {
   }
 };
 
+// @desc    Get all registered customer vehicles for verified garage (BR-03)
+// @route   GET /api/garage/customer-vehicles
+// @access  Private (Verified Garage & Admin)
+const getGarageCustomerVehicles = async (req, res, next) => {
+  try {
+    const vehicles = await Vehicle.find()
+      .populate('ownerId', 'fullName email phone displayName')
+      .sort({ updatedAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      count: vehicles.length,
+      data: {
+        vehicles,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getGarageDashboardStats,
   getGarageRecords,
@@ -360,4 +381,6 @@ module.exports = {
   getQuotations,
   createInvoice,
   getInvoices,
+  getGarageCustomerVehicles,
 };
+

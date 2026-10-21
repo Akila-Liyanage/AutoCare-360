@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Search,
@@ -13,8 +13,10 @@ import {
   Wrench,
 } from 'lucide-react';
 import GarageLayout from '../../components/layout/GarageLayout';
+import api from '../../services/api';
 import {
   MOCK_GARAGE_VEHICLES,
+  type GarageVehicle,
 } from './garageData';
 import '../../styles/garage-dashboard.css';
 
@@ -33,6 +35,65 @@ export const GarageVehiclesPage: React.FC = () => {
   // Interactive Toast State
   const [toast, setToast] = useState<ToastState>({ show: false, message: '' });
 
+  // Vehicles state with API fetching and mock fallback
+  const [vehiclesList, setVehiclesList] = useState<GarageVehicle[]>(MOCK_GARAGE_VEHICLES);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchVehicles = async () => {
+      try {
+        const res = await api.get('/garage/customer-vehicles');
+        if (
+          isMounted &&
+          res.data?.data?.vehicles &&
+          Array.isArray(res.data.data.vehicles) &&
+          res.data.data.vehicles.length > 0
+        ) {
+          const apiVehicles: GarageVehicle[] = res.data.data.vehicles.map((v: any) => ({
+            id: v._id,
+            registration: v.registrationNumber,
+            vin: v.vin,
+            make: v.manufacturer,
+            model: v.model,
+            year: v.manufacturingYear,
+            color: v.color || 'Pearl White',
+            fuelType: v.fuelType || 'Hybrid',
+            transmission: v.transmission || 'Automatic',
+            engineCapacity: v.engineNumber ? `Engine ${v.engineNumber}` : '1,800 cc',
+            mileage: v.currentMileage || 30000,
+            lastService: v.lastServiceDate
+              ? new Date(v.lastServiceDate).toLocaleDateString('en-GB')
+              : 'Recent',
+            lastServiceType: 'Certified Routine Maintenance',
+            status: v.status || 'Active',
+            statusColor: 'green',
+            customer: {
+              id: v.ownerId?._id || 'cust-owner',
+              name: v.ownerId?.fullName || v.ownerId?.displayName || 'Vehicle Owner',
+              phone: v.ownerId?.phone || '+94 77 123 4567',
+              email: v.ownerId?.email || 'owner@gmail.com',
+              address: 'Colombo, Western Province',
+              memberSince: 'March 2022',
+              loyaltyTier: 'Platinum',
+            },
+            serviceHistory: [],
+            documents: [],
+          }));
+
+          const apiIds = new Set(apiVehicles.map((v) => v.id));
+          const remainingMock = MOCK_GARAGE_VEHICLES.filter((m) => !apiIds.has(m.id));
+          setVehiclesList([...apiVehicles, ...remainingMock]);
+        }
+      } catch {
+        // Fallback to MOCK_GARAGE_VEHICLES
+      }
+    };
+    fetchVehicles();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const showToast = (message: string) => {
     setToast({ show: true, message });
     setTimeout(() => {
@@ -42,7 +103,7 @@ export const GarageVehiclesPage: React.FC = () => {
 
   // Filter vehicles
   const filteredVehicles = useMemo(() => {
-    return MOCK_GARAGE_VEHICLES.filter((v) => {
+    return vehiclesList.filter((v) => {
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
         !q ||
@@ -58,7 +119,7 @@ export const GarageVehiclesPage: React.FC = () => {
 
       return matchesSearch && matchesStatus;
     });
-  }, [searchQuery, statusFilter]);
+  }, [vehiclesList, searchQuery, statusFilter]);
 
   return (
     <GarageLayout activeItem="Vehicles" breadcrumbCurrent="Customer Vehicles">

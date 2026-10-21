@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Search,
@@ -14,6 +14,7 @@ import {
   Car,
 } from 'lucide-react';
 import GarageLayout from '../../components/layout/GarageLayout';
+import api from '../../services/api';
 import {
   MOCK_GARAGE_VEHICLES,
   type GarageVehicle,
@@ -50,6 +51,72 @@ export const GarageServiceRecordsPage: React.FC = () => {
   // Toast Notification
   const [toast, setToast] = useState<ToastState>({ show: false, message: '' });
 
+  // Live records fetched from backend API
+  const [apiRecords, setApiRecords] = useState<ServiceRecordRow[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchRecords = async () => {
+      try {
+        const res = await api.get('/garage/my-records');
+        if (isMounted && res.data?.data?.records && Array.isArray(res.data.data.records)) {
+          const mapped: ServiceRecordRow[] = res.data.data.records.map((r: any) => ({
+            vehicle: {
+              id: r.vehicleId?._id || 'veh-1',
+              registration: r.vehicleId?.registrationNumber || 'WP-Unknown',
+              vin: r.vehicleId?.vin || 'VIN-UNSPECIFIED',
+              make: r.vehicleId?.manufacturer || 'Toyota',
+              model: r.vehicleId?.model || 'Vehicle',
+              year: 2022,
+              color: 'Pearl White',
+              fuelType: 'Hybrid',
+              transmission: 'Automatic',
+              engineCapacity: '1,800 cc',
+              mileage: r.vehicleId?.currentMileage || r.mileage,
+              lastService: new Date(r.serviceDate).toLocaleDateString('en-GB'),
+              lastServiceType: r.serviceType,
+              status: 'Active',
+              statusColor: 'green',
+              customer: {
+                id: r.vehicleId?.ownerId || 'cust-1',
+                name: 'Chathura Perera',
+                phone: '+94 77 123 4567',
+                email: 'owner@gmail.com',
+                address: 'Colombo, Western Province',
+                memberSince: 'March 2022',
+                loyaltyTier: 'Platinum',
+              },
+              serviceHistory: [],
+              documents: [],
+            },
+            record: {
+              id: r._id,
+              serviceDate: new Date(r.serviceDate).toLocaleDateString('en-GB'),
+              serviceType: r.serviceType,
+              mileage: r.mileage,
+              workPerformed: r.workPerformed,
+              partsReplaced: r.partsReplaced || [],
+              labourCost: r.labourCost || 0,
+              partsCost: r.partsCost || 0,
+              totalCost: r.totalCost || 0,
+              garageName: r.garageName || 'Perera Auto Works (Pvt) Ltd',
+              technician: r.technicianName || 'Kaveesha Perera',
+              status: r.verificationStatus === 'verified' ? 'Verified' : 'Pending Signature',
+              invoiceNo: `INV-${r._id.slice(-6).toUpperCase()}`,
+            },
+          }));
+          setApiRecords(mapped);
+        }
+      } catch {
+        // Fallback gracefully
+      }
+    };
+    fetchRecords();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const showToast = (message: string) => {
     setToast({ show: true, message });
     setTimeout(() => {
@@ -57,19 +124,22 @@ export const GarageServiceRecordsPage: React.FC = () => {
     }, 4500);
   };
 
-  // Compile records from all vehicles
+  // Compile records from API and vehicles
   const allRecordsList = useMemo(() => {
-    const rows: ServiceRecordRow[] = [];
+    const rows: ServiceRecordRow[] = [...apiRecords];
+    const seenIds = new Set(apiRecords.map((a) => a.record.id));
     MOCK_GARAGE_VEHICLES.forEach((v) => {
       v.serviceHistory.forEach((sh) => {
-        rows.push({
-          vehicle: v,
-          record: sh,
-        });
+        if (!seenIds.has(sh.id)) {
+          rows.push({
+            vehicle: v,
+            record: sh,
+          });
+        }
       });
     });
     return rows;
-  }, []);
+  }, [apiRecords]);
 
   // Filtered rows
   const filteredRows = useMemo(() => {
