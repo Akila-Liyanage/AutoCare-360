@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import Footer from './Footer';
 import logoImg from '../../assets/auth/download (27) (1) 2.png';
+import { useAuth } from '../../hooks/useAuth';
 import '../../styles/garage-dashboard.css';
 
 export interface GarageLayoutProps {
@@ -30,6 +31,7 @@ export const GarageLayout: React.FC<GarageLayoutProps> = ({
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   // Mobile menu drawer toggle
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
@@ -189,8 +191,17 @@ export const GarageLayout: React.FC<GarageLayoutProps> = ({
                 if (e.key === 'Enter' || e.key === ' ') setShowProfileModal(true);
               }}
             >
-              <span className="autocare-garage-user-name">Kaveesha P.</span>
-              <div className="autocare-garage-user-avatar">KP</div>
+              <span className="autocare-garage-user-name">{user?.fullName || 'Kaveesha P.'}</span>
+              <div className="autocare-garage-user-avatar">
+                {user?.fullName
+                  ? user.fullName
+                      .split(' ')
+                      .map((n) => n[0])
+                      .join('')
+                      .slice(0, 2)
+                      .toUpperCase()
+                  : 'KP'}
+              </div>
             </div>
           </div>
         </header>
