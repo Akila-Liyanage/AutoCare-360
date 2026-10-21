@@ -72,6 +72,35 @@ const userSchema = new mongoose.Schema(
       trim: true,
       default: '',
     },
+    workshopName: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    businessRegNumber: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    address: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    verifiedAt: {
+      type: Date,
+      default: null,
+    },
+    verifiedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    rejectionReason: {
+      type: String,
+      trim: true,
+      default: null,
+    },
   },
   {
     timestamps: true,

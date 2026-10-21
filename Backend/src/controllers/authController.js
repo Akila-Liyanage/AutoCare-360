@@ -58,6 +58,10 @@ const register = async (req, res, next) => {
 
     // Owner accounts start active; Garage accounts start pending verification per BRD
     const status = assignedRole === 'garage' ? 'pending' : 'active';
+    const workshop = (req.body.workshopName || req.body.businessName || '').trim();
+    const regNumber = (req.body.businessRegNumber || '').trim();
+    const userCity = (req.body.city || '').trim();
+    const userAddress = (req.body.address || '').trim();
 
     const user = await User.create({
       fullName: fullName.trim(),
@@ -66,6 +70,10 @@ const register = async (req, res, next) => {
       password,
       role: assignedRole,
       status,
+      workshopName: workshop,
+      businessRegNumber: regNumber,
+      city: userCity,
+      address: userAddress,
     });
 
     const token = generateToken(user._id, user.role);

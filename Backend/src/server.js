@@ -44,6 +44,7 @@ const transferRoutes = require('./routes/transferRoutes');
 const shareLinkRoutes = require('./routes/shareLinkRoutes');
 const qrShareRoutes = require('./routes/qrShareRoutes');
 const publicShareRoutes = require('./routes/publicShareRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
 
@@ -137,6 +138,9 @@ app.use('/api/public/shared', publicShareRoutes);
 
 // Mount Vehicle Digital Passport Routes
 app.use('/api/vehicles', vehicleRoutes);
+
+// Mount Admin Garage Verification Routes
+app.use('/api/admin', adminRoutes);
 
 // 404 JSON Handler for unmatched routes
 app.use((req, res) => {
