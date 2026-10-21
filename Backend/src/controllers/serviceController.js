@@ -274,6 +274,8 @@ const createServiceRecord = async (req, res, next) => {
         await VehicleDocument.create({
           vehicleId: vehicle._id,
           ownerId: vehicle.ownerId,
+          uploadedBy: req.user._id,
+          source: isGarage ? 'verified_garage' : 'owner_upload',
           documentType: 'Invoice',
           title: `Certified Invoice — ${serviceRecord.serviceType}`,
           description: `Service invoice issued by ${resolvedGarageName} for ${vehicle.registrationNumber}`,
