@@ -181,7 +181,7 @@ export const AddMaintenanceRecordPage: React.FC = () => {
     }
 
     if (!ownerConsent) {
-      newErrors.consent = 'Owner consent certification is required to publish verified record.';
+      newErrors.consent = 'Owner consent certification is required to publish service record (Demo Mode).';
     }
 
     setErrors(newErrors);
@@ -320,7 +320,7 @@ export const AddMaintenanceRecordPage: React.FC = () => {
               </div>
               <div>
                 <h3 style={{ margin: '0 0 4px 0', fontSize: '15px', fontWeight: 800 }}>
-                  Scan Physical Job Card / Invoice with AI OCR
+                  Scan Physical Job Card / Invoice (Simulate OCR Extraction)
                 </h3>
                 <p style={{ margin: 0, fontSize: '12.5px', color: 'rgba(255, 255, 255, 0.85)' }}>
                   Optical recognition extracts parts, labour, and odometer telemetry automatically.
@@ -1097,7 +1097,7 @@ export const AddMaintenanceRecordPage: React.FC = () => {
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#059669', fontWeight: 700, marginBottom: '4px' }}>
                 <ShieldCheck size={14} />
-                <span>SLT Mobitel Trust Network Anchor</span>
+                <span>Security & Verification Audit Anchor (Demo)</span>
               </div>
               <div>Station Node: <code>SLT-PAW-COL05-NODE</code></div>
               <div>Payload Hash: <code>0x7f2a...981c</code></div>
@@ -1113,7 +1113,7 @@ export const AddMaintenanceRecordPage: React.FC = () => {
                 style={{ width: '100%', justifyContent: 'center', padding: '12px' }}
               >
                 <ShieldCheck size={18} />
-                <span>{isSubmitting ? 'Publishing to Ledger...' : 'Publish Verified Record'}</span>
+                <span>{isSubmitting ? 'Publishing Record...' : 'Publish Service Record'}</span>
               </button>
 
               <button
@@ -1130,6 +1130,36 @@ export const AddMaintenanceRecordPage: React.FC = () => {
               >
                 Save Draft
               </button>
+
+              {/* Optional Next Actions */}
+              <div
+                style={{
+                  marginTop: '10px',
+                  paddingTop: '10px',
+                  borderTop: '1px solid #f1f5f9',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => navigate(`/garage/quotation/new?vehicleId=${selectedVehicle.id}`)}
+                  className="autocare-garage-action-link"
+                  style={{ fontSize: '11.5px', color: '#0056a2', fontWeight: 600 }}
+                >
+                  + Generate Quotation
+                </button>
+                <span style={{ color: '#cbd5e1' }}>·</span>
+                <button
+                  type="button"
+                  onClick={() => navigate(`/garage/invoice/new?vehicleId=${selectedVehicle.id}`)}
+                  className="autocare-garage-action-link"
+                  style={{ fontSize: '11.5px', color: '#059669', fontWeight: 600 }}
+                >
+                  + Create Invoice
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1206,22 +1236,50 @@ export const AddMaintenanceRecordPage: React.FC = () => {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-                <button
-                  type="button"
-                  className="autocare-garage-btn-primary"
-                  onClick={() => navigate('/garage/service-records')}
-                >
-                  View in Service Records
-                </button>
-                <button
-                  type="button"
-                  className="autocare-garage-hero-btn"
-                  style={{ background: '#f8fafc', border: '1px solid #cbd5e1' }}
-                  onClick={() => navigate(`/garage/vehicles/${selectedVehicle.id}`)}
-                >
-                  View Vehicle Passport
-                </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className="autocare-garage-btn-primary"
+                    onClick={() => navigate('/garage/service-records')}
+                  >
+                    View in Service Records
+                  </button>
+                  <button
+                    type="button"
+                    className="autocare-garage-hero-btn"
+                    style={{ background: '#f8fafc', border: '1px solid #cbd5e1' }}
+                    onClick={() => navigate(`/garage/vehicles/${selectedVehicle.id}`)}
+                  >
+                    View Vehicle Passport
+                  </button>
+                </div>
+
+                <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '12px', marginTop: '4px' }}>
+                  <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '8px' }}>
+                    Optional Next Steps for {selectedVehicle.registration}:
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      className="autocare-garage-hero-btn"
+                      style={{ background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', fontSize: '12.5px' }}
+                      onClick={() => navigate(`/garage/invoice/new?vehicleId=${selectedVehicle.id}`)}
+                    >
+                      <FileText size={14} style={{ marginRight: '4px' }} />
+                      <span>Create Invoice</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="autocare-garage-hero-btn"
+                      style={{ background: '#eff6ff', color: '#1e40af', border: '1px solid #bfdbfe', fontSize: '12.5px' }}
+                      onClick={() => navigate(`/garage/quotation/new?vehicleId=${selectedVehicle.id}`)}
+                    >
+                      <Plus size={14} style={{ marginRight: '4px' }} />
+                      <span>Generate Quotation</span>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

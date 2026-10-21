@@ -12,8 +12,6 @@ import {
   X,
   ArrowLeft,
   DollarSign,
-  Printer,
-  Download,
   ExternalLink,
 } from 'lucide-react';
 import GarageLayout from '../../components/layout/GarageLayout';
@@ -37,63 +35,15 @@ export const GarageVehicleDetailsPage: React.FC = () => {
   // Floating Toast State
   const [toast, setToast] = useState<ToastState>({ show: false, message: '' });
 
-  // Modals state
-  const [showAddRecordModal, setShowAddRecordModal] = useState<boolean>(false);
-  const [showQuoteModal, setShowQuoteModal] = useState<boolean>(false);
-  const [showInvoiceModal, setShowInvoiceModal] = useState<boolean>(false);
-  const [showDocModal, setShowDocModal] = useState<GarageVehicleDocumentItem | null>(null);
-
-  // Add Record Form State
-  const [recordDate, setRecordDate] = useState<string>(
-    new Date().toISOString().split('T')[0]
-  );
-  const [recordType, setRecordType] = useState<string>('Routine Maintenance');
-  const [recordMileage, setRecordMileage] = useState<string>(
-    String(vehicle.mileage + 200)
-  );
-  const [recordWork, setRecordWork] = useState<string>('');
-  const [recordLabour, setRecordLabour] = useState<string>('8500');
-  const [recordParts, setRecordParts] = useState<string>('16500');
-
-  // Quotation Form State
-  const [quoteParts, setQuoteParts] = useState<string>('Engine Oil 0W-20, Brake Pads (Front)');
-  const [quoteEstimate, setQuoteEstimate] = useState<string>('32,000');
-  const [quoteValidDays, setQuoteValidDays] = useState<string>('14');
-
-  // Invoice Form State
-  const [invoiceNo, setInvoiceNo] = useState<string>('INV-2026-8492');
-  const [invoiceAmount, setInvoiceAmount] = useState<string>('25,000');
-
   const showToast = (message: string) => {
     setToast({ show: true, message });
     setTimeout(() => {
-      setToast((prev) => ({ ...prev, show: false }));
-    }, 4500);
+      setToast({ show: false, message: '' });
+    }, 3500);
   };
 
-  const handleAddRecordSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setShowAddRecordModal(false);
-    showToast(
-      `Verified maintenance record published for ${vehicle.registration}. OTP confirmation dispatched to customer ${vehicle.customer.phone}.`
-    );
-  };
-
-  const handleSendQuote = (e: React.FormEvent) => {
-    e.preventDefault();
-    setShowQuoteModal(false);
-    showToast(
-      `Quotation for LKR ${quoteEstimate} generated and sent to ${vehicle.customer.email}.`
-    );
-  };
-
-  const handleCreateInvoice = (e: React.FormEvent) => {
-    e.preventDefault();
-    setShowInvoiceModal(false);
-    showToast(
-      `Invoice ${invoiceNo} (LKR ${invoiceAmount}) issued and recorded on customer digital ledger.`
-    );
-  };
+  // Modals state
+  const [showDocModal, setShowDocModal] = useState<GarageVehicleDocumentItem | null>(null);
 
   return (
     <GarageLayout
@@ -156,7 +106,7 @@ export const GarageVehicleDetailsPage: React.FC = () => {
             type="button"
             className="autocare-garage-hero-btn"
             style={{ background: '#f8fafc', color: '#003874', border: '1px solid #cbd5e1' }}
-            onClick={() => setShowQuoteModal(true)}
+            onClick={() => navigate(`/garage/quotation/new?vehicleId=${vehicle.id}`)}
           >
             <DollarSign size={16} />
             <span>Generate Quotation</span>
@@ -165,7 +115,7 @@ export const GarageVehicleDetailsPage: React.FC = () => {
             type="button"
             className="autocare-garage-hero-btn"
             style={{ background: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0' }}
-            onClick={() => setShowInvoiceModal(true)}
+            onClick={() => navigate(`/garage/invoice/new?vehicleId=${vehicle.id}`)}
           >
             <FileText size={16} />
             <span>Create Invoice</span>
@@ -472,7 +422,7 @@ export const GarageVehicleDetailsPage: React.FC = () => {
           <button
             type="button"
             className="autocare-garage-action-link"
-            onClick={() => showToast('Uploading document scanner initialized for Perera Auto Works.')}
+            onClick={() => navigate('/garage/documents?vehicleId=' + vehicle.id)}
             style={{ fontWeight: 700 }}
           >
             + Upload Document
@@ -587,6 +537,7 @@ export const GarageVehicleDetailsPage: React.FC = () => {
           </button>
         </div>
 
+        <div className="autocare-garage-table-responsive">
         <table className="autocare-garage-records-table">
           <thead>
             <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
@@ -664,9 +615,7 @@ export const GarageVehicleDetailsPage: React.FC = () => {
                   <button
                     type="button"
                     className="autocare-garage-action-link"
-                    onClick={() => {
-                      showToast(`Viewing invoice ${item.invoiceNo} for ${vehicle.registration}.`);
-                    }}
+                    onClick={() => navigate('/garage/invoice/new?vehicleId=' + vehicle.id)}
                     style={{ fontSize: '12.5px', fontWeight: 600 }}
                   >
                     {item.invoiceNo}
@@ -676,332 +625,13 @@ export const GarageVehicleDetailsPage: React.FC = () => {
             ))}
           </tbody>
         </table>
+        </div>
       </section>
 
       {/* ====================================================================
           ACTION MODALS (NO DEAD BUTTONS)
           ==================================================================== */}
-      {/* 1. Add Maintenance Record Modal */}
-      {showAddRecordModal && (
-        <div
-          className="autocare-garage-modal-backdrop"
-          onClick={() => setShowAddRecordModal(false)}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div
-            className="autocare-garage-modal"
-            style={{ maxWidth: '580px' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="autocare-garage-modal-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Wrench size={20} />
-                <h3>Add Record: {vehicle.registration}</h3>
-              </div>
-              <button
-                type="button"
-                className="autocare-garage-modal-close-btn"
-                onClick={() => setShowAddRecordModal(false)}
-                aria-label="Close modal"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={handleAddRecordSubmit}>
-              <div className="autocare-garage-modal-body">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
-                        Service Date *
-                      </label>
-                      <input
-                        type="date"
-                        value={recordDate}
-                        max={new Date().toISOString().split('T')[0]}
-                        onChange={(e) => setRecordDate(e.target.value)}
-                        style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13.5px', boxSizing: 'border-box' }}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
-                        Odometer (km) *
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={recordMileage}
-                        onChange={(e) => setRecordMileage(e.target.value)}
-                        style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13.5px', boxSizing: 'border-box' }}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
-                      Service Type *
-                    </label>
-                    <select
-                      value={recordType}
-                      onChange={(e) => setRecordType(e.target.value)}
-                      style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13.5px' }}
-                      required
-                    >
-                      <option value="Routine Maintenance">Routine Maintenance</option>
-                      <option value="Brake Overhaul & Fluid Flush">Brake Overhaul & Fluid Flush</option>
-                      <option value="Transmission Service">Transmission Service</option>
-                      <option value="Hybrid Battery Conditioning">Hybrid Battery Conditioning</option>
-                      <option value="Suspension Alignment">Suspension Alignment</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
-                      Work Performed Description *
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={recordWork}
-                      onChange={(e) => setRecordWork(e.target.value)}
-                      placeholder="e.g. Engine oil replaced with 0W-20 synthetic, filter replaced, electronic brake calibration done."
-                      style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13.5px', boxSizing: 'border-box', resize: 'vertical' }}
-                      required
-                    />
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
-                        Labour Cost (LKR)
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={recordLabour}
-                        onChange={(e) => setRecordLabour(e.target.value)}
-                        style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13.5px', boxSizing: 'border-box' }}
-                      />
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
-                        Parts Cost (LKR)
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={recordParts}
-                        onChange={(e) => setRecordParts(e.target.value)}
-                        style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13.5px', boxSizing: 'border-box' }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="autocare-garage-modal-footer">
-                <button
-                  type="button"
-                  className="autocare-garage-hero-btn"
-                  style={{ background: '#f1f5f9', color: '#475569', marginRight: '8px' }}
-                  onClick={() => setShowAddRecordModal(false)}
-                >
-                  Cancel
-                </button>
-                <button type="submit" className="autocare-garage-btn-primary">
-                  Commit to Ledger
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* 2. Generate Quotation Modal */}
-      {showQuoteModal && (
-        <div
-          className="autocare-garage-modal-backdrop"
-          onClick={() => setShowQuoteModal(false)}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div
-            className="autocare-garage-modal"
-            style={{ maxWidth: '520px' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="autocare-garage-modal-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <DollarSign size={20} />
-                <h3>Generate Quotation: {vehicle.registration}</h3>
-              </div>
-              <button
-                type="button"
-                className="autocare-garage-modal-close-btn"
-                onClick={() => setShowQuoteModal(false)}
-                aria-label="Close modal"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSendQuote}>
-              <div className="autocare-garage-modal-body">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                  <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '13px' }}>
-                    <strong>Recipient:</strong> {vehicle.customer.name} ({vehicle.customer.email})
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
-                      Proposed Services / Parts *
-                    </label>
-                    <textarea
-                      rows={2}
-                      value={quoteParts}
-                      onChange={(e) => setQuoteParts(e.target.value)}
-                      style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13.5px', boxSizing: 'border-box' }}
-                      required
-                    />
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
-                        Estimated Amount (LKR) *
-                      </label>
-                      <input
-                        type="text"
-                        value={quoteEstimate}
-                        onChange={(e) => setQuoteEstimate(e.target.value)}
-                        style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13.5px', boxSizing: 'border-box' }}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
-                        Validity (Days)
-                      </label>
-                      <select
-                        value={quoteValidDays}
-                        onChange={(e) => setQuoteValidDays(e.target.value)}
-                        style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13.5px' }}
-                      >
-                        <option value="7">7 Days</option>
-                        <option value="14">14 Days</option>
-                        <option value="30">30 Days</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="autocare-garage-modal-footer">
-                <button
-                  type="button"
-                  className="autocare-garage-hero-btn"
-                  style={{ background: '#f1f5f9', color: '#475569', marginRight: '8px' }}
-                  onClick={() => setShowQuoteModal(false)}
-                >
-                  Cancel
-                </button>
-                <button type="submit" className="autocare-garage-btn-primary">
-                  <Printer size={16} />
-                  <span>Send Quotation</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* 3. Create Invoice Modal */}
-      {showInvoiceModal && (
-        <div
-          className="autocare-garage-modal-backdrop"
-          onClick={() => setShowInvoiceModal(false)}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div
-            className="autocare-garage-modal"
-            style={{ maxWidth: '520px' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="autocare-garage-modal-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <FileText size={20} />
-                <h3>Create Invoice: {vehicle.registration}</h3>
-              </div>
-              <button
-                type="button"
-                className="autocare-garage-modal-close-btn"
-                onClick={() => setShowInvoiceModal(false)}
-                aria-label="Close modal"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateInvoice}>
-              <div className="autocare-garage-modal-body">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
-                        Invoice Number *
-                      </label>
-                      <input
-                        type="text"
-                        value={invoiceNo}
-                        onChange={(e) => setInvoiceNo(e.target.value)}
-                        style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13.5px', boxSizing: 'border-box' }}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
-                        Total Billed (LKR) *
-                      </label>
-                      <input
-                        type="text"
-                        value={invoiceAmount}
-                        onChange={(e) => setInvoiceAmount(e.target.value)}
-                        style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13.5px', boxSizing: 'border-box' }}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '12.5px', color: '#64748b' }}>
-                    Will be cryptographically timestamped and made available to customer {vehicle.customer.name} via the AutoCare 360 portal.
-                  </div>
-                </div>
-              </div>
-
-              <div className="autocare-garage-modal-footer">
-                <button
-                  type="button"
-                  className="autocare-garage-hero-btn"
-                  style={{ background: '#f1f5f9', color: '#475569', marginRight: '8px' }}
-                  onClick={() => setShowInvoiceModal(false)}
-                >
-                  Cancel
-                </button>
-                <button type="submit" className="autocare-garage-btn-primary">
-                  <Download size={16} />
-                  <span>Issue &amp; Record Invoice</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* 4. Inspect Document Modal */}
+{/* 4. Inspect Document Modal */}
       {showDocModal && (
         <div
           className="autocare-garage-modal-backdrop"

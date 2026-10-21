@@ -57,23 +57,23 @@ export const GarageServiceRecordsPage: React.FC = () => {
     }, 4500);
   };
 
-  // Compile records from all vehicles
-  const allRecordsList = useMemo(() => {
+  // Compile records from all vehicles into local mutable state
+  const [recordsList, setRecordsList] = useState<ServiceRecordRow[]>(() => {
     const rows: ServiceRecordRow[] = [];
     MOCK_GARAGE_VEHICLES.forEach((v) => {
       v.serviceHistory.forEach((sh) => {
         rows.push({
           vehicle: v,
-          record: sh,
+          record: { ...sh },
         });
       });
     });
     return rows;
-  }, []);
+  });
 
   // Filtered rows
   const filteredRows = useMemo(() => {
-    return allRecordsList.filter(({ vehicle, record }) => {
+    return recordsList.filter(({ vehicle, record }) => {
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
         !q ||
@@ -95,7 +95,7 @@ export const GarageServiceRecordsPage: React.FC = () => {
 
       return matchesSearch && matchesStatus && matchesType;
     });
-  }, [allRecordsList, searchQuery, statusFilter, typeFilter]);
+  }, [recordsList, searchQuery, statusFilter, typeFilter]);
 
   const handleOpenEdit = (row: ServiceRecordRow) => {
     setEditRecord(row);
@@ -106,6 +106,22 @@ export const GarageServiceRecordsPage: React.FC = () => {
   const handleSaveEdit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editRecord) return;
+    const newCost = parseFloat(editCost) || editRecord.record.totalCost;
+    setRecordsList((prev) =>
+      prev.map((item) => {
+        if (item.record.id === editRecord.record.id) {
+          return {
+            ...item,
+            record: {
+              ...item.record,
+              workPerformed: editWork.trim() || item.record.workPerformed,
+              totalCost: newCost,
+            },
+          };
+        }
+        return item;
+      })
+    );
     showToast(
       `Service record ${editRecord.record.invoiceNo} for ${editRecord.vehicle.registration} updated successfully.`
     );
@@ -225,7 +241,7 @@ export const GarageServiceRecordsPage: React.FC = () => {
 
       {/* Results Count */}
       <div style={{ marginBottom: '14px', fontSize: '13px', color: '#64748b' }}>
-        Showing <strong>{filteredRows.length}</strong> of <strong>{allRecordsList.length}</strong> total records
+        Showing <strong>{filteredRows.length}</strong> of <strong>{recordsList.length}</strong> total records
       </div>
 
       {/* Records Table */}
@@ -252,7 +268,8 @@ export const GarageServiceRecordsPage: React.FC = () => {
             </button>
           </div>
         ) : (
-          <table className="autocare-garage-records-table">
+          <div className="autocare-garage-table-responsive">
+            <table className="autocare-garage-records-table">
             <thead>
               <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
                 <th style={{ padding: '12px 14px', textAlign: 'left', fontSize: '12px', color: '#64748b' }}>
@@ -322,7 +339,7 @@ export const GarageServiceRecordsPage: React.FC = () => {
                     </div>
                   </td>
 
-                  {/* Service Type */}
+                  {/* Service Type & Invoice Link */}
                   <td style={{ padding: '14px 14px' }}>
                     <span
                       style={{
@@ -337,6 +354,21 @@ export const GarageServiceRecordsPage: React.FC = () => {
                     >
                       {record.serviceType}
                     </span>
+                    <button
+                      type="button"
+                      className="autocare-garage-action-link"
+                      onClick={() => navigate(`/garage/invoice/new?vehicleId=${vehicle.id}`)}
+                      style={{
+                        display: 'block',
+                        fontSize: '11.5px',
+                        color: '#0284c7',
+                        marginTop: '4px',
+                        fontWeight: 600,
+                      }}
+                      title={`Open Invoice ${record.invoiceNo} in Invoice Generator`}
+                    >
+                      {record.invoiceNo} →
+                    </button>
                   </td>
 
                   {/* Garage & Technician */}
@@ -419,6 +451,7 @@ export const GarageServiceRecordsPage: React.FC = () => {
               ))}
             </tbody>
           </table>
+        </div>
         )}
       </section>
 
@@ -543,7 +576,34 @@ export const GarageServiceRecordsPage: React.FC = () => {
               )}
             </div>
 
-            <div className="autocare-garage-modal-footer">
+            <div className="autocare-garage-modal-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  className="autocare-garage-hero-btn"
+                  style={{ background: '#f8fafc', color: '#003874', border: '1px solid #cbd5e1', fontSize: '12.5px' }}
+                  onClick={() => {
+                    const vId = selectedRecord.vehicle.id;
+                    setSelectedRecord(null);
+                    navigate(`/garage/quotation/new?vehicleId=${vId}`);
+                  }}
+                >
+                  + Quotation
+                </button>
+                <button
+                  type="button"
+                  className="autocare-garage-hero-btn"
+                  style={{ background: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0', fontSize: '12.5px' }}
+                  onClick={() => {
+                    const vId = selectedRecord.vehicle.id;
+                    setSelectedRecord(null);
+                    navigate(`/garage/invoice/new?vehicleId=${vId}`);
+                  }}
+                >
+                  + Invoice
+                </button>
+              </div>
+
               <button
                 type="button"
                 className="autocare-garage-btn-primary"

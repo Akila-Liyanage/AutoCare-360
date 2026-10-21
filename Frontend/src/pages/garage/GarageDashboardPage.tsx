@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import {
   AlertTriangle,
   Plus,
-  CheckCircle2,
   X,
   FileText,
   Sparkles,
@@ -19,26 +18,17 @@ import {
 } from './garageData';
 import '../../styles/garage-dashboard.css';
 
-interface ToastState {
-  show: boolean;
-  message: string;
-}
+
 
 export const GarageDashboardPage: React.FC = () => {
   const navigate = useNavigate();
 
-  // Toast feedback state
-  const [toast, setToast] = useState<ToastState>({ show: false, message: '' });
+  
 
   // OCR details modal state
   const [showOcrModal, setShowOcrModal] = useState<boolean>(false);
 
-  const showToast = (message: string) => {
-    setToast({ show: true, message });
-    setTimeout(() => {
-      setToast((prev) => ({ ...prev, show: false }));
-    }, 4500);
-  };
+  
 
   const handleViewPassport = (record: GarageRecordItem) => {
     navigate(`/garage/vehicles/${record.vehicleId}`);
@@ -60,9 +50,8 @@ export const GarageDashboardPage: React.FC = () => {
         <button
           type="button"
           className="autocare-garage-hero-btn"
-          onClick={() => {
-            showToast('Perera Auto Works accreditation valid on SLT Mobitel Trust Network.');
-          }}
+          onClick={() => navigate('/garage/profile')}
+          title="View verified accreditation profile and certificate"
         >
           Accreditation details
         </button>
@@ -73,7 +62,7 @@ export const GarageDashboardPage: React.FC = () => {
         <div>
           <h1 className="autocare-garage-main-title">Garage Service Management</h1>
           <p className="autocare-garage-main-subtitle">
-            Tamper-proof ledger publisher portal and diagnostic scanning metrics.
+            Garage Service &amp; Workshop Management Portal and diagnostic inspection console.
           </p>
         </div>
 
@@ -125,34 +114,54 @@ export const GarageDashboardPage: React.FC = () => {
           </div>
 
           <div className="autocare-garage-entries-list">
-            {MOCK_RECENT_ENTRIES.map((entry) => (
-              <div key={entry.id} className="autocare-garage-entry-item">
-                <div className="autocare-garage-entry-left">
-                  <span className="autocare-garage-entry-vehicle">
-                    {entry.vehicleTitle} ({entry.regNumber})
-                  </span>
-                  <span className="autocare-garage-entry-details">
-                    {entry.mileage} • {entry.serviceDescription}
+            {MOCK_RECENT_ENTRIES.map((entry) => {
+              const targetVehId = entry.regNumber.includes('ABC-1234')
+                ? 'veh-1'
+                : entry.regNumber.includes('CAS-9988')
+                ? 'veh-2'
+                : 'veh-3';
+              return (
+                <div
+                  key={entry.id}
+                  className="autocare-garage-entry-item"
+                  onClick={() => navigate(`/garage/vehicles/${targetVehId}`)}
+                  style={{ cursor: 'pointer' }}
+                  title={`View vehicle passport for ${entry.vehicleTitle} (${entry.regNumber})`}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      navigate(`/garage/vehicles/${targetVehId}`);
+                    }
+                  }}
+                >
+                  <div className="autocare-garage-entry-left">
+                    <span className="autocare-garage-entry-vehicle">
+                      {entry.vehicleTitle} ({entry.regNumber})
+                    </span>
+                    <span className="autocare-garage-entry-details">
+                      {entry.mileage} • {entry.serviceDescription}
+                    </span>
+                  </div>
+
+                  <span
+                    className={`autocare-garage-status-badge ${
+                      entry.status === 'COMMITTED' ? 'is-committed' : 'is-pending'
+                    }`}
+                  >
+                    {entry.status}
                   </span>
                 </div>
-
-                <span
-                  className={`autocare-garage-status-badge ${
-                    entry.status === 'COMMITTED' ? 'is-committed' : 'is-pending'
-                  }`}
-                >
-                  {entry.status}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
 
         {/* Right Column: Active AI OCR Queue */}
-        <section className="autocare-garage-panel" aria-label="Active AI OCR Queue">
+        <section className="autocare-garage-panel" aria-label="Active OCR Queue">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
             <h2 className="autocare-garage-panel-title" style={{ margin: 0 }}>
-              Active AI OCR Queue
+              Active OCR Queue (Demo)
             </h2>
             <span
               style={{
@@ -214,24 +223,23 @@ export const GarageDashboardPage: React.FC = () => {
           {/* Warning Notice Box */}
           <div
             className="autocare-garage-warning-box"
-            onClick={() => {
-              showToast(
-                'Telemetry Disparity: Physical odometer shows 98,700 km, digital ECU scan shows 98,712 km (within 0.1% tolerance).'
-              );
-            }}
+            onClick={() => navigate('/garage/vehicles/veh-4')}
             role="button"
             tabIndex={0}
-            title="Click for validation error logs"
+            title="Click to view telemetry disparity on Toyota Prius (WP CAR-8282)"
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
-                showToast('Telemetry Disparity: Physical odometer inspection log opened.');
+                navigate('/garage/vehicles/veh-4');
               }
             }}
+            style={{ cursor: 'pointer' }}
           >
             <AlertTriangle size={18} className="autocare-garage-warning-icon" />
             <div>
               <div className="autocare-garage-warning-title">{MOCK_OCR_WARNING.title}</div>
-              <div className="autocare-garage-warning-desc">{MOCK_OCR_WARNING.message}</div>
+              <div className="autocare-garage-warning-desc">
+                {MOCK_OCR_WARNING.message} Click to open WP CAR-8282 passport.
+              </div>
             </div>
           </div>
         </section>
@@ -259,58 +267,60 @@ export const GarageDashboardPage: React.FC = () => {
           </button>
         </div>
 
-        <table className="autocare-garage-records-table">
-          <thead>
-            <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-              <th style={{ padding: '10px 10px', textAlign: 'left', fontSize: '12px', color: '#64748b' }}>
-                VEHICLE
-              </th>
-              <th style={{ padding: '10px 10px', textAlign: 'left', fontSize: '12px', color: '#64748b' }}>
-                CUSTOMER
-              </th>
-              <th style={{ padding: '10px 10px', textAlign: 'left', fontSize: '12px', color: '#64748b' }}>
-                DATE
-              </th>
-              <th style={{ padding: '10px 10px', textAlign: 'left', fontSize: '12px', color: '#64748b' }}>
-                STATUS
-              </th>
-              <th style={{ padding: '10px 10px', textAlign: 'right', fontSize: '12px', color: '#64748b' }}>
-                ACTIONS
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {MOCK_GARAGE_RECORDS.map((rec) => (
-              <tr key={rec.id}>
-                <td className="autocare-garage-td-ref">{rec.vehicleRef}</td>
-                <td className="autocare-garage-td-customer">{rec.customerName}</td>
-                <td className="autocare-garage-td-date">{rec.date}</td>
-                <td className={`autocare-garage-td-status is-${rec.statusColor}`}>
-                  {rec.status}
-                </td>
-                <td className="autocare-garage-td-actions">
-                  <button
-                    type="button"
-                    className="autocare-garage-action-link"
-                    onClick={() => handleViewPassport(rec)}
-                    title={`View Digital Passport for ${rec.vehicleRef}`}
-                  >
-                    View Passport
-                  </button>
-                  <span className="autocare-garage-action-separator">·</span>
-                  <button
-                    type="button"
-                    className="autocare-garage-action-link"
-                    onClick={() => navigate(`/garage/maintenance/new?vehicleId=${rec.vehicleId}`)}
-                    title={`Add Record for ${rec.vehicleRef}`}
-                  >
-                    Add Record
-                  </button>
-                </td>
+        <div className="autocare-garage-table-responsive">
+          <table className="autocare-garage-records-table">
+            <thead>
+              <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                <th style={{ padding: '10px 10px', textAlign: 'left', fontSize: '12px', color: '#64748b' }}>
+                  VEHICLE
+                </th>
+                <th style={{ padding: '10px 10px', textAlign: 'left', fontSize: '12px', color: '#64748b' }}>
+                  CUSTOMER
+                </th>
+                <th style={{ padding: '10px 10px', textAlign: 'left', fontSize: '12px', color: '#64748b' }}>
+                  DATE
+                </th>
+                <th style={{ padding: '10px 10px', textAlign: 'left', fontSize: '12px', color: '#64748b' }}>
+                  STATUS
+                </th>
+                <th style={{ padding: '10px 10px', textAlign: 'right', fontSize: '12px', color: '#64748b' }}>
+                  ACTIONS
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {MOCK_GARAGE_RECORDS.map((rec) => (
+                <tr key={rec.id}>
+                  <td className="autocare-garage-td-ref">{rec.vehicleRef}</td>
+                  <td className="autocare-garage-td-customer">{rec.customerName}</td>
+                  <td className="autocare-garage-td-date">{rec.date}</td>
+                  <td className={`autocare-garage-td-status is-${rec.statusColor}`}>
+                    {rec.status}
+                  </td>
+                  <td className="autocare-garage-td-actions">
+                    <button
+                      type="button"
+                      className="autocare-garage-action-link"
+                      onClick={() => handleViewPassport(rec)}
+                      title={`View Digital Passport for ${rec.vehicleRef}`}
+                    >
+                      View Passport
+                    </button>
+                    <span className="autocare-garage-action-separator">·</span>
+                    <button
+                      type="button"
+                      className="autocare-garage-action-link"
+                      onClick={() => navigate(`/garage/maintenance/new?vehicleId=${rec.vehicleId}`)}
+                      title={`Add Record for ${rec.vehicleRef}`}
+                    >
+                      Add Record
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       {/* ====================================================================
@@ -385,31 +395,30 @@ export const GarageDashboardPage: React.FC = () => {
                 className="autocare-garage-btn-primary"
                 onClick={() => {
                   setShowOcrModal(false);
-                  showToast('Invoice fields successfully converted to ledger draft.');
+                  navigate('/garage/maintenance/new?vehicleId=veh-4', {
+                    state: {
+                      ocrExtracted: true,
+                      workPerformed:
+                        'Full synthetic periodic lube service, replacement of engine oil & filter, brake caliper inspection, hybrid fan cleaning.',
+                      partsList: [
+                        'Mobil 1 0W-20 Advanced Fuel Economy (4L)',
+                        'Toyota Genuine Oil Filter 04152-YZZA6',
+                        'Cabin Micro-Air Filter',
+                      ],
+                      labourCost: '9500',
+                      partsCost: '18500',
+                    },
+                  });
                 }}
               >
-                Accept OCR Extracted Data
+                Accept OCR &amp; Create Maintenance Record
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Floating Action Toast Notification */}
-      {toast.show && (
-        <div className="autocare-garage-toast" role="alert">
-          <CheckCircle2 size={18} style={{ color: '#00B4EB', flexShrink: 0 }} />
-          <span>{toast.message}</span>
-          <button
-            type="button"
-            className="autocare-garage-toast-close"
-            onClick={() => setToast((prev) => ({ ...prev, show: false }))}
-            aria-label="Dismiss toast"
-          >
-            <X size={16} />
-          </button>
-        </div>
-      )}
+      
     </GarageLayout>
   );
 };

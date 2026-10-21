@@ -15,6 +15,7 @@ import {
 import GarageLayout from '../../components/layout/GarageLayout';
 import {
   MOCK_GARAGE_VEHICLES,
+  type GarageVehicle,
 } from './garageData';
 import '../../styles/garage-dashboard.css';
 
@@ -26,9 +27,23 @@ interface ToastState {
 export const GarageVehiclesPage: React.FC = () => {
   const navigate = useNavigate();
 
+  // Vehicles state (allows local adding of client vehicles)
+  const [vehicles, setVehicles] = useState<GarageVehicle[]>(MOCK_GARAGE_VEHICLES);
+
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
+
+  // Register Modal State
+  const [showRegisterModal, setShowRegisterModal] = useState<boolean>(false);
+  const [newReg, setNewReg] = useState<string>('');
+  const [newVin, setNewVin] = useState<string>('');
+  const [newMake, setNewMake] = useState<string>('Toyota');
+  const [newModel, setNewModel] = useState<string>('');
+  const [newCustomer, setNewCustomer] = useState<string>('');
+  const [newPhone, setNewPhone] = useState<string>('');
+  const [newMileage, setNewMileage] = useState<string>('45000');
+  const [formError, setFormError] = useState<string>('');
 
   // Interactive Toast State
   const [toast, setToast] = useState<ToastState>({ show: false, message: '' });
@@ -40,9 +55,70 @@ export const GarageVehiclesPage: React.FC = () => {
     }, 4500);
   };
 
+  // Register Client Vehicle Handler
+  const handleRegisterSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError('');
+
+    const regTrimmed = newReg.trim();
+    const custTrimmed = newCustomer.trim();
+    const mNum = parseInt(newMileage, 10);
+
+    if (!regTrimmed) {
+      setFormError('Vehicle registration number is required.');
+      return;
+    }
+    if (!custTrimmed) {
+      setFormError('Customer/Owner name is required.');
+      return;
+    }
+    if (isNaN(mNum) || mNum < 0) {
+      setFormError('Current mileage must be a non-negative number.');
+      return;
+    }
+
+    const newVehItem: GarageVehicle = {
+      id: `veh-${Date.now()}`,
+      registration: regTrimmed.toUpperCase(),
+      vin: newVin.trim().toUpperCase() || `VIN-${Date.now().toString().slice(-8)}`,
+      make: newMake.trim() || 'Toyota',
+      model: newModel.trim() || 'Custom Vehicle',
+      year: new Date().getFullYear(),
+      color: 'Standard Silver',
+      fuelType: 'Hybrid / Petrol',
+      transmission: 'Automatic',
+      engineCapacity: '1,500 cc',
+      mileage: mNum,
+      lastService: 'Just Registered',
+      lastServiceType: 'Initial Workshop Intake',
+      status: 'Active',
+      statusColor: 'green',
+      customer: {
+        id: `cust-${Date.now()}`,
+        name: custTrimmed,
+        phone: newPhone.trim() || '+94 77 000 0000',
+        email: `${custTrimmed.toLowerCase().replace(/\s+/g, '.')}@example.com`,
+        address: 'Colombo, Sri Lanka',
+        memberSince: 'October 2026',
+        loyaltyTier: 'Standard',
+      },
+      serviceHistory: [],
+      documents: [],
+    };
+
+    setVehicles((prev) => [newVehItem, ...prev]);
+    setShowRegisterModal(false);
+    setNewReg('');
+    setNewVin('');
+    setNewModel('');
+    setNewCustomer('');
+    setNewPhone('');
+    showToast(`Vehicle ${newVehItem.registration} successfully linked to workshop registry.`);
+  };
+
   // Filter vehicles
   const filteredVehicles = useMemo(() => {
-    return MOCK_GARAGE_VEHICLES.filter((v) => {
+    return vehicles.filter((v) => {
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
         !q ||
@@ -58,7 +134,7 @@ export const GarageVehiclesPage: React.FC = () => {
 
       return matchesSearch && matchesStatus;
     });
-  }, [searchQuery, statusFilter]);
+  }, [vehicles, searchQuery, statusFilter]);
 
   return (
     <GarageLayout activeItem="Vehicles" breadcrumbCurrent="Customer Vehicles">
@@ -74,12 +150,10 @@ export const GarageVehiclesPage: React.FC = () => {
         <button
           type="button"
           className="autocare-garage-btn-primary"
-          onClick={() => {
-            showToast('Client Vehicle Registration portal initialized. Ready to link new VIN.');
-          }}
+          onClick={() => setShowRegisterModal(true)}
         >
           <Plus size={16} />
-          <span>Register Client Vehicle</span>
+          <span>+ Register Client Vehicle</span>
         </button>
       </div>
 
@@ -202,7 +276,8 @@ export const GarageVehiclesPage: React.FC = () => {
             </button>
           </div>
         ) : (
-          <table className="autocare-garage-records-table">
+          <div className="autocare-garage-table-responsive">
+            <table className="autocare-garage-records-table">
             <thead>
               <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
                 <th style={{ padding: '12px 14px', textAlign: 'left', fontSize: '12px', color: '#64748b' }}>
@@ -371,8 +446,206 @@ export const GarageVehiclesPage: React.FC = () => {
               ))}
             </tbody>
           </table>
+        </div>
         )}
       </section>
+
+      {/* Register Client Vehicle Modal */}
+      {showRegisterModal && (
+        <div
+          className="autocare-garage-modal-backdrop"
+          onClick={() => setShowRegisterModal(false)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="autocare-garage-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '520px' }}>
+            <div className="autocare-garage-modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Car size={18} />
+                <h3>Register Client Vehicle</h3>
+              </div>
+              <button
+                type="button"
+                className="autocare-garage-modal-close-btn"
+                onClick={() => setShowRegisterModal(false)}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleRegisterSubmit}>
+              <div className="autocare-garage-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {formError && (
+                  <div
+                    style={{
+                      background: '#fef2f2',
+                      color: '#dc2626',
+                      border: '1px solid #fecaca',
+                      padding: '8px 12px',
+                      borderRadius: '6px',
+                      fontSize: '12.5px',
+                    }}
+                  >
+                    {formError}
+                  </div>
+                )}
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
+                      Registration Number *
+                    </label>
+                    <input
+                      type="text"
+                      value={newReg}
+                      onChange={(e) => setNewReg(e.target.value)}
+                      placeholder="e.g. WP CBB-4422"
+                      required
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        borderRadius: '8px',
+                        border: '1px solid #cbd5e1',
+                        fontSize: '13px',
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
+                      VIN / Chassis Number
+                    </label>
+                    <input
+                      type="text"
+                      value={newVin}
+                      onChange={(e) => setNewVin(e.target.value)}
+                      placeholder="e.g. NZE161-90281"
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        borderRadius: '8px',
+                        border: '1px solid #cbd5e1',
+                        fontSize: '13px',
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
+                      Manufacturer (Make)
+                    </label>
+                    <input
+                      type="text"
+                      value={newMake}
+                      onChange={(e) => setNewMake(e.target.value)}
+                      placeholder="e.g. Toyota"
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        borderRadius: '8px',
+                        border: '1px solid #cbd5e1',
+                        fontSize: '13px',
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
+                      Model &amp; Edition
+                    </label>
+                    <input
+                      type="text"
+                      value={newModel}
+                      onChange={(e) => setNewModel(e.target.value)}
+                      placeholder="e.g. Yaris Cross G-Spec"
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        borderRadius: '8px',
+                        border: '1px solid #cbd5e1',
+                        fontSize: '13px',
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
+                      Customer / Owner Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={newCustomer}
+                      onChange={(e) => setNewCustomer(e.target.value)}
+                      placeholder="e.g. Dilan Perera"
+                      required
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        borderRadius: '8px',
+                        border: '1px solid #cbd5e1',
+                        fontSize: '13px',
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
+                      Customer Phone Number
+                    </label>
+                    <input
+                      type="text"
+                      value={newPhone}
+                      onChange={(e) => setNewPhone(e.target.value)}
+                      placeholder="e.g. +94 77 889 0011"
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        borderRadius: '8px',
+                        border: '1px solid #cbd5e1',
+                        fontSize: '13px',
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
+                    Current Odometer (km) *
+                  </label>
+                  <input
+                    type="number"
+                    value={newMileage}
+                    onChange={(e) => setNewMileage(e.target.value)}
+                    min="0"
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '13px',
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="autocare-garage-modal-footer">
+                <button
+                  type="button"
+                  className="autocare-garage-hero-btn"
+                  onClick={() => setShowRegisterModal(false)}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="autocare-garage-btn-primary">
+                  Save &amp; Link Vehicle
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Floating Action Toast Notification */}
       {toast.show && (

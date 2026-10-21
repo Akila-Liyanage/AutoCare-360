@@ -79,9 +79,9 @@ export const GarageAuditTrailPage: React.FC = () => {
     <GarageLayout activeItem="Audit trail" breadcrumbCurrent="Audit Trail">
       <div className="autocare-garage-title-row">
         <div>
-          <h1 className="autocare-garage-main-title">Cryptographic Audit Trail</h1>
+          <h1 className="autocare-garage-main-title">Security & Verification Activity Log</h1>
           <p className="autocare-garage-main-subtitle">
-            Blockchain-anchored ledger proof verifying every garage entry, signature, and scan.
+            Activity log and audit proof verifying garage entries, signatures, and document scans (Demo simulation).
           </p>
         </div>
 
@@ -134,6 +134,7 @@ export const GarageAuditTrailPage: React.FC = () => {
       </div>
 
       <section className="autocare-garage-records-panel" aria-label="Audit Ledger Table">
+        <div className="autocare-garage-table-responsive">
         <table className="autocare-garage-records-table">
           <thead>
             <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
@@ -204,6 +205,7 @@ export const GarageAuditTrailPage: React.FC = () => {
             ))}
           </tbody>
         </table>
+        </div>
       </section>
 
       {/* Toast */}
