@@ -23,7 +23,6 @@ async function seedBRDFull() {
     console.log('✓ Connected to MongoDB');
 
     const defaultPassword = 'Password123!';
-    const hashedPassword = await bcrypt.hash(defaultPassword, 10);
 
     // 1. Ensure or update the 3 exact accounts requested by user
     // A. Vehicle Owner: owner@gmail.com
@@ -33,7 +32,7 @@ async function seedBRDFull() {
         fullName: 'Chathura Perera',
         email: 'owner@gmail.com',
         phone: '+94 77 123 4567',
-        password: hashedPassword,
+        password: defaultPassword,
         role: 'owner',
         status: 'active',
         displayName: 'Chathura P.',
@@ -41,7 +40,7 @@ async function seedBRDFull() {
       });
       console.log('✓ Created owner@gmail.com');
     } else {
-      owner.password = hashedPassword;
+      owner.password = defaultPassword;
       owner.status = 'active';
       owner.fullName = 'Chathura Perera';
       owner.displayName = 'Chathura P.';
@@ -56,7 +55,7 @@ async function seedBRDFull() {
         fullName: 'Perera Auto Works (Pvt) Ltd',
         email: 'garage@gmail.com',
         phone: '+94 11 258 9632',
-        password: hashedPassword,
+        password: defaultPassword,
         role: 'garage',
         status: 'active',
         displayName: 'Perera Auto Works',
@@ -64,7 +63,7 @@ async function seedBRDFull() {
       });
       console.log('✓ Created garage@gmail.com (active verified)');
     } else {
-      garage.password = hashedPassword;
+      garage.password = defaultPassword;
       garage.status = 'active';
       garage.fullName = 'Perera Auto Works (Pvt) Ltd';
       garage.displayName = 'Perera Auto Works';
@@ -79,7 +78,7 @@ async function seedBRDFull() {
         fullName: 'AutoCare System Director',
         email: 'admin@gmail.com',
         phone: '+94 11 200 1000',
-        password: hashedPassword,
+        password: defaultPassword,
         role: 'admin',
         status: 'active',
         displayName: 'AutoCare Director',
@@ -87,7 +86,7 @@ async function seedBRDFull() {
       });
       console.log('✓ Created admin@gmail.com');
     } else {
-      admin.password = hashedPassword;
+      admin.password = defaultPassword;
       admin.status = 'active';
       admin.fullName = 'AutoCare System Director';
       admin.displayName = 'AutoCare Director';

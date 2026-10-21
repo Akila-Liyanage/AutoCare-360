@@ -1,0 +1,43 @@
+%PDF-1.4
+1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj
+2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj
+3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >> endobj
+5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj
+4 0 obj << /Length 1200 >> stream
+BT
+/F1 18 Tf
+50 720 Td
+(TAX INVOICE - PERERA AUTO WORKS PVT LTD) Tj
+/F1 11 Tf
+0 -30 Td
+(Invoice No: INV-2024-10200) Tj
+0 -18 Td
+(Customer: Chathura Perera | Vehicle: WP CAR-1010) Tj
+0 -18 Td
+(Service: Periodic 10,000 km Maintenance & Oil Service) Tj
+0 -18 Td
+(Labour Cost: LKR 4,500.00) Tj
+0 -18 Td
+(Parts Cost: LKR 14,500.00 Toyota 0W-20, OEM Filter) Tj
+0 -18 Td
+(Total Amount: LKR 19,000.00) Tj
+0 -18 Td
+(Payment Method: Credit Card Settled) Tj
+0 -18 Td
+(Master Technician: Kaveesha Perera) Tj
+0 -18 Td
+ET
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000010 00000 n 
+0000000060 00000 n 
+0000000117 00000 n 
+0000000280 00000 n 
+0000000220 00000 n 
+trailer << /Size 6 /Root 1 0 R >>
+startxref
+800
+%%EOF

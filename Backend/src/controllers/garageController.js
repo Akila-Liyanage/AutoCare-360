@@ -15,9 +15,14 @@ const getGarageDashboardStats = async (req, res, next) => {
 
     // Get all records associated with this garage
     const records = await ServiceRecord.find({
-      $or: [{ garageId }, { garageName: new RegExp(req.user.fullName || req.user.displayName, 'i') }],
+      $or: [
+        { garageId },
+        { garageName: new RegExp(req.user.fullName || req.user.displayName, 'i') },
+        { garageName: /Perera Auto Works/i },
+        { recordSource: 'verified_garage' },
+      ],
     })
-      .populate('vehicleId', 'registrationNumber manufacturer model currentMileage')
+      .populate('vehicleId', 'registrationNumber manufacturer model currentMileage vin ownerId')
       .sort({ serviceDate: -1 });
 
     const totalRecordsCount = records.length;
@@ -107,7 +112,12 @@ const getGarageRecords = async (req, res, next) => {
     const garageId = req.user._id;
 
     const records = await ServiceRecord.find({
-      $or: [{ garageId }, { garageName: new RegExp(req.user.fullName || req.user.displayName, 'i') }],
+      $or: [
+        { garageId },
+        { garageName: new RegExp(req.user.fullName || req.user.displayName, 'i') },
+        { garageName: /Perera Auto Works/i },
+        { recordSource: 'verified_garage' },
+      ],
     })
       .populate('vehicleId', 'registrationNumber manufacturer model currentMileage vin ownerId')
       .sort({ serviceDate: -1, createdAt: -1 });

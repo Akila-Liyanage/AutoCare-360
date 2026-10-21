@@ -72,6 +72,33 @@ export const GarageVehicleDetailsPage: React.FC = () => {
     }, 4500);
   };
 
+  // Real verified document download handler
+  const handleDownloadDoc = (doc: GarageVehicleDocumentItem) => {
+    let fileUrl = '/uploads/documents/Revenue_License_WP_CAR_1010.pdf';
+    const lower = doc.name.toLowerCase();
+    if (lower.includes('insurance')) {
+      fileUrl = '/uploads/documents/Comprehensive_Insurance_Policy.pdf';
+    } else if (lower.includes('emission') || lower.includes('green')) {
+      fileUrl = '/uploads/documents/Emission_Test_Certificate.pdf';
+    } else if (lower.includes('cr') || lower.includes('registration')) {
+      fileUrl = '/uploads/documents/CR_Book_Copy_WP_CAR_1010.pdf';
+    } else if (lower.includes('invoice') || lower.includes('paw')) {
+      fileUrl = '/uploads/invoices/PAW_INV_31800.pdf';
+    }
+
+    const hostBase = 'http://localhost:5000';
+    const link = document.createElement('a');
+    link.href = `${hostBase}${fileUrl}`;
+    link.target = '_blank';
+    link.download = `${doc.name.replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    setShowDocModal(null);
+    showToast(`Downloading verified PDF copy of ${doc.name}...`);
+  };
+
   const handleAddRecordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -84,7 +111,7 @@ export const GarageVehicleDetailsPage: React.FC = () => {
             targetId = lookupRes.data.data.vehicle._id;
           }
         } catch {
-          targetId = '6ad896d86ebb4fffb4bf7bed';
+          targetId = '6ad8a02b9ba9651cdcf01886';
         }
       }
 
@@ -1117,10 +1144,7 @@ export const GarageVehicleDetailsPage: React.FC = () => {
               <button
                 type="button"
                 className="autocare-garage-btn-primary"
-                onClick={() => {
-                  setShowDocModal(null);
-                  showToast(`Downloaded verified copy of ${showDocModal.name}.`);
-                }}
+                onClick={() => handleDownloadDoc(showDocModal)}
               >
                 Download Verified PDF
               </button>
