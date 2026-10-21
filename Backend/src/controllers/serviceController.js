@@ -2,6 +2,9 @@ const mongoose = require('mongoose');
 const ServiceRecord = require('../models/ServiceRecord');
 const Vehicle = require('../models/Vehicle');
 const AuditLog = require('../models/AuditLog');
+const Expense = require('../models/Expense');
+const Notification = require('../models/Notification');
+const GarageInvoice = require('../models/GarageInvoice');
 
 // @desc    Create a new service record
 // @route   POST /api/services or POST /api/vehicles/:vehicleId/services
@@ -192,6 +195,75 @@ const createServiceRecord = async (req, res, next) => {
       vehicle.lastServiceDate = parsedDate;
     }
     await vehicle.save();
+
+    // Auto-sync Expense for Vehicle Owner (BR-04, FR-03: Cost tracking)
+    if (serviceRecord.totalCost > 0) {
+      try {
+        await Expense.create({
+          vehicleId: vehicle._id,
+          ownerId: vehicle.ownerId,
+          serviceRecordId: serviceRecord._id,
+          category: 'Maintenance',
+          title: serviceRecord.serviceType || 'Vehicle Maintenance',
+          description: serviceRecord.workPerformed || '',
+          amount: serviceRecord.totalCost,
+          expenseDate: serviceRecord.serviceDate,
+          vendor: resolvedGarageName,
+          paymentMethod: 'Bank Transfer / Card',
+          source: 'service_record',
+          notes: `Auto-generated from certified service record #${serviceRecord._id}`,
+        });
+      } catch (expErr) {
+        console.warn('[Expense Sync Notice]:', expErr.message);
+      }
+    }
+
+    // Auto-sync Notification for Vehicle Owner (BR-04, FR-06: Notifications & Reminders)
+    try {
+      await Notification.create({
+        userId: vehicle.ownerId,
+        vehicleId: vehicle._id,
+        title: isGarage ? 'New Certified Service Record' : 'Service Record Logged',
+        message: `${resolvedGarageName} recorded a maintenance milestone (${serviceRecord.serviceType}) for your ${vehicle.manufacturer} ${vehicle.model} (${vehicle.registrationNumber}).`,
+        type: 'service',
+        priority: 'medium',
+        status: 'unread',
+        source: 'service',
+        relatedServiceRecordId: serviceRecord._id,
+      });
+    } catch (notifErr) {
+      console.warn('[Notification Sync Notice]:', notifErr.message);
+    }
+
+    // Auto-sync Invoice for Verified Garage (BR-03: Invoices)
+    if (isGarage) {
+      try {
+        const count = await GarageInvoice.countDocuments();
+        const invoiceNum = `INV-PAW-${Date.now().toString().slice(-4)}-${count + 1}`;
+        await GarageInvoice.create({
+          garageId: req.user._id,
+          vehicleId: vehicle._id,
+          serviceRecordId: serviceRecord._id,
+          invoiceNumber: invoiceNum,
+          items: [
+            {
+              description: serviceRecord.workPerformed || serviceRecord.serviceType,
+              quantity: 1,
+              unitPrice: serviceRecord.totalCost,
+              total: serviceRecord.totalCost,
+            },
+          ],
+          labourCost: parsedLabour,
+          partsCost: parsedParts,
+          totalAmount: serviceRecord.totalCost,
+          paymentStatus: 'paid',
+          issueDate: serviceRecord.serviceDate,
+          notes: `Certified ledger invoice for ${vehicle.registrationNumber}`,
+        });
+      } catch (invErr) {
+        console.warn('[GarageInvoice Sync Notice]:', invErr.message);
+      }
+    }
 
     return res.status(201).json({
       success: true,
