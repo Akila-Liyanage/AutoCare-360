@@ -10,6 +10,7 @@ export interface ExpenseLedgerItem {
   payment: string;
   amount: number;
   source?: 'service_record' | 'manual';
+  receiptUrl?: string;
   description?: string;
   notes?: string;
 }

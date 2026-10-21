@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Clock, X, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Clock, X, RefreshCw, AlertTriangle, ArrowLeft } from 'lucide-react';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import {
@@ -293,6 +293,31 @@ export const NotificationsPage: React.FC = () => {
 
       <main className="autocare-notifications-main">
         <div className="autocare-notifications-container">
+          {/* Back Navigation */}
+          <div style={{ marginBottom: '14px' }}>
+            <Link
+              to="/vehicles"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: 'transparent',
+                border: 'none',
+                color: '#0056A2',
+                fontSize: '13.5px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                textDecoration: 'none',
+                padding: '6px 12px',
+                borderRadius: '8px',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <ArrowLeft size={16} />
+              <span>Back to My Vehicles</span>
+            </Link>
+          </div>
+
           {/* Header Row */}
           <div className="autocare-notif-header-row">
             <div className="autocare-notif-title-group">

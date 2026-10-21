@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { useLocation, useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams, Link } from 'react-router-dom';
 import {
   Search,
   Bell,
@@ -12,7 +12,8 @@ import {
   Clock,
   X,
   Loader2,
-  RotateCw
+  RotateCw,
+  ArrowLeft
 } from 'lucide-react';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
@@ -22,6 +23,7 @@ import {
 } from './serviceData';
 import {
   getVehicleServiceRecords,
+  createServiceRecord,
   type BackendServiceRecord
 } from '../../services/serviceService';
 import {
@@ -29,12 +31,14 @@ import {
   type Vehicle
 } from '../../services/vehicleService';
 import '../../styles/services.css';
+import '../../styles/vehicle.css';
 
 type ServiceTab = 'all' | 'verified' | 'self-reported';
 
 interface LocationState {
   vehicleId?: string;
   vehicle?: Vehicle;
+  openAddModal?: boolean;
 }
 
 /**
@@ -121,7 +125,7 @@ const mapBackendRecordToItem = (record: BackendServiceRecord): ServiceRecordItem
 
 export const ServiceHistoryPage: React.FC = () => {
   const location = useLocation();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const locationState = (location.state as LocationState) || {};
 
   // State
@@ -132,9 +136,41 @@ export const ServiceHistoryPage: React.FC = () => {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Async data & vehicle states
+  const [myVehiclesList, setMyVehiclesList] = useState<Vehicle[]>([]);
   const [currentVehicle, setCurrentVehicle] = useState<Vehicle | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [apiError, setApiError] = useState<string | null>(null);
+
+  // Add Service Record Modal form state
+  const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
+  const [formServiceDate, setFormServiceDate] = useState<string>(
+    new Date().toISOString().split('T')[0]
+  );
+  const [formServiceType, setFormServiceType] = useState<string>('Routine Maintenance');
+  const [formMileage, setFormMileage] = useState<string>('');
+  const [formWorkPerformed, setFormWorkPerformed] = useState<string>('');
+  const [formTotalCost, setFormTotalCost] = useState<string>('');
+  const [formGarageName, setFormGarageName] = useState<string>('');
+  const [formNotes, setFormNotes] = useState<string>('');
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [modalError, setModalError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+  /**
+   * Reset form fields to clean state
+   */
+  const resetForm = useCallback(() => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    setFormServiceDate(todayStr);
+    setFormServiceType('Routine Maintenance');
+    setFormMileage(currentVehicle?.currentMileage ? String(currentVehicle.currentMileage) : '');
+    setFormWorkPerformed('');
+    setFormTotalCost('');
+    setFormGarageName('');
+    setFormNotes('');
+    setFormErrors({});
+    setModalError(null);
+  }, [currentVehicle]);
 
   /**
    * Helper to load service records for a target vehicle
@@ -164,6 +200,19 @@ export const ServiceHistoryPage: React.FC = () => {
   );
 
   /**
+   * Switch active vehicle without page reload
+   */
+  const handleVehicleSwitch = (vehicleId: string) => {
+    const found = myVehiclesList.find((v) => v._id === vehicleId);
+    if (!found) return;
+    setCurrentVehicle(found);
+    setSearchParams({ vehicleId });
+    setIsLoading(true);
+    setApiError(null);
+    fetchRecords(found);
+  };
+
+  /**
    * Manual refresh handler triggered by user action
    */
   const handleRefresh = useCallback(() => {
@@ -176,6 +225,7 @@ export const ServiceHistoryPage: React.FC = () => {
     if (!targetVehicle && !targetVehicleId) {
       getMyVehicles()
         .then((vehicles) => {
+          setMyVehiclesList(vehicles);
           if (vehicles.length > 0) {
             setCurrentVehicle(vehicles[0]);
             fetchRecords(vehicles[0]);
@@ -195,6 +245,7 @@ export const ServiceHistoryPage: React.FC = () => {
     } else if (targetVehicleId) {
       getMyVehicles()
         .then((vehicles) => {
+          setMyVehiclesList(vehicles);
           const match = vehicles.find((v) => v._id === targetVehicleId) || vehicles[0];
           if (match) {
             setCurrentVehicle(match);
@@ -211,6 +262,94 @@ export const ServiceHistoryPage: React.FC = () => {
   }, [currentVehicle, fetchRecords, locationState.vehicle, locationState.vehicleId, searchParams]);
 
   /**
+   * Validate Add Service Record Form
+   */
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (!formServiceDate) {
+      errors.serviceDate = 'Service date is required.';
+    } else {
+      const selectedDate = new Date(formServiceDate);
+      const endOfToday = new Date();
+      endOfToday.setHours(23, 59, 59, 999);
+      if (selectedDate > endOfToday) {
+        errors.serviceDate = 'Service date cannot be in the future.';
+      }
+    }
+
+    if (!formServiceType.trim()) {
+      errors.serviceType = 'Service type / category is required.';
+    }
+
+    if (formMileage === '' || isNaN(Number(formMileage)) || Number(formMileage) < 0) {
+      errors.mileage = 'Please enter a valid non-negative mileage.';
+    }
+
+    if (!formWorkPerformed.trim()) {
+      errors.workPerformed = 'Description of work performed is required.';
+    }
+
+    if (formTotalCost !== '' && (isNaN(Number(formTotalCost)) || Number(formTotalCost) < 0)) {
+      errors.totalCost = 'Total cost must be a non-negative number.';
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  /**
+   * Handle Submission of New Service Record
+   */
+  const handleAddRecordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentVehicle) {
+      setModalError('No vehicle selected.');
+      return;
+    }
+
+    setModalError(null);
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const createdRecord = await createServiceRecord({
+        vehicleId: currentVehicle._id,
+        serviceDate: formServiceDate,
+        mileage: Number(formMileage),
+        serviceType: formServiceType.trim(),
+        workPerformed: formWorkPerformed.trim(),
+        totalCost: formTotalCost !== '' ? Number(formTotalCost) : 0,
+        garageName: formGarageName.trim() || undefined,
+        notes: formNotes.trim() || undefined,
+      });
+
+      setIsAddModalOpen(false);
+      resetForm();
+      showToast('Service record added successfully!');
+
+      // Instantly refresh list from database
+      const backendRecords = await getVehicleServiceRecords(currentVehicle._id);
+      const mapped = backendRecords.map(mapBackendRecordToItem);
+      setRecords(mapped);
+      if (createdRecord?._id) {
+        setSelectedRecordId(createdRecord._id);
+      } else if (mapped.length > 0) {
+        setSelectedRecordId(mapped[0].id);
+      }
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        (err instanceof Error ? err.message : 'Failed to save service record. Please try again.');
+      setModalError(msg);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  /**
    * Initial data synchronization on page mount
    */
   useEffect(() => {
@@ -221,19 +360,18 @@ export const ServiceHistoryPage: React.FC = () => {
         let targetVehicleId = locationState.vehicleId || searchParams.get('vehicleId');
         let targetVehicle = locationState.vehicle || null;
 
-        if (!targetVehicleId || !targetVehicle) {
-          const vehicles = await getMyVehicles();
-          if (vehicles.length > 0) {
-            if (targetVehicleId) {
-              targetVehicle = vehicles.find((v) => v._id === targetVehicleId) || vehicles[0];
-            } else {
-              targetVehicle = vehicles[0];
-            }
-            targetVehicleId = targetVehicle._id;
-          }
-        }
-
+        const vehicles = await getMyVehicles();
         if (!isMounted) return;
+        setMyVehiclesList(vehicles);
+
+        if (vehicles.length > 0) {
+          if (targetVehicleId) {
+            targetVehicle = vehicles.find((v) => v._id === targetVehicleId) || vehicles[0];
+          } else if (!targetVehicle) {
+            targetVehicle = vehicles[0];
+          }
+          targetVehicleId = targetVehicle._id;
+        }
 
         if (!targetVehicleId || !targetVehicle) {
           setCurrentVehicle(null);
@@ -255,6 +393,11 @@ export const ServiceHistoryPage: React.FC = () => {
           setSelectedRecordId('');
         }
         setIsLoading(false);
+
+        // Check if user requested opening Add Modal directly via navigation
+        if (searchParams.get('action') === 'add' || locationState.openAddModal) {
+          setIsAddModalOpen(true);
+        }
       } catch (err: unknown) {
         if (!isMounted) return;
         const msg =
@@ -271,7 +414,7 @@ export const ServiceHistoryPage: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [locationState.vehicle, locationState.vehicleId, searchParams]);
+  }, [locationState.openAddModal, locationState.vehicle, locationState.vehicleId, searchParams]);
 
   // Tab counts
   const allCount = records.length;
@@ -350,6 +493,31 @@ export const ServiceHistoryPage: React.FC = () => {
 
       <main className="autocare-services-main">
         <div className="autocare-services-container">
+          {/* Back Navigation */}
+          <div style={{ marginBottom: '14px' }}>
+            <Link
+              to={currentVehicle ? `/vehicles/${currentVehicle._id}` : '/vehicles'}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: 'transparent',
+                border: 'none',
+                color: '#0056A2',
+                fontSize: '13.5px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                textDecoration: 'none',
+                padding: '6px 12px',
+                borderRadius: '8px',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <ArrowLeft size={16} />
+              <span>{currentVehicle ? 'Back to vehicle details' : 'Back to My Vehicles'}</span>
+            </Link>
+          </div>
+
           {/* Top Header Row (Title + Vehicle Identity + Toolbar) */}
           <div className="autocare-services-header-row">
             <div>
@@ -357,16 +525,42 @@ export const ServiceHistoryPage: React.FC = () => {
                 Maintenance &amp; Service Records History
               </h1>
               {currentVehicle && (
-                <p style={{ margin: '4px 0 0 0', fontSize: '13.5px', color: '#64748b' }}>
-                  Vehicle:{' '}
-                  <strong style={{ color: '#0f172a' }}>
-                    {currentVehicle.manufacturer} {currentVehicle.model} ({currentVehicle.manufacturingYear})
-                  </strong>{' '}
-                  • Plate:{' '}
-                  <span style={{ fontWeight: 600, color: '#0056a2' }}>
-                    {currentVehicle.registrationNumber}
-                  </span>
-                </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '4px', flexWrap: 'wrap' }}>
+                  <p style={{ margin: 0, fontSize: '13.5px', color: '#64748b' }}>
+                    Vehicle:{' '}
+                    <strong style={{ color: '#0f172a' }}>
+                      {currentVehicle.manufacturer} {currentVehicle.model} ({currentVehicle.manufacturingYear})
+                    </strong>{' '}
+                    • Plate:{' '}
+                    <span style={{ fontWeight: 600, color: '#0056a2' }}>
+                      {currentVehicle.registrationNumber}
+                    </span>
+                  </p>
+                  {myVehiclesList.length > 1 && (
+                    <select
+                      value={currentVehicle._id}
+                      onChange={(e) => handleVehicleSwitch(e.target.value)}
+                      aria-label="Switch vehicle"
+                      style={{
+                        padding: '3px 8px',
+                        borderRadius: '6px',
+                        border: '1px solid #cbd5e1',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        color: '#0f172a',
+                        background: '#ffffff',
+                        cursor: 'pointer',
+                        outline: 'none',
+                      }}
+                    >
+                      {myVehiclesList.map((v) => (
+                        <option key={v._id} value={v._id}>
+                          Switch to: {v.manufacturer} {v.model} ({v.registrationNumber})
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
               )}
             </div>
 
@@ -455,11 +649,10 @@ export const ServiceHistoryPage: React.FC = () => {
             <button
               type="button"
               className="autocare-btn-add-manual"
-              onClick={() =>
-                showToast(
-                  'Backend service APIs are active! Modal form integration for adding service records is scheduled in the upcoming sprint.'
-                )
-              }
+              onClick={() => {
+                resetForm();
+                setIsAddModalOpen(true);
+              }}
             >
               <Plus size={16} />
               <span>Add Manual Record</span>
@@ -754,6 +947,298 @@ export const ServiceHistoryPage: React.FC = () => {
           </div>
         </div>
       </main>
+
+      {/* Add Service Record Modal */}
+      {isAddModalOpen && currentVehicle && (
+        <div
+          className="autocare-modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !isSubmitting) {
+              setIsAddModalOpen(false);
+            }
+          }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="add-service-title"
+        >
+          <div className="autocare-modal-container" style={{ maxWidth: '580px' }}>
+            <div className="autocare-modal-header">
+              <div>
+                <h3 id="add-service-title" className="autocare-modal-title">
+                  Add Service Record
+                </h3>
+                <p style={{ margin: '3px 0 0 0', fontSize: '13px', color: '#64748b' }}>
+                  Log a manual maintenance entry for this vehicle.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="autocare-modal-close-btn"
+                onClick={() => !isSubmitting && setIsAddModalOpen(false)}
+                aria-label="Close modal"
+                disabled={isSubmitting}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddRecordSubmit}>
+              <div className="autocare-modal-body" style={{ maxHeight: '72vh', overflowY: 'auto' }}>
+                {/* Informational Verification Banner */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    background: '#f0fdf4',
+                    border: '1px solid #bbf7d0',
+                    fontSize: '12.5px',
+                    color: '#166534',
+                  }}
+                >
+                  <ShieldCheck size={18} style={{ color: '#16a34a', flexShrink: 0 }} />
+                  <span>
+                    <strong>Owner Verified Entry:</strong> Records logged by vehicle owners are saved
+                    with <em>Self-Reported</em> status to maintain platform ledger integrity.
+                  </span>
+                </div>
+
+                {/* API Error Alert */}
+                {modalError && (
+                  <div
+                    style={{
+                      padding: '10px 14px',
+                      background: '#fef2f2',
+                      border: '1px solid #fecaca',
+                      borderRadius: '8px',
+                      color: '#991b1b',
+                      fontSize: '13px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                    }}
+                    role="alert"
+                  >
+                    <AlertCircle size={16} style={{ flexShrink: 0, color: '#ef4444' }} />
+                    <span>{modalError}</span>
+                  </div>
+                )}
+
+                {/* Vehicle Target Display */}
+                <div className="autocare-modal-field">
+                  <label className="autocare-modal-label">Target Vehicle</label>
+                  <input
+                    type="text"
+                    className="autocare-modal-input"
+                    disabled
+                    value={`${currentVehicle.manufacturer} ${currentVehicle.model} (${currentVehicle.manufacturingYear}) — Plate: ${currentVehicle.registrationNumber}`}
+                    style={{ background: '#f8fafc', color: '#475569', cursor: 'not-allowed' }}
+                  />
+                </div>
+
+                {/* Row 1: Date & Service Type */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                  <div className="autocare-modal-field">
+                    <label className="autocare-modal-label">
+                      Service Date <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <input
+                      type="date"
+                      className="autocare-modal-input"
+                      value={formServiceDate}
+                      max={new Date().toISOString().split('T')[0]}
+                      onChange={(e) => {
+                        setFormServiceDate(e.target.value);
+                        setFormErrors((prev) => ({ ...prev, serviceDate: '' }));
+                        setModalError(null);
+                      }}
+                      style={formErrors.serviceDate ? { borderColor: '#ef4444' } : {}}
+                      disabled={isSubmitting}
+                      required
+                    />
+                    {formErrors.serviceDate && (
+                      <span style={{ fontSize: '12px', color: '#ef4444', marginTop: '2px' }}>
+                        {formErrors.serviceDate}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="autocare-modal-field">
+                    <label className="autocare-modal-label">
+                      Service Category / Type <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <select
+                      className="autocare-modal-select"
+                      value={formServiceType}
+                      onChange={(e) => {
+                        setFormServiceType(e.target.value);
+                        setFormErrors((prev) => ({ ...prev, serviceType: '' }));
+                        setModalError(null);
+                      }}
+                      style={formErrors.serviceType ? { borderColor: '#ef4444' } : {}}
+                      disabled={isSubmitting}
+                      required
+                    >
+                      <option value="Routine Maintenance">Routine Maintenance</option>
+                      <option value="Oil & Filter Change">Oil &amp; Filter Change</option>
+                      <option value="Braking System">Braking System</option>
+                      <option value="Tires & Wheel Alignment">Tires &amp; Wheel Alignment</option>
+                      <option value="Electrical & Battery">Electrical &amp; Battery</option>
+                      <option value="Transmission & Drivetrain">Transmission &amp; Drivetrain</option>
+                      <option value="Suspension & Steering">Suspension &amp; Steering</option>
+                      <option value="Air Conditioning & Heating">Air Conditioning &amp; Heating</option>
+                      <option value="Inspection & Diagnostics">Inspection &amp; Diagnostics</option>
+                      <option value="Body & Paint">Body &amp; Paint</option>
+                      <option value="General Repair">General Repair</option>
+                      <option value="Other">Other</option>
+                    </select>
+                    {formErrors.serviceType && (
+                      <span style={{ fontSize: '12px', color: '#ef4444', marginTop: '2px' }}>
+                        {formErrors.serviceType}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Row 2: Mileage & Total Cost */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                  <div className="autocare-modal-field">
+                    <label className="autocare-modal-label">
+                      Odometer / Mileage (km) <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      placeholder="e.g. 48500"
+                      className="autocare-modal-input"
+                      value={formMileage}
+                      onChange={(e) => {
+                        setFormMileage(e.target.value);
+                        setFormErrors((prev) => ({ ...prev, mileage: '' }));
+                        setModalError(null);
+                      }}
+                      style={formErrors.mileage ? { borderColor: '#ef4444' } : {}}
+                      disabled={isSubmitting}
+                      required
+                    />
+                    {formErrors.mileage && (
+                      <span style={{ fontSize: '12px', color: '#ef4444', marginTop: '2px' }}>
+                        {formErrors.mileage}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="autocare-modal-field">
+                    <label className="autocare-modal-label">Total Cost (LKR)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="any"
+                      placeholder="e.g. 24000"
+                      className="autocare-modal-input"
+                      value={formTotalCost}
+                      onChange={(e) => {
+                        setFormTotalCost(e.target.value);
+                        setFormErrors((prev) => ({ ...prev, totalCost: '' }));
+                        setModalError(null);
+                      }}
+                      style={formErrors.totalCost ? { borderColor: '#ef4444' } : {}}
+                      disabled={isSubmitting}
+                    />
+                    {formErrors.totalCost && (
+                      <span style={{ fontSize: '12px', color: '#ef4444', marginTop: '2px' }}>
+                        {formErrors.totalCost}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Row 3: Work Performed / Description */}
+                <div className="autocare-modal-field">
+                  <label className="autocare-modal-label">
+                    Work Performed / Details <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <textarea
+                    rows={3}
+                    placeholder="Describe service work, parts changed, or maintenance tasks performed..."
+                    className="autocare-modal-input"
+                    value={formWorkPerformed}
+                    onChange={(e) => {
+                      setFormWorkPerformed(e.target.value);
+                      setFormErrors((prev) => ({ ...prev, workPerformed: '' }));
+                      setModalError(null);
+                    }}
+                    style={formErrors.workPerformed ? { borderColor: '#ef4444' } : {}}
+                    disabled={isSubmitting}
+                    required
+                  />
+                  {formErrors.workPerformed && (
+                    <span style={{ fontSize: '12px', color: '#ef4444', marginTop: '2px' }}>
+                      {formErrors.workPerformed}
+                    </span>
+                  )}
+                </div>
+
+                {/* Row 4: Garage Name & Notes */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                  <div className="autocare-modal-field">
+                    <label className="autocare-modal-label">Workshop / Service Center</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. AutoMiraj, Toyota Lanka, DIY"
+                      className="autocare-modal-input"
+                      value={formGarageName}
+                      onChange={(e) => setFormGarageName(e.target.value)}
+                      disabled={isSubmitting}
+                    />
+                  </div>
+
+                  <div className="autocare-modal-field">
+                    <label className="autocare-modal-label">Additional Notes</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Next service at 55,000 km"
+                      className="autocare-modal-input"
+                      value={formNotes}
+                      onChange={(e) => setFormNotes(e.target.value)}
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="autocare-modal-footer">
+                <button
+                  type="button"
+                  className="autocare-btn-cancel"
+                  onClick={() => setIsAddModalOpen(false)}
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="autocare-btn-save"
+                  disabled={isSubmitting}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <span>Save Service Record</span>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Interactive Toast Notification Banner */}
       {toastMessage && (

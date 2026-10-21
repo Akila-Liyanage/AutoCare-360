@@ -24,6 +24,13 @@ import AccessPermissionManagementPage from './pages/sharing/AccessPermissionMana
 import ConfigureAccessPermissionsPage from './pages/sharing/ConfigureAccessPermissionsPage';
 import BuyerSharedRecordViewPage from './pages/sharing/BuyerSharedRecordViewPage';
 import GarageDashboardPage from './pages/garage/GarageDashboardPage';
+import GarageVehiclesPage from './pages/garage/GarageVehiclesPage';
+import GarageVehicleDetailsPage from './pages/garage/GarageVehicleDetailsPage';
+import GarageServiceRecordsPage from './pages/garage/GarageServiceRecordsPage';
+import GarageDocumentsPage from './pages/garage/GarageDocumentsPage';
+import GarageSharingPage from './pages/garage/GarageSharingPage';
+import GarageAuditTrailPage from './pages/garage/GarageAuditTrailPage';
+import AddMaintenanceRecordPage from './pages/garage/AddMaintenanceRecordPage';
 import './App.css';
 
 export const App: React.FC = () => {
@@ -80,6 +87,14 @@ export const App: React.FC = () => {
 
           {/* Verified Garage Service Management — BR-03 */}
           <Route path="/garage/dashboard" element={<GarageDashboardPage />} />
+          <Route path="/garage/vehicles" element={<GarageVehiclesPage />} />
+          <Route path="/garage/vehicles/:id" element={<GarageVehicleDetailsPage />} />
+          <Route path="/garage/service-records" element={<GarageServiceRecordsPage />} />
+          <Route path="/garage/maintenance/new" element={<AddMaintenanceRecordPage />} />
+          <Route path="/garage/services/new" element={<Navigate to="/garage/maintenance/new" replace />} />
+          <Route path="/garage/documents" element={<GarageDocumentsPage />} />
+          <Route path="/garage/sharing" element={<GarageSharingPage />} />
+          <Route path="/garage/audit" element={<GarageAuditTrailPage />} />
           <Route path="/garage" element={<Navigate to="/garage/dashboard" replace />} />
 
           <Route path="/profile" element={<ProfilePage />} />

@@ -49,6 +49,7 @@ const uploadVehicleImage = (req, res, next) => {
     { name: 'image', maxCount: 1 },
     { name: 'photo', maxCount: 1 },
     { name: 'vehicleImage', maxCount: 1 },
+    { name: 'file', maxCount: 1 },
   ])(req, res, (err) => {
     if (err) {
       if (err.code === 'LIMIT_FILE_SIZE') {
@@ -63,7 +64,7 @@ const uploadVehicleImage = (req, res, next) => {
       });
     }
     if (!req.file && req.files) {
-      req.file = req.files.image?.[0] || req.files.photo?.[0] || req.files.vehicleImage?.[0];
+      req.file = req.files.image?.[0] || req.files.photo?.[0] || req.files.vehicleImage?.[0] || req.files.file?.[0];
     }
     next();
   });
