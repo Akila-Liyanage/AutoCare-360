@@ -134,6 +134,72 @@ async function seed() {
       console.log('✓ Updated admin.demo@autocare360.com');
     }
 
+    // 5. Ensure owner@gmail.com, garage@gmail.com, admin@gmail.com exist
+    const simpleAccounts = [
+      {
+        fullName: 'AutoCare Owner',
+        email: 'owner@gmail.com',
+        phone: '0771122334',
+        role: 'owner',
+        status: 'active',
+        displayName: 'Vehicle Owner',
+      },
+      {
+        fullName: 'AutoCare Verified Garage',
+        email: 'garage@gmail.com',
+        phone: '0112233445',
+        role: 'garage',
+        status: 'active',
+        displayName: 'Verified Garage Partner',
+      },
+      {
+        fullName: 'AutoCare Administrator',
+        email: 'admin@gmail.com',
+        phone: '0779988776',
+        role: 'admin',
+        status: 'active',
+        displayName: 'System Admin',
+      },
+    ];
+
+    for (const a of simpleAccounts) {
+      let acc = await User.findOne({ email: a.email });
+      if (!acc) {
+        acc = await User.create({
+          ...a,
+          password: hashedPassword,
+        });
+        console.log(`✓ Created ${a.email}`);
+      } else {
+        acc.fullName = a.fullName;
+        acc.role = a.role;
+        acc.status = 'active';
+        acc.password = hashedPassword;
+        await acc.save();
+        console.log(`✓ Updated ${a.email} to active`);
+      }
+
+      if (a.role === 'owner') {
+        const v = await Vehicle.findOne({ ownerId: acc._id });
+        if (!v) {
+          await Vehicle.create({
+            ownerId: acc._id,
+            registrationNumber: 'WP CAR-1010',
+            vin: '1HGCR2F83HA101010',
+            manufacturer: 'Toyota',
+            model: 'Corolla Cross',
+            manufacturingYear: 2022,
+            currentMileage: 32000,
+            fuelType: 'Petrol',
+            transmission: 'Automatic',
+            color: 'Celestial Silver Metallic',
+            status: 'Active',
+          });
+          console.log(`✓ Created vehicle WP CAR-1010 for ${a.email}`);
+        }
+      }
+    }
+
     console.log('\n--- ALL DEMO ACCOUNTS READY ---');
     await mongoose.disconnect();
   } catch (err) {
