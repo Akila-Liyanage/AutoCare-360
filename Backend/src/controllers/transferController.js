@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const TransferRequest = require('../models/TransferRequest');
 const Vehicle = require('../models/Vehicle');
 const User = require('../models/User');
+const AuditLog = require('../models/AuditLog');
 
 // Helper to verify if user is the intended recipient of a transfer request
 const isRecipient = (transfer, user) => {
@@ -128,6 +129,22 @@ const createTransferRequest = async (req, res, next) => {
       notes: notes ? notes.trim() : '',
       status: 'pending',
       requestedAt: new Date(),
+    });
+
+    // Audit Trail logging (BRULE-04)
+    await AuditLog.create({
+      action: 'TRANSFER_INITIATED',
+      vehicleId: vehicle._id,
+      actorId: req.user._id,
+      actorRole: req.user.role,
+      actorName: req.user.fullName,
+      recipientInfo: normalizedRecipientEmail,
+      status: 'success',
+      details: {
+        transferId: transferRequest._id,
+        recipientEmail: normalizedRecipientEmail,
+        recipientName: transferRequest.recipientName,
+      },
     });
 
     return res.status(201).json({
@@ -341,6 +358,22 @@ const acceptTransferRequest = async (req, res, next) => {
         session.endSession();
       }
     }
+
+    // Audit Trail logging (BRULE-04, BRULE-05)
+    await AuditLog.create({
+      action: 'TRANSFER_COMPLETED',
+      vehicleId: vehicle._id,
+      actorId: req.user._id,
+      actorRole: req.user.role,
+      actorName: req.user.fullName,
+      status: 'success',
+      details: {
+        transferId: transfer._id,
+        newOwnerId: req.user._id,
+        newOwnerEmail: req.user.email,
+        registrationNumber: vehicle.registrationNumber,
+      },
+    });
 
     return res.status(200).json({
       success: true,

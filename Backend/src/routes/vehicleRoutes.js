@@ -8,70 +8,56 @@ const {
   getMyVehicles,
   getVehicleById,
   updateVehicle,
-  uploadVehicleImage,
+  lookupVehicle,
+  getVehicleAuditLogs,
+  uploadVehiclePhoto,
+  updateVehiclePhoto,
 } = require('../controllers/vehicleController');
+const { getVehicleHealthScore } = require('../controllers/healthController');
 const { protect, authorize } = require('../middlewares/authMiddleware');
+const { uploadVehicleImage, vehicleUploadDir } = require('../middlewares/vehicleUpload');
 
-const uploadDir = path.join(__dirname, '../../uploads/vehicles');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
+// Serve uploaded vehicle photo files safely (path.basename prevents directory traversal attacks)
+router.get('/images/:filename', (req, res) => {
+  const filename = path.basename(req.params.filename);
+  const filePath = path.join(vehicleUploadDir, filename);
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    const vehicleId = req.params.id || 'vehicle';
-    cb(null, `vehicle-${vehicleId}-${uniqueSuffix}${ext}`);
-  },
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({
+      success: false,
+      message: 'Vehicle photo not found.',
+    });
+  }
+
+  return res.sendFile(filePath);
 });
 
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB limit
-  fileFilter: (req, file, cb) => {
-    if (['image/jpeg', 'image/png', 'image/webp', 'image/jpg'].includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only JPG, PNG, and WEBP images are supported'), false);
-    }
-  },
-});
-
-const uploadVehicleImageMiddleware = (req, res, next) => {
-  upload.fields([
-    { name: 'image', maxCount: 1 },
-    { name: 'vehicleImage', maxCount: 1 },
-    { name: 'file', maxCount: 1 },
-  ])(req, res, (err) => {
-    if (err) {
-      return res.status(400).json({
-        success: false,
-        message: err.message || 'Image upload failed',
-      });
-    }
-    if (!req.file && req.files) {
-      req.file = req.files.image?.[0] || req.files.vehicleImage?.[0] || req.files.file?.[0];
-    }
-    next();
-  });
-};
-
-// Enforce authentication and Vehicle Owner role for all vehicle operations in this phase
+// All vehicle operations below require an authenticated session
 router.use(protect);
-router.use(authorize('owner'));
 
+// Upload vehicle photo (Owner only)
+router.post('/upload-image', authorize('owner'), uploadVehicleImage, uploadVehiclePhoto);
+
+// Upload or replace photo for an existing vehicle (Owner only)
+router.post('/:id/image', authorize('owner'), uploadVehicleImage, updateVehiclePhoto);
+
+// Vehicle lookup by registration number or VIN (Owner, Verified Garage, and Admin)
+router.get('/lookup', authorize('owner', 'garage', 'admin'), lookupVehicle);
+
+// AI Vehicle Health Assessment & Trust Score (BR-09, FR-10)
+router.get('/:id/health-score', authorize('owner', 'garage', 'admin'), getVehicleHealthScore);
+
+// Vehicle Audit Trail logs (BR-08)
+router.get('/:id/audit-logs', authorize('owner', 'admin'), getVehicleAuditLogs);
+
+// Owner vehicle digital passport management
 router.route('/')
-  .post(createVehicle)
-  .get(getMyVehicles);
+  .post(authorize('owner'), uploadVehicleImage, createVehicle)
+  .get(authorize('owner'), getMyVehicles);
 
+// Single vehicle passport view and modification
 router.route('/:id')
-  .get(getVehicleById)
-  .patch(updateVehicle);
-
-router.post('/:id/image', uploadVehicleImageMiddleware, uploadVehicleImage);
+  .get(authorize('owner', 'garage', 'admin'), getVehicleById)
+  .patch(authorize('owner'), uploadVehicleImage, updateVehicle);
 
 module.exports = router;

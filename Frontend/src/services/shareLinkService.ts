@@ -14,14 +14,6 @@ export interface ShareLinkVehicleInfo {
   currentMileage?: number;
 }
 
-export interface ShareProtectionSettings {
-  allowDownload: boolean;
-  allowPrint: boolean;
-  allowCopy: boolean;
-  watermarkEnabled: boolean;
-  watermarkText?: string;
-}
-
 export interface ShareLink {
   _id: string;
   vehicleId: ShareLinkVehicleInfo | string;
@@ -39,7 +31,6 @@ export interface ShareLink {
   createdBy: string;
   revokedAt?: string | null;
   notes?: string;
-  protection?: ShareProtectionSettings;
   createdAt: string;
   updatedAt: string;
 }
@@ -146,27 +137,95 @@ export const deleteShareLink = async (id: string): Promise<void> => {
   await api.delete<ShareLinkActionResponse>(`/share-links/${id}`);
 };
 
-/**
- * Update permissions of an active share link
- * PATCH /api/share-links/:id/permissions
- */
-export interface UpdateShareLinkPermissionsPayload {
-  permissionLevel?: ShareLinkPermissionLevel;
-  allowedSections?: string[];
-  expiresAt?: string;
-  maxViews?: number | null;
-  protection?: Partial<ShareProtectionSettings>;
+export interface PublicSharedRecordData {
+  shareSession: {
+    id: string;
+    permissionLevel: ShareLinkPermissionLevel;
+    allowedSections?: string[];
+    recipientName?: string;
+    recipientEmail?: string;
+    purpose?: string;
+    expiresAt: string;
+    viewCount: number;
+  };
+  vehicle: {
+    _id: string;
+    registrationNumber: string;
+    vin: string;
+    engineNumber?: string;
+    manufacturer: string;
+    model: string;
+    manufacturingYear: number;
+    vehicleType: string;
+    currentMileage: number;
+    fuelType?: string;
+    transmission?: string;
+    color?: string;
+    registrationJurisdiction?: string;
+    status: string;
+    imageUrl?: string;
+    ownerName?: string;
+  };
+  serviceRecords: Array<{
+    _id: string;
+    serviceDate: string;
+    mileage: number;
+    serviceType: string;
+    workPerformed: string;
+    garageName: string;
+    technicianName?: string;
+    recordSource?: string;
+    verificationStatus?: string;
+    cost?: number;
+  }>;
+  documents: Array<{
+    _id: string;
+    title: string;
+    documentType: string;
+    fileUrl?: string;
+    fileName?: string;
+    issueDate?: string;
+    expiryDate?: string;
+  }>;
+  watermark: {
+    recipientName: string;
+    accessId: string;
+    timestamp: string;
+    expiresAt: string;
+    purpose: string;
+  };
+  protection: {
+    allowDownload: boolean;
+    allowPrint: boolean;
+    allowCopy: boolean;
+    allowExport: boolean;
+    watermarkRequired: boolean;
+  };
+  healthAssessment?: {
+    trustScore: number;
+    trustLevel: string;
+    odometerIntegrity: string;
+    anomalyDetected: boolean;
+    verifiedChecks: string;
+    lastServiceMileage: number;
+  };
 }
 
-export const updateShareLinkPermissions = async (
-  id: string,
-  payload: UpdateShareLinkPermissionsPayload
-): Promise<ShareLink> => {
-  const response = await api.patch<ShareLinkActionResponse>(
-    `/share-links/${id}/permissions`,
-    payload
-  );
-  return response.data?.data?.shareLink as ShareLink;
+export interface PublicSharedRecordResponse {
+  success: boolean;
+  message: string;
+  data: PublicSharedRecordData;
+}
+
+/**
+ * Fetch public shared vehicle records using public secure token (BR-05, BR-06, BR-07, BR-08)
+ * GET /api/share-links/public/:token
+ */
+export const getPublicSharedRecord = async (
+  token: string
+): Promise<PublicSharedRecordData> => {
+  const response = await api.get<PublicSharedRecordResponse>(`/share-links/public/${token}`);
+  return response.data.data;
 };
 
 export default {
@@ -175,5 +234,5 @@ export default {
   getShareLink,
   revokeShareLink,
   deleteShareLink,
-  updateShareLinkPermissions,
+  getPublicSharedRecord,
 };

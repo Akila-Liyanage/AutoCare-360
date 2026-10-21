@@ -390,7 +390,7 @@ export const ProfilePage: React.FC = () => {
                           justifyContent: 'center',
                           backgroundColor: '#f1f5f9',
                           color: '#64748b',
-                          gap: '4px'
+                          gap: '4px',
                         }}
                       >
                         <Car size={24} style={{ color: '#94a3b8' }} />

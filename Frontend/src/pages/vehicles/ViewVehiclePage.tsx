@@ -29,17 +29,11 @@ import {
   uploadVehicleImage,
   type Vehicle
 } from '../../services/vehicleService';
+import { resolveImageUrl } from '../../utils/imageUrl';
 import {
   getVehicleServiceRecords,
   type BackendServiceRecord
 } from '../../services/serviceService';
-
-const resolveImageUrl = (img?: string): string | undefined => {
-  if (!img) return undefined;
-  if (img.startsWith('http://') || img.startsWith('https://') || img.startsWith('blob:')) return img;
-  const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '');
-  return `${base}${img.startsWith('/') ? '' : '/'}${img}`;
-};
 
 export const ViewVehiclePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -370,30 +364,30 @@ export const ViewVehiclePage: React.FC = () => {
                     ) : (
                       <div
                         className="autocare-view-no-image-placeholder"
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: '100%',
-                        height: '100%',
-                        minHeight: '220px',
-                        backgroundColor: '#f1f5f9',
-                        borderRadius: '12px',
-                        color: '#64748b',
-                        padding: '24px',
-                        textAlign: 'center',
-                        border: '1px dashed #cbd5e1',
-                      }}
-                    >
-                      <Car size={46} style={{ marginBottom: '10px', color: '#94a3b8' }} />
-                      <span style={{ fontSize: '14.5px', fontWeight: 700, color: '#334155' }}>
-                        No vehicle image
-                      </span>
-                      <span style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>
-                        Upload a photo via Edit Vehicle
-                      </span>
-                    </div>
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: '100%',
+                          height: '100%',
+                          minHeight: '220px',
+                          backgroundColor: '#f1f5f9',
+                          borderRadius: '12px',
+                          color: '#64748b',
+                          padding: '24px',
+                          textAlign: 'center',
+                          border: '1px dashed #cbd5e1',
+                        }}
+                      >
+                        <Car size={46} style={{ marginBottom: '10px', color: '#94a3b8' }} />
+                        <span style={{ fontSize: '14.5px', fontWeight: 700, color: '#334155' }}>
+                          No vehicle image
+                        </span>
+                        <span style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>
+                          Upload a photo via Edit Vehicle
+                        </span>
+                      </div>
                     );
                   })()}
                 </div>

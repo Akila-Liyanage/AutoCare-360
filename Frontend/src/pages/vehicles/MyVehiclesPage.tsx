@@ -13,13 +13,7 @@ import {
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import { getMyVehicles, type Vehicle } from '../../services/vehicleService';
-
-const resolveImageUrl = (img?: string): string | undefined => {
-  if (!img) return undefined;
-  if (img.startsWith('http://') || img.startsWith('https://') || img.startsWith('blob:')) return img;
-  const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '');
-  return `${base}${img.startsWith('/') ? '' : '/'}${img}`;
-};
+import { resolveImageUrl } from '../../utils/imageUrl';
 
 export const MyVehiclesPage: React.FC = () => {
   const navigate = useNavigate();

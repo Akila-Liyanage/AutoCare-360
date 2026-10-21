@@ -22,13 +22,7 @@ import {
   type Vehicle, 
   type CreateVehiclePayload 
 } from '../../services/vehicleService';
-
-const resolveImageUrl = (img?: string): string | undefined => {
-  if (!img) return undefined;
-  if (img.startsWith('http://') || img.startsWith('https://') || img.startsWith('blob:')) return img;
-  const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '');
-  return `${base}${img.startsWith('/') ? '' : '/'}${img}`;
-};
+import { resolveImageUrl } from '../../utils/imageUrl';
 
 export const AddVehiclePage: React.FC = () => {
   const { user } = useAuth();
@@ -60,6 +54,7 @@ export const AddVehiclePage: React.FC = () => {
   }));
 
   // Local Image Upload Preview State (Object URL for memory safety and zero network bloat)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const imagePreviewRef = useRef<string | null>(null);
@@ -123,7 +118,7 @@ export const AddVehiclePage: React.FC = () => {
     }
   };
 
-  // Image Selection Handler (Local Object URL preview only, frontend-safe)
+  // Image Selection Handler (stores file for upload and generates object URL preview)
   const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -131,8 +126,8 @@ export const AddVehiclePage: React.FC = () => {
         setSubmitError('Please select a valid image file (PNG, JPG, WEBP).');
         return;
       }
-      if (file.size > 5 * 1024 * 1024) {
-        setSubmitError('Image size must be less than 5MB. Please choose a smaller photo.');
+      if (file.size > 10 * 1024 * 1024) {
+        setSubmitError('Image size must be less than 10MB. Please choose a smaller photo.');
         return;
       }
 
@@ -144,6 +139,7 @@ export const AddVehiclePage: React.FC = () => {
       setSelectedImageFile(file);
       const objectUrl = URL.createObjectURL(file);
       setImagePreview(objectUrl);
+      setSelectedFile(file);
       setSubmitError(null);
     }
   };
@@ -222,35 +218,34 @@ export const AddVehiclePage: React.FC = () => {
 
     const effectiveColor = formData.customColor.trim() || formData.color;
 
-    const payload: CreateVehiclePayload = {
-      registrationNumber: formData.registrationNumber.trim().toUpperCase(),
-      vin: formData.vin.trim().toUpperCase(),
-      engineNumber: formData.engineNumber.trim().toUpperCase() || undefined,
-      vehicleType: formData.vehicleType,
-      manufacturer: formData.manufacturer.trim(),
-      model: formData.model.trim(),
-      manufacturingYear: Number(formData.manufacturingYear),
-      currentMileage: Number(formData.currentMileage),
-      fuelType: formData.fuelType,
-      transmission: formData.transmission,
-      color: effectiveColor,
-      registrationJurisdiction: formData.registrationJurisdiction.trim() || 'Western Province, Sri Lanka',
-      lastServiceDate: formData.lastServiceDate ? formData.lastServiceDate : null,
-      nextServiceMileage: formData.nextServiceMileage ? Number(formData.nextServiceMileage) : null,
-      imageUrl: '',
-      status: 'Active',
-    };
-
     setSubmitting(true);
     try {
-      const createdVehicle = await createVehicle(payload);
-      if (selectedImageFile && createdVehicle?._id) {
-        try {
-          await uploadVehicleImage(createdVehicle._id, selectedImageFile);
-        } catch {
-          // If image upload fails after vehicle created, log error but proceed
-        }
+      const fileToUpload = selectedFile || selectedImageFile;
+      let uploadedImageUrl = '';
+      if (fileToUpload) {
+        uploadedImageUrl = await uploadVehicleImage(fileToUpload);
       }
+
+      const payload: CreateVehiclePayload = {
+        registrationNumber: formData.registrationNumber.trim().toUpperCase(),
+        vin: formData.vin.trim().toUpperCase(),
+        engineNumber: formData.engineNumber.trim().toUpperCase() || undefined,
+        vehicleType: formData.vehicleType,
+        manufacturer: formData.manufacturer.trim(),
+        model: formData.model.trim(),
+        manufacturingYear: Number(formData.manufacturingYear),
+        currentMileage: Number(formData.currentMileage),
+        fuelType: formData.fuelType,
+        transmission: formData.transmission,
+        color: effectiveColor,
+        registrationJurisdiction: formData.registrationJurisdiction.trim() || 'Western Province, Sri Lanka',
+        lastServiceDate: formData.lastServiceDate ? formData.lastServiceDate : null,
+        nextServiceMileage: formData.nextServiceMileage ? Number(formData.nextServiceMileage) : null,
+        imageUrl: uploadedImageUrl || '',
+        status: 'Active',
+      };
+
+      await createVehicle(payload);
       setSuccessBanner('Vehicle digital passport created successfully! Redirecting...');
       setTimeout(() => {
         navigate('/vehicles');
@@ -482,9 +477,37 @@ export const AddVehiclePage: React.FC = () => {
                         alt="Vehicle preview" 
                         className="autocare-upload-preview-img" 
                       />
-                      <span className="autocare-upload-change-text">
-                        Click to change photo
-                      </span>
+                      <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', alignItems: 'center', marginTop: '8px' }}>
+                        <span className="autocare-upload-change-text" style={{ margin: 0 }}>
+                          Click to change photo
+                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (imagePreview && imagePreview.startsWith('blob:')) {
+                              URL.revokeObjectURL(imagePreview);
+                            }
+                            setImagePreview(null);
+                            setSelectedFile(null);
+                            if (fileInputRef.current) {
+                              fileInputRef.current.value = '';
+                            }
+                          }}
+                          style={{
+                            background: '#fee2e2',
+                            color: '#b91c1c',
+                            border: '1px solid #fca5a5',
+                            padding: '3px 10px',
+                            borderRadius: '6px',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Remove Photo
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <div className="autocare-upload-placeholder">

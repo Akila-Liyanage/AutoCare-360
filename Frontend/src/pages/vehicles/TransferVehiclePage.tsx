@@ -18,15 +18,10 @@ import {
 } from 'lucide-react';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
+import defaultHeroImg from '../../assets/vehicles/default-vehicle-hero.png';
+import { resolveImageUrl } from '../../utils/imageUrl';
 import { useAuth } from '../../hooks/useAuth';
 import { getVehicleById, getMyVehicles, type Vehicle } from '../../services/vehicleService';
-
-const resolveImageUrl = (img?: string): string | undefined => {
-  if (!img) return undefined;
-  if (img.startsWith('http://') || img.startsWith('https://') || img.startsWith('blob:')) return img;
-  const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '');
-  return `${base}${img.startsWith('/') ? '' : '/'}${img}`;
-};
 import {
   createTransferRequest,
   getOutgoingTransfers,
@@ -548,7 +543,7 @@ export const TransferVehiclePage: React.FC = () => {
                         alt={`${vehicle.manufacturer} ${vehicle.model}`}
                         loading="lazy"
                         onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
+                          (e.target as HTMLImageElement).src = defaultHeroImg;
                         }}
                       />
                     ) : (
@@ -564,7 +559,7 @@ export const TransferVehiclePage: React.FC = () => {
                           color: '#64748b',
                           gap: '4px',
                           textAlign: 'center',
-                          padding: '12px'
+                          padding: '12px',
                         }}
                       >
                         <Car size={32} style={{ color: '#94a3b8' }} />

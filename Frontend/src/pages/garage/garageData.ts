@@ -8,6 +8,7 @@ export interface GarageKPI {
 
 export interface RecentVerifiedEntry {
   id: string;
+  _id?: string;
   vehicleTitle: string;
   regNumber: string;
   mileage: string;
@@ -21,6 +22,8 @@ export interface OCRQueueItem {
   vehicleTitle: string;
   regNumber: string;
   progressPercent: number;
+  status?: string;
+  estimatedTimeRemaining?: string;
 }
 
 export interface OCRWarningItem {
@@ -160,6 +163,8 @@ export const MOCK_OCR_QUEUE: OCRQueueItem = {
   vehicleTitle: 'Toyota Prius',
   regNumber: 'WP CAR-8282',
   progressPercent: 88,
+  status: 'In Progress (88%)',
+  estimatedTimeRemaining: '12 seconds',
 };
 
 export const MOCK_OCR_WARNING: OCRWarningItem = {

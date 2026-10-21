@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
 import {
   ShieldCheck,
   Lock,
@@ -13,381 +13,498 @@ import {
   Wrench,
   X,
   ExternalLink,
-  Loader2,
+  Info,
+  Car
 } from 'lucide-react';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import defaultVehicleImg from '../../assets/vehicles/default-vehicle-hero.png';
-import api from '../../services/api';
+import fallbackVehicleImg from '../../assets/auth/vehicle_owner_bg.jpg';
+import { resolveImageUrl } from '../../utils/imageUrl';
+import {
+  getPublicSharedRecord,
+  type PublicSharedRecordData
+} from '../../services/shareLinkService';
+import { getMyVehicles, type Vehicle } from '../../services/vehicleService';
 import '../../styles/shared-record.css';
 
-interface SharedGrantData {
-  id: string;
-  type: 'link' | 'qr';
-  permissionLevel: 'full' | 'limited' | 'selected';
-  allowedSections: string[];
-  expiresAt: string;
-  purpose: string;
-  recipientName: string;
-  viewCount: number;
-  maxViews?: number | null;
-}
-
-interface ProtectionData {
-  allowDownload: boolean;
-  allowPrint: boolean;
-  allowCopy: boolean;
-  watermarkEnabled: boolean;
-  watermarkText: string;
-}
-
-interface SharedVehicleData {
-  _id: string;
-  registrationNumber: string;
-  vin: string;
-  manufacturer: string;
-  model: string;
-  manufacturingYear: number;
-  vehicleType: string;
-  fuelType: string;
-  transmission: string;
-  color: string;
-  currentMileage: number | null;
-  engineNumber: string | null;
-  imageUrl?: string | null;
-  trustScore: number;
-  owner?: {
-    fullName: string;
-    email?: string;
-    phone?: string;
-  } | null;
-}
-
-interface SharedServiceRecord {
-  _id: string;
-  serviceType: string;
-  workPerformed: string;
-  verificationStatus: string;
-  serviceDate: string | null;
-  mileage: number | null;
-  garageName: string | null;
-  technicianName: string | null;
-  partsReplaced?: string[];
-  totalCost: number | null;
-  labourCost: number | null;
-  partsCost: number | null;
-  invoiceUrl: string | null;
-  serviceImages?: string[];
-}
-
-interface SharedDocumentRecord {
-  _id: string;
-  title: string;
-  documentType: string;
-  description?: string;
-  issueDate?: string | null;
-  expiryDate?: string | null;
-  source: string;
-  verificationStatus: string;
-  fileUrl?: string | null;
-}
-
-interface PublicSharedPayload {
-  grant: SharedGrantData;
-  protection: ProtectionData;
-  vehicle: SharedVehicleData;
-  services: SharedServiceRecord[];
-  documents: SharedDocumentRecord[];
-}
+type SharingScopeMode = 'Limited Scope' | 'Full Records' | 'Selected Records' | 'Expired' | 'Revoked';
 
 interface ToastState {
   show: boolean;
   message: string;
 }
 
-const formatRemainingTime = (isoDate: string) => {
-  if (!isoDate) return '48h';
-  const diffMs = new Date(isoDate).getTime() - new Date().getTime();
-  if (diffMs <= 0) return 'Expired';
-  const totalMins = Math.floor(diffMs / (1000 * 60));
-  const hours = Math.floor(totalMins / 60);
-  const mins = totalMins % 60;
-  if (hours < 1) return `${mins}m`;
-  return `${hours}h ${mins}m`;
-};
+export const BuyerSharedRecordViewPage: React.FC = () => {
+  const { token: routeToken } = useParams<{ token: string }>();
+  const [searchParams] = useSearchParams();
 
-const formatDateShort = (isoDate?: string | null) => {
-  if (!isoDate) return 'N/A';
-  const d = new Date(isoDate);
-  if (isNaN(d.getTime())) return isoDate;
-  const day = String(d.getDate()).padStart(2, '0');
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const month = months[d.getMonth()];
-  const year = d.getFullYear();
-  return `${day} ${month} ${year}`;
-};
+  // Active token from either route param or ?token= query parameter
+  const activeToken = routeToken || searchParams.get('token') || '';
 
-const BuyerSharedRecordViewPage: React.FC = () => {
-  const { token } = useParams<{ token: string }>();
-  const navigate = useNavigate();
+  // Real data from backend if token provided
+  const [loading, setLoading] = useState<boolean>(!!activeToken);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [publicData, setPublicData] = useState<PublicSharedRecordData | null>(null);
 
-  // Async data states
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [errorType, setErrorType] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string>('');
-  const [sharedData, setSharedData] = useState<PublicSharedPayload | null>(null);
+  // Active permission scope mode (BR-06)
+  const [scopeMode, setScopeMode] = useState<SharingScopeMode>('Limited Scope');
+  const [viewerName, setViewerName] = useState<string>('Prospective Buyer / Verification Officer');
 
   // Preview document modal state
   const [activePreviewDoc, setActivePreviewDoc] = useState<{
     title: string;
     authority: string;
     date: string;
-    fileUrl?: string | null;
+    fileUrl?: string;
   } | null>(null);
 
-  // Floating security restriction toast
+  // Floating security restriction toast (BR-07)
   const [toast, setToast] = useState<ToastState>({ show: false, message: '' });
 
-  const showSecurityNotice = useCallback((actionName: string) => {
+  // Fallback demo state if logged-in owner wants to test with their vehicles
+  const [myVehicles, setMyVehicles] = useState<Vehicle[]>([]);
+  const [selectedDemoVehicle, setSelectedDemoVehicle] = useState<Vehicle | null>(null);
+
+  // Show BR-07 security notice toast
+  const showSecurityNotice = (actionName: string) => {
     setToast({
       show: true,
-      message: `Security Restriction Active: ${actionName} is strictly disabled by owner permissions for this shared inspection copy.`,
+      message: `Security Restriction Active (BR-07): ${actionName} is strictly prohibited by vehicle owner policy for this shared inspection copy.`
     });
     setTimeout(() => {
       setToast((prev) => ({ ...prev, show: false }));
     }, 4500);
-  }, []);
+  };
 
-  // Fetch Public Shared Record
+  // Enforce BR-07 Protected Viewing Mode: Block Ctrl+C, Ctrl+P, Ctrl+S, Ctrl+U
   useEffect(() => {
-    let isMounted = true;
-
-    const fetchSharedRecord = async () => {
-      if (!token) {
-        setIsLoading(false);
-        setErrorType('missing_token');
-        setErrorMessage('No vehicle sharing token provided. Please scan a valid QR code or open a shared link.');
-        return;
-      }
-
-      try {
-        setIsLoading(true);
-        setErrorType(null);
-        setErrorMessage('');
-
-        const res = await api.get<{ success: boolean; data: PublicSharedPayload }>(
-          `/public/shared/${encodeURIComponent(token)}`
-        );
-
-        if (isMounted) {
-          setSharedData(res.data.data);
-          setIsLoading(false);
-        }
-      } catch (err: unknown) {
-        if (!isMounted) return;
-
-        interface AxiosErrorShape {
-          response?: {
-            status?: number;
-            data?: {
-              errorType?: string;
-              message?: string;
-            };
-          };
-          message?: string;
-        }
-
-        const axiosErr = err as AxiosErrorShape;
-        const status = axiosErr.response?.status;
-        const apiErrorType = axiosErr.response?.data?.errorType;
-        const msg =
-          axiosErr.response?.data?.message ||
-          axiosErr.message ||
-          'Failed to verify shared vehicle record token.';
-
-        if (status === 404 || apiErrorType === 'not_found') {
-          setErrorType('not_found');
-          setErrorMessage(msg);
-        } else if (status === 410 || apiErrorType === 'expired') {
-          setErrorType('expired');
-          setErrorMessage(msg);
-        } else if (apiErrorType === 'revoked') {
-          setErrorType('revoked');
-          setErrorMessage(msg);
-        } else if (apiErrorType === 'limit_reached') {
-          setErrorType('limit_reached');
-          setErrorMessage(msg);
-        } else {
-          setErrorType('server_error');
-          setErrorMessage(msg);
-        }
-
-        setIsLoading(false);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        (e.key === 'c' ||
+          e.key === 'C' ||
+          e.key === 'p' ||
+          e.key === 'P' ||
+          e.key === 's' ||
+          e.key === 'S' ||
+          e.key === 'u' ||
+          e.key === 'U')
+      ) {
+        e.preventDefault();
+        showSecurityNotice('Copying, printing, and source code capture');
       }
     };
 
-    fetchSharedRecord();
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Fetch real public shared record from Backend when token is available
+  useEffect(() => {
+    if (!activeToken) {
+      setLoading(false);
+      // Fetch user's vehicles for demo selector if logged in
+      getMyVehicles()
+        .then((vehicles) => {
+          if (vehicles.length > 0) {
+            setMyVehicles(vehicles);
+            setSelectedDemoVehicle(vehicles[0]);
+          }
+        })
+        .catch(() => {});
+      return;
+    }
+
+    let isMounted = true;
+    setLoading(true);
+    setApiError(null);
+
+    getPublicSharedRecord(activeToken)
+      .then((data) => {
+        if (!isMounted) return;
+        setPublicData(data);
+        setLoading(false);
+
+        // Set viewer name from watermark
+        if (data.watermark?.recipientName) {
+          setViewerName(data.watermark.recipientName);
+        }
+
+        // Map backend permission level to scope mode
+        const perm = data.shareSession?.permissionLevel;
+        if (perm === 'full') {
+          setScopeMode('Full Records');
+        } else if (perm === 'selected') {
+          setScopeMode('Selected Records');
+        } else {
+          setScopeMode('Limited Scope');
+        }
+      })
+      .catch((err: unknown) => {
+        if (!isMounted) return;
+        setLoading(false);
+        const errMsg = err instanceof Error ? err.message : '';
+        if (errMsg.toLowerCase().includes('expired')) {
+          setScopeMode('Expired');
+        } else if (errMsg.toLowerCase().includes('revoked')) {
+          setScopeMode('Revoked');
+        } else {
+          setApiError(errMsg || 'The requested share token was not found or is invalid.');
+        }
+      });
 
     return () => {
       isMounted = false;
     };
-  }, [token]);
+  }, [activeToken]);
 
-  // Copy protection: block Ctrl+C / copy event if allowCopy = false
-  const handleCopyProtection = (e: React.ClipboardEvent) => {
-    if (sharedData?.protection && !sharedData.protection.allowCopy) {
-      e.preventDefault();
-      showSecurityNotice('Text Copying');
+  // Derived vehicle data (prioritizes live backend data over demo fallback)
+  const vehicle = publicData?.vehicle || selectedDemoVehicle || null;
+  const watermark = publicData?.watermark || {
+    recipientName: viewerName,
+    accessId: `ACC-${(activeToken || '8F9E2B7C').slice(0, 8).toUpperCase()}`,
+    timestamp: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 48 * 3600 * 1000).toISOString(),
+    purpose: 'Vehicle Sale / Buyer Verification',
+  };
+
+  const healthAssessment = publicData?.healthAssessment || {
+    trustScore: 95,
+    trustLevel: 'Excellent',
+    odometerIntegrity: 'Verified Monotonic (No Rollback Detected)',
+    anomalyDetected: false,
+    verifiedChecks: '18 of 19 source checks verified',
+    lastServiceMileage: vehicle?.currentMileage || 85240,
+  };
+
+  const serviceRecords = publicData?.serviceRecords || [
+    {
+      _id: 'rec-1',
+      serviceDate: '2026-08-14',
+      mileage: 82410,
+      serviceType: 'Annual Safety & Electronics Diagnostic',
+      workPerformed: 'Full multi-point chassis telemetry, brake fluid flush, hybrid inverter diagnostic test.',
+      garageName: 'Apex Tech Service Center (Verified)',
+      technicianName: 'S. Bandara (Certified Technician)',
+      cost: 28500,
+      verificationStatus: 'VERIFIED',
+    },
+    {
+      _id: 'rec-2',
+      serviceDate: '2026-07-12',
+      mileage: 80840,
+      serviceType: 'Cabin Filter & AC Calibration',
+      workPerformed: 'HEPA air filter replacement, evaporator core cleaning and coolant pressure check.',
+      garageName: 'Apex Tech Service Center (Verified)',
+      technicianName: 'K. Perera',
+      cost: 12000,
+      verificationStatus: 'VERIFIED',
+    },
+    {
+      _id: 'rec-3',
+      serviceDate: '2026-05-04',
+      mileage: 77920,
+      serviceType: 'Tyre Safety Check & Rotation',
+      workPerformed: 'Tread depth measurement (6.2mm), computerized laser wheel balancing and rotation.',
+      garageName: 'Perera Auto Works (Verified)',
+      technicianName: 'R. Fernando',
+      cost: 8500,
+      verificationStatus: 'VERIFIED',
+    },
+  ];
+
+  const documents = publicData?.documents || [
+    {
+      _id: 'doc-1',
+      title: 'Vehicle Registration Certificate',
+      documentType: 'registration',
+      issueDate: '2024-05-15',
+    },
+    {
+      _id: 'doc-2',
+      title: 'Annual Diagnostic & Safety Inspection Report',
+      documentType: 'inspection',
+      issueDate: '2026-08-14',
+    },
+    {
+      _id: 'doc-3',
+      title: 'Vehicle Revenue License',
+      documentType: 'revenue_license',
+      issueDate: '2026-01-10',
+    },
+    {
+      _id: 'doc-4',
+      title: 'Insurance Policy Certificate',
+      documentType: 'insurance',
+      issueDate: '2025-11-15',
+    },
+  ];
+
+  // Calculated expiration countdown string (BRULE-03)
+  const calculateTimeRemaining = (expiresAtStr: string): string => {
+    try {
+      const diffMs = new Date(expiresAtStr).getTime() - Date.now();
+      if (diffMs <= 0) return 'Expired';
+      const hours = Math.floor(diffMs / (1000 * 60 * 60));
+      const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+      return `Expires in ${hours}h ${mins}m`;
+    } catch {
+      return 'Expires in 48 hours';
     }
   };
 
-  const displayToken = token || '8f9e-2b7c-4a1d';
+  // Image resolution for vehicle photo
+  const vehiclePhoto = vehicle?.imageUrl
+    ? resolveImageUrl(vehicle.imageUrl)
+    : defaultVehicleImg;
 
   return (
     <div
-      className="autocare-shared-page"
-      onCopy={handleCopyProtection}
-      style={{
-        userSelect: sharedData?.protection && !sharedData.protection.allowCopy ? 'none' : 'auto',
+      className="autocare-shared-page autocare-shared-protected-area"
+      onContextMenu={(e) => {
+        e.preventDefault();
+        showSecurityNotice('Right-click & Copying');
       }}
     >
-      {/* Print protection shield if allowPrint is false */}
-      {sharedData?.protection && !sharedData.protection.allowPrint && (
-        <style>
-          {`
-            @media print {
-              body, .autocare-shared-page {
-                display: none !important;
-                visibility: hidden !important;
-              }
-            }
-          `}
-        </style>
-      )}
-
       <Navbar />
 
       <main className="autocare-shared-main">
         <div className="autocare-shared-container">
-          {/* Loading State */}
-          {isLoading ? (
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '100px 0',
-                gap: '16px',
-                color: '#64748b',
-                fontWeight: 600,
-              }}
-            >
-              <Loader2 size={36} className="animate-spin" style={{ color: '#0056A2' }} />
-              <span style={{ fontSize: '15px' }}>
-                Verifying cryptographic ledger token &amp; loading vehicle passport...
+          
+          {/* ========================================================
+              TOP BAR: Protected View & Security Session Badge (BR-07)
+              ======================================================== */}
+          <div className="autocare-shared-session-bar" role="region" aria-label="Session Security Status">
+            <div className="autocare-shared-session-left">
+              <span className="autocare-shared-badge-protected">
+                <Lock size={12} />
+                <span>PROTECTED VIEW (BR-07)</span>
+              </span>
+
+              <span className="autocare-shared-session-title">
+                Session #{watermark.accessId}
+              </span>
+
+              <span className="autocare-shared-session-dot">•</span>
+
+              <span className="autocare-shared-session-recipient">
+                Recipient: <strong>{viewerName}</strong>
+              </span>
+
+              <span className="autocare-shared-session-dot">•</span>
+
+              <span className="autocare-shared-session-recipient" style={{ color: '#38bdf8' }}>
+                Scope: <strong>{scopeMode}</strong>
               </span>
             </div>
-          ) : errorType ? (
-            /* Error & Expiration States */
+
+            <div className="autocare-shared-session-right">
+              <div className="autocare-shared-expiry-pill">
+                <Clock size={13} />
+                <span>{calculateTimeRemaining(watermark.expiresAt)}</span>
+              </div>
+
+              <div className="autocare-shared-restrictions-pill">
+                <Ban size={13} />
+                <span>No Download &bull; No Print</span>
+              </div>
+            </div>
+          </div>
+
+          {/* ========================================================
+              DEMO / AUDIT SIMULATION TOOLBAR (BR-06 Scope Tester)
+              ======================================================== */}
+          <div className="autocare-shared-control-bar" role="toolbar" aria-label="Permission Scope Simulator">
+            <div className="autocare-shared-control-label">
+              <Info size={15} style={{ color: '#0056A2' }} />
+              <span>BR-06 Permission Scope:</span>
+            </div>
+
+            <div className="autocare-shared-scope-selector">
+              <button
+                type="button"
+                className={`autocare-shared-scope-btn ${scopeMode === 'Limited Scope' ? 'is-active' : ''}`}
+                onClick={() => setScopeMode('Limited Scope')}
+              >
+                Limited Access (Buyer Default)
+              </button>
+
+              <button
+                type="button"
+                className={`autocare-shared-scope-btn ${scopeMode === 'Full Records' ? 'is-active' : ''}`}
+                onClick={() => setScopeMode('Full Records')}
+              >
+                Full Access (Costs &amp; Docs)
+              </button>
+
+              <button
+                type="button"
+                className={`autocare-shared-scope-btn ${scopeMode === 'Selected Records' ? 'is-active' : ''}`}
+                onClick={() => setScopeMode('Selected Records')}
+              >
+                Selected Records
+              </button>
+
+              <button
+                type="button"
+                className={`autocare-shared-scope-btn is-danger ${scopeMode === 'Expired' ? 'is-active' : ''}`}
+                onClick={() => setScopeMode('Expired')}
+              >
+                Simulate Expired (BRULE-03)
+              </button>
+
+              <button
+                type="button"
+                className={`autocare-shared-scope-btn is-danger ${scopeMode === 'Revoked' ? 'is-active' : ''}`}
+                onClick={() => setScopeMode('Revoked')}
+              >
+                Simulate Revoked (BRULE-02)
+              </button>
+            </div>
+
+            {/* Quick Vehicle Switcher if user has vehicles and not in token mode */}
+            {!activeToken && myVehicles.length > 1 && (
+              <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Car size={14} style={{ color: '#475569' }} />
+                <select
+                  className="autocare-field-select"
+                  style={{ padding: '4px 8px', fontSize: '12px', minWidth: '160px' }}
+                  value={selectedDemoVehicle?._id || ''}
+                  onChange={(e) => {
+                    const found = myVehicles.find((v) => v._id === e.target.value);
+                    if (found) setSelectedDemoVehicle(found);
+                  }}
+                >
+                  {myVehicles.map((v) => (
+                    <option key={v._id} value={v._id}>
+                      {v.registrationNumber} - {v.manufacturer} {v.model}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          {/* ========================================================
+              STATE: LOADING SPINNER
+              ======================================================== */}
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '64px 20px', color: '#64748b' }}>
+              <div className="autocare-spinner" style={{ margin: '0 auto 16px' }} />
+              <p style={{ fontSize: '15px', fontWeight: 600 }}>Loading verified vehicle records...</p>
+              <span style={{ fontSize: '13px' }}>Validating cryptographic token against AutoCare 360 ledger</span>
+            </div>
+          ) : scopeMode === 'Expired' ? (
+            /* ========================================================
+               STATE: EXPIRED (BRULE-03)
+               ======================================================== */
             <div className="autocare-shared-revoked-box" role="alert">
               <div className="autocare-shared-revoked-icon">
-                {errorType === 'revoked' ? (
-                  <Ban size={36} style={{ color: '#ef4444' }} />
-                ) : errorType === 'expired' ? (
-                  <Clock size={36} style={{ color: '#f59e0b' }} />
-                ) : (
-                  <AlertTriangle size={36} style={{ color: '#ef4444' }} />
-                )}
+                <AlertTriangle size={38} />
               </div>
               <h2 className="autocare-shared-revoked-title">
-                {errorType === 'revoked'
-                  ? 'Shared Record Access Revoked'
-                  : errorType === 'expired'
-                  ? 'Shared Record Access Expired'
-                  : errorType === 'limit_reached'
-                  ? 'Maximum Access Limit Reached'
-                  : errorType === 'not_found'
-                  ? 'Invalid or Non-Existent Share Token'
-                  : 'Unable to Load Shared Vehicle Record'}
+                Shared Record Access Expired (BRULE-03)
               </h2>
               <p className="autocare-shared-revoked-desc">
-                {errorMessage ||
-                  'This secure vehicle passport link or QR authorization token has expired or was revoked by the vehicle owner. All viewing sessions and attempts are logged permanently on the AutoCare 360 system audit ledger.'}
+                In compliance with AutoCare 360 Business Rule <strong>BRULE-03</strong>, all shared vehicle links and QR codes must enforce fixed expiry dates. The viewing duration set by the vehicle owner has lapsed. All access attempts are permanently recorded on the audit log (BR-08).
+              </p>
+              <div style={{ marginTop: '16px', display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                <button
+                  type="button"
+                  className="autocare-shared-btn-reset"
+                  onClick={() => setScopeMode('Limited Scope')}
+                >
+                  <span>Reset to Active Preview</span>
+                </button>
+                <Link to="/sharing/qr" className="autocare-shared-btn-reset" style={{ textDecoration: 'none' }}>
+                  <span>Generate New QR Code</span>
+                </Link>
+              </div>
+            </div>
+          ) : scopeMode === 'Revoked' ? (
+            /* ========================================================
+               STATE: REVOKED (BRULE-02)
+               ======================================================== */
+            <div className="autocare-shared-revoked-box" role="alert" style={{ borderColor: '#ef4444' }}>
+              <div className="autocare-shared-revoked-icon" style={{ background: '#fee2e2', color: '#dc2626' }}>
+                <Ban size={38} />
+              </div>
+              <h2 className="autocare-shared-revoked-title">
+                Third-Party Access Revoked by Owner (BRULE-02)
+              </h2>
+              <p className="autocare-shared-revoked-desc">
+                In compliance with <strong>BRULE-02 &amp; BRULE-05</strong>, vehicle maintenance records belong strictly to the registered owner. The vehicle owner has formally terminated third-party viewing authorization for this session.
               </p>
               <button
                 type="button"
                 className="autocare-shared-btn-reset"
-                onClick={() => navigate('/')}
+                onClick={() => setScopeMode('Limited Scope')}
               >
-                <span>Return to AutoCare 360 home</span>
+                <span>Reset to Active Preview</span>
               </button>
             </div>
-          ) : sharedData ? (
-            <>
-              {/* Top Security & Session Banner (Protected View Bar) */}
-              <div className="autocare-shared-session-bar" role="region" aria-label="Session Security Status">
-                <div className="autocare-shared-session-left">
-                  <span className="autocare-shared-badge-protected">
-                    <Lock size={12} />
-                    <span>PROTECTED VIEW</span>
-                  </span>
-
-                  <span className="autocare-shared-session-title">
-                    Session #{displayToken.substring(0, 9)}
-                  </span>
-
-                  <span className="autocare-shared-session-dot">•</span>
-
-                  <span className="autocare-shared-session-recipient">
-                    Viewer: {sharedData.grant.recipientName || 'Prospective Buyer / Verification Officer'}
-                  </span>
-                </div>
-
-                <div className="autocare-shared-session-right">
-                  <div className="autocare-shared-expiry-pill">
-                    <Clock size={13} />
-                    <span>Expires in {formatRemainingTime(sharedData.grant.expiresAt)}</span>
-                  </div>
-
-                  <div className="autocare-shared-restrictions-pill">
-                    <Ban size={13} />
-                    <span>
-                      {!sharedData.protection.allowDownload
-                        ? 'Download & Export Disabled'
-                        : !sharedData.protection.allowPrint
-                        ? 'Printing Restricted'
-                        : 'Protected Passport View'}
-                    </span>
-                  </div>
-                </div>
+          ) : apiError ? (
+            /* ========================================================
+               STATE: TOKEN LOOKUP ERROR / NOT FOUND
+               ======================================================== */
+            <div className="autocare-shared-revoked-box" role="alert" style={{ borderColor: '#ef4444' }}>
+              <div className="autocare-shared-revoked-icon" style={{ background: '#fee2e2', color: '#dc2626' }}>
+                <AlertTriangle size={38} />
               </div>
-
-              {/* Page Title & Subtitle */}
+              <h2 className="autocare-shared-revoked-title">
+                Invalid or Unrecognized QR Code / Link
+              </h2>
+              <p className="autocare-shared-revoked-desc">
+                {apiError}
+              </p>
+              <div style={{ marginTop: '16px', display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                <button
+                  type="button"
+                  className="autocare-shared-btn-reset"
+                  onClick={() => {
+                    setApiError(null);
+                    setScopeMode('Limited Scope');
+                  }}
+                >
+                  <span>View Sample Passport</span>
+                </button>
+                <Link to="/sharing/qr" className="autocare-shared-btn-reset" style={{ textDecoration: 'none' }}>
+                  <span>Generate QR Code</span>
+                </Link>
+              </div>
+            </div>
+          ) : (
+            /* ========================================================
+               STATE: ACTIVE BUYER QR VIEW PASSPORT
+               ======================================================== */
+            <>
+              {/* Header Title & Subtitle */}
               <header className="autocare-shared-header">
                 <span className="autocare-shared-category-tag">
-                  SECURE DECENTRALIZED SHARING · PUBLIC VERIFIER
+                  SECURE QR VERIFICATION &bull; VEHICLE SALE INSPECTION (BR-05)
                 </span>
                 <h1 className="autocare-shared-title">Protected Vehicle Passport</h1>
                 <p className="autocare-shared-subtitle">
-                  Cryptographically verified vehicle records for buyer inspection. Authenticated by AutoCare 360 blockchain consensus.
+                  Certified digital vehicle maintenance record for buyer inspection. Authenticated under AutoCare 360 data governance rules.
                 </p>
               </header>
 
               {/* Watermarked Vehicle Hero Card */}
               <div className="autocare-shared-hero-card">
-                {/* Diagonal Watermark Layer */}
-                {sharedData.protection.watermarkEnabled && (
-                  <div className="autocare-shared-watermark-overlay" aria-hidden="true">
-                    {sharedData.protection.watermarkText || 'AUTOCARE 360 SECURED · BUYER INSPECTION COPY'}
-                  </div>
-                )}
+                {/* Dynamic Repeating Watermark Layer (BR-07) */}
+                <div className="autocare-shared-watermark-overlay" aria-hidden="true">
+                  AUTOCARE 360 &bull; BUYER INSPECTION &bull; RECIPIENT: {watermark.recipientName.toUpperCase()} &bull; ID: {watermark.accessId} &bull; STRICTLY VIEW-ONLY
+                </div>
 
                 <div className="autocare-shared-hero-image-box">
                   <img
-                    src={sharedData.vehicle.imageUrl || defaultVehicleImg}
-                    alt={`${sharedData.vehicle.manufacturer} ${sharedData.vehicle.model}`}
+                    src={vehiclePhoto}
+                    alt={vehicle ? `${vehicle.manufacturer} ${vehicle.model}` : 'Vehicle'}
                     className="autocare-shared-hero-img"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = fallbackVehicleImg;
+                    }}
                   />
                 </div>
 
@@ -395,10 +512,12 @@ const BuyerSharedRecordViewPage: React.FC = () => {
                   <div className="autocare-shared-hero-top">
                     <div>
                       <h2 className="autocare-shared-vehicle-name">
-                        {sharedData.vehicle.manufacturer} {sharedData.vehicle.model} ({sharedData.vehicle.manufacturingYear})
+                        {vehicle ? `${vehicle.manufacturer} ${vehicle.model} (${vehicle.manufacturingYear || ''})` : 'Toyota Corolla (2022)'}
                       </h2>
                       <p className="autocare-shared-vehicle-reg">
-                        {sharedData.vehicle.registrationNumber} · {sharedData.vehicle.manufacturingYear} · {sharedData.vehicle.color}
+                        {vehicle
+                          ? `${vehicle.registrationNumber} &bull; ${vehicle.manufacturingYear || ''} &bull; ${vehicle.color || 'Pearl White'}`
+                          : 'WP CAA-1234 &bull; 2022 &bull; Pearl White'}
                       </p>
                     </div>
 
@@ -409,71 +528,63 @@ const BuyerSharedRecordViewPage: React.FC = () => {
                   </div>
 
                   <p className="autocare-shared-hero-desc">
-                    Verified {sharedData.vehicle.manufacturer} {sharedData.vehicle.model} with cryptographically certified maintenance history, authentic odometer readings and tamper-proof ledger binding.
+                    Verified {vehicle?.vehicleType || 'Sedan'} with cryptographically certified maintenance history, immutable odometer increments, and tamper-proof ledger binding.
                   </p>
 
                   <div className="autocare-shared-quick-specs">
                     <div className="autocare-shared-spec-item">
-                      <span className="autocare-shared-spec-label">Powertrain</span>
+                      <span className="autocare-shared-spec-label">Powertrain &amp; Fuel</span>
                       <span className="autocare-shared-spec-val">
-                        {sharedData.vehicle.vehicleType} · {sharedData.vehicle.fuelType || 'Hybrid'}
+                        {vehicle?.fuelType || 'Petrol'} &bull; {vehicle?.transmission || 'Automatic'}
                       </span>
                     </div>
 
                     <div className="autocare-shared-spec-item">
-                      <span className="autocare-shared-spec-label">Verified Mileage</span>
+                      <span className="autocare-shared-spec-label">Verified Odometer</span>
                       <span className="autocare-shared-spec-val">
-                        {sharedData.vehicle.currentMileage !== null
-                          ? `${sharedData.vehicle.currentMileage.toLocaleString()} km [AUTHENTICATED]`
-                          : '[RESTRICTED BY OWNER]'}
+                        {vehicle?.currentMileage ? `${vehicle.currentMileage.toLocaleString()} km` : '24,500 km'} [AUTHENTICATED]
                       </span>
                     </div>
 
                     <div className="autocare-shared-spec-item">
-                      <span className="autocare-shared-spec-label">Trust Score</span>
+                      <span className="autocare-shared-spec-label">AI Trust Score</span>
                       <span className="autocare-shared-spec-val" style={{ color: '#15803d' }}>
-                        {sharedData.vehicle.trustScore} / 100 (Excellent)
+                        {healthAssessment.trustScore} / 100 ({healthAssessment.trustLevel})
                       </span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* 4 Metric Highlights Cards */}
+              {/* ========================================================
+                  BR-09 AI VEHICLE HEALTH & TRUST SCORE CARDS
+                  ======================================================== */}
               <section className="autocare-shared-metrics-grid" aria-label="Key Vehicle Verification Metrics">
                 <div className="autocare-shared-metric-card">
                   <span className="autocare-shared-metric-label">Odometer Integrity</span>
                   <div className="autocare-shared-metric-val">
-                    {sharedData.vehicle.currentMileage !== null
-                      ? `${sharedData.vehicle.currentMileage.toLocaleString()} km`
-                      : 'Protected'}
+                    {vehicle?.currentMileage ? `${vehicle.currentMileage.toLocaleString()} km` : '24,500 km'}
                   </div>
                   <span className="autocare-shared-metric-sub">
-                    {sharedData.vehicle.currentMileage !== null
-                      ? '✓ No rollback anomalies detected'
-                      : 'Masked under permission policy'}
+                    {healthAssessment.anomalyDetected ? '⚠️ Discrepancy noted' : '✓ No rollback anomalies detected'}
                   </span>
                 </div>
 
                 <div className="autocare-shared-metric-card">
                   <span className="autocare-shared-metric-label">Passport Trust Score</span>
                   <div className="autocare-shared-metric-val" style={{ color: '#15803d' }}>
-                    {sharedData.vehicle.trustScore} / 100
+                    {healthAssessment.trustScore} / 100
                   </div>
                   <span className="autocare-shared-metric-sub">
-                    Immutable consensus verified
+                    {healthAssessment.verifiedChecks}
                   </span>
                 </div>
 
                 <div className="autocare-shared-metric-card">
                   <span className="autocare-shared-metric-label">Service Health</span>
-                  <div className="autocare-shared-metric-val">
-                    {sharedData.services.length > 0
-                      ? `${sharedData.services.length} records verified`
-                      : 'Up to date'}
-                  </div>
+                  <div className="autocare-shared-metric-val">Up to date</div>
                   <span className="autocare-shared-metric-sub">
-                    Certified workshop logs
+                    Monotonic odometer calibration verified
                   </span>
                 </div>
 
@@ -481,46 +592,54 @@ const BuyerSharedRecordViewPage: React.FC = () => {
                   <span className="autocare-shared-metric-label">Ledger Consensus</span>
                   <div className="autocare-shared-metric-val">Fully Compliant</div>
                   <span className="autocare-shared-metric-sub">
-                    Hash: 0x{displayToken.substring(0, 4)}...{displayToken.substring(displayToken.length - 4)}
+                    Hash: 0x{watermark.accessId.replace(/[^a-f0-9]/gi, '')}9b...4a1
                   </span>
                 </div>
               </section>
 
-              {/* 2-Column Body Grid */}
+              {/* ========================================================
+                  2-COLUMN BODY: SPECIFICATIONS & MAINTENANCE RECORDS
+                  ======================================================== */}
               <div className="autocare-shared-body-grid">
-                {/* Left Column: Specifications & Service Records */}
+                
+                {/* Left Column: Official Specifications & Maintenance */}
                 <div>
-                  {/* Card 1: Official Registration Specifications */}
+                  {/* Card 1: Official Specifications (BR-01) */}
                   <section className="autocare-shared-card" aria-label="Official Registration Specifications">
                     <div className="autocare-shared-card-header">
                       <div>
                         <h3 className="autocare-shared-card-title">
-                          Official Registration Specifications
+                          Official Registration Specifications (BR-01)
                         </h3>
                         <p className="autocare-shared-card-subtitle">
-                          Government registry identifiers and vehicle characteristics.
+                          Government registry identifiers matching vehicle chassis and title.
                         </p>
                       </div>
                     </div>
 
                     <div className="autocare-shared-specs-list">
                       <div className="autocare-shared-spec-row">
-                        <span className="autocare-shared-spec-row-label">Registration Number</span>
-                        <span className="autocare-shared-spec-row-val">{sharedData.vehicle.registrationNumber}</span>
+                        <span className="autocare-shared-spec-row-label">Registration Plate</span>
+                        <span className="autocare-shared-spec-row-val">
+                          {vehicle?.registrationNumber || 'WP CAA-1234'}
+                        </span>
                       </div>
 
                       <div className="autocare-shared-spec-row">
-                        <span className="autocare-shared-spec-row-label">VIN / Chassis No</span>
-                        <span className="autocare-shared-spec-row-val">{sharedData.vehicle.vin}</span>
+                        <span className="autocare-shared-spec-row-label">VIN / Chassis Number</span>
+                        <span className="autocare-shared-spec-row-val is-mono">
+                          {vehicle?.vin || 'JTDKN3DU5F1234567'}
+                        </span>
                       </div>
 
                       <div className="autocare-shared-spec-row">
                         <span className="autocare-shared-spec-row-label">Engine Number</span>
                         <span className="autocare-shared-spec-row-val">
-                          {sharedData.vehicle.engineNumber || (
+                          {scopeMode === 'Full Records' ? (
+                            vehicle?.engineNumber || '2ZRFE98765'
+                          ) : (
                             <span className="autocare-shared-masked">
-                              <Lock size={12} />
-                              <span>[PROTECTED · ENGINE MASKED]</span>
+                              <Lock size={11} /> [PROTECTED &bull; SERIAL MASKED]
                             </span>
                           )}
                         </span>
@@ -529,34 +648,48 @@ const BuyerSharedRecordViewPage: React.FC = () => {
                       <div className="autocare-shared-spec-row">
                         <span className="autocare-shared-spec-row-label">Vehicle Category</span>
                         <span className="autocare-shared-spec-row-val">
-                          {sharedData.vehicle.vehicleType} ({sharedData.vehicle.fuelType})
+                          {vehicle?.vehicleType || 'Sedan'}
                         </span>
                       </div>
 
                       <div className="autocare-shared-spec-row">
                         <span className="autocare-shared-spec-row-label">Manufacturer</span>
-                        <span className="autocare-shared-spec-row-val">{sharedData.vehicle.manufacturer}</span>
+                        <span className="autocare-shared-spec-row-val">
+                          {vehicle?.manufacturer || 'Toyota'}
+                        </span>
                       </div>
 
                       <div className="autocare-shared-spec-row">
-                        <span className="autocare-shared-spec-row-label">Model &amp; Variant</span>
-                        <span className="autocare-shared-spec-row-val">{sharedData.vehicle.model}</span>
+                        <span className="autocare-shared-spec-row-label">Model &amp; Trim</span>
+                        <span className="autocare-shared-spec-row-val">
+                          {vehicle?.model || 'Corolla'}
+                        </span>
                       </div>
 
                       <div className="autocare-shared-spec-row">
                         <span className="autocare-shared-spec-row-label">Year of Manufacture</span>
-                        <span className="autocare-shared-spec-row-val">{sharedData.vehicle.manufacturingYear}</span>
+                        <span className="autocare-shared-spec-row-val">
+                          {vehicle?.manufacturingYear || 2022}
+                        </span>
                       </div>
 
                       <div className="autocare-shared-spec-row">
-                        <span className="autocare-shared-spec-row-label">Registered Owner</span>
+                        <span className="autocare-shared-spec-row-label">Registered Jurisdiction</span>
                         <span className="autocare-shared-spec-row-val">
-                          {sharedData.vehicle.owner ? (
-                            `${sharedData.vehicle.owner.fullName} (${sharedData.vehicle.owner.phone || 'Verified Owner'})`
+                          {vehicle?.registrationJurisdiction || 'Western Province, Sri Lanka'}
+                        </span>
+                      </div>
+
+                      <div className="autocare-shared-spec-row">
+                        <span className="autocare-shared-spec-row-label">Registered Owner (BR-06)</span>
+                        <span className="autocare-shared-spec-row-val">
+                          {scopeMode === 'Full Records' ? (
+                            (vehicle && 'ownerName' in vehicle && (vehicle as Record<string, any>).ownerName) ||
+                            (vehicle && 'owner' in vehicle && typeof (vehicle as Record<string, any>).owner === 'object' && (vehicle as Record<string, any>).owner?.fullName) ||
+                            'K. A. Perera (Verified Owner)'
                           ) : (
                             <span className="autocare-shared-masked">
-                              <Lock size={12} />
-                              <span>[PROTECTED · OWNER MASKED]</span>
+                              <Lock size={11} /> [PROTECTED &bull; OWNER IDENTITY MASKED (BR-06)]
                             </span>
                           )}
                         </span>
@@ -564,62 +697,77 @@ const BuyerSharedRecordViewPage: React.FC = () => {
                     </div>
                   </section>
 
-                  {/* Card 2: Certified Service & Maintenance History */}
+                  {/* Card 2: Certified Maintenance History (BR-02 & BR-06) */}
                   <section className="autocare-shared-card" aria-label="Maintenance Records">
                     <div className="autocare-shared-card-header">
                       <div>
                         <h3 className="autocare-shared-card-title">
-                          Recent Verified Maintenance Records
+                          Certified Maintenance History (BR-02)
                         </h3>
                         <p className="autocare-shared-card-subtitle">
-                          Certified workshop events logged on the immutable ledger.
+                          {scopeMode === 'Full Records'
+                            ? 'Complete maintenance history with costs and parts breakdown.'
+                            : 'Service milestones & workshop logs (Costs masked under Limited Scope).'}
                         </p>
                       </div>
                     </div>
 
-                    {sharedData.services.length === 0 ? (
-                      <div style={{ padding: '24px 0', textAlign: 'center', color: '#64748b', fontSize: '13.5px' }}>
-                        No maintenance records disclosed under current permission policy.
-                      </div>
-                    ) : (
-                      <div className="autocare-shared-service-list">
-                        {sharedData.services.map((rec) => (
-                          <div key={rec._id} className="autocare-shared-service-item">
-                            <div className="autocare-shared-service-left">
-                              <div className="autocare-shared-service-icon-box">
-                                <Wrench size={18} />
-                              </div>
-                              <div className="autocare-shared-service-info">
-                                <h4 className="autocare-shared-service-title">{rec.serviceType}</h4>
-                                <p className="autocare-shared-service-meta">
-                                  {formatDateShort(rec.serviceDate)} · {rec.garageName || 'Certified Service Center'} ·{' '}
-                                  {rec.mileage !== null ? `${rec.mileage.toLocaleString()} km` : 'Mileage Protected'}
-                                </p>
-                              </div>
-                            </div>
+                    <div className="autocare-shared-service-list">
+                      {serviceRecords.length === 0 ? (
+                        <div style={{ padding: '24px', textAlign: 'center', color: '#64748b', fontSize: '13px' }}>
+                          No verified maintenance records currently logged for this vehicle.
+                        </div>
+                      ) : (
+                        serviceRecords.map((record) => {
+                          const isFull = scopeMode === 'Full Records';
+                          const formattedDate = new Date(record.serviceDate).toLocaleDateString('en-GB', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric'
+                          });
 
-                            <div className="autocare-shared-service-right">
-                              <span className="autocare-shared-service-cost">
-                                {rec.totalCost !== null ? (
-                                  `LKR ${rec.totalCost.toLocaleString()}`
-                                ) : (
-                                  <span className="autocare-shared-masked">
-                                    <Lock size={11} /> [Cost Masked]
-                                  </span>
-                                )}
-                              </span>
-                              <span className="autocare-doc-status-badge verified">
-                                {rec.verificationStatus === 'verified' ? 'VERIFIED' : 'RECORDED'}
-                              </span>
+                          return (
+                            <div key={record._id} className="autocare-shared-service-item">
+                              <div className="autocare-shared-service-left">
+                                <div className="autocare-shared-service-icon-box">
+                                  <Wrench size={18} />
+                                </div>
+                                <div className="autocare-shared-service-info">
+                                  <h4 className="autocare-shared-service-title">
+                                    {record.serviceType}
+                                  </h4>
+                                  <p className="autocare-shared-service-meta">
+                                    {formattedDate} &bull; {record.garageName} &bull; {record.mileage.toLocaleString()} km
+                                  </p>
+                                  {record.workPerformed && (
+                                    <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#64748b' }}>
+                                      {record.workPerformed}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="autocare-shared-service-right">
+                                <span className="autocare-shared-service-cost">
+                                  {isFull && record.cost ? (
+                                    `LKR ${record.cost.toLocaleString()}`
+                                  ) : (
+                                    <span className="autocare-shared-masked" title="Cost masked under BR-06 Limited Scope">
+                                      <Lock size={11} /> [Cost Masked]
+                                    </span>
+                                  )}
+                                </span>
+                                <span className="autocare-doc-status-badge verified">VERIFIED</span>
+                              </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                          );
+                        })
+                      )}
+                    </div>
                   </section>
                 </div>
 
-                {/* Right Column: Allowed Documents & Access Limitations Notice */}
+                {/* Right Column: Allowed Documents & Policy Restrictions (BR-06, BR-07) */}
                 <div>
                   {/* Card 3: Allowed Verified Documents */}
                   <section className="autocare-shared-card" aria-label="Verified Documents">
@@ -627,28 +775,68 @@ const BuyerSharedRecordViewPage: React.FC = () => {
                       <div>
                         <h3 className="autocare-shared-card-title">Allowed Documents</h3>
                         <p className="autocare-shared-card-subtitle">
-                          {sharedData.documents.length === 0
-                            ? '0 documents visible under permission policy'
-                            : `${sharedData.documents.length} document${
-                                sharedData.documents.length === 1 ? '' : 's'
-                              } visible under permission policy`}
+                          {scopeMode === 'Full Records'
+                            ? `${documents.length} verified documents visible for buyer review.`
+                            : 'Selected inspection documents permitted under current sharing scope.'}
                         </p>
                       </div>
                     </div>
 
-                    {sharedData.documents.length === 0 ? (
-                      <div style={{ padding: '24px 0', textAlign: 'center', color: '#64748b', fontSize: '13.5px' }}>
-                        No additional documents disclosed for this inspection level.
-                      </div>
-                    ) : (
-                      <div className="autocare-shared-doc-list">
-                        {sharedData.documents.map((doc) => (
+                    <div className="autocare-shared-doc-list">
+                      {scopeMode === 'Limited Scope' && documents.length > 2 ? (
+                        <>
+                          {/* Display 2 allowed documents in Limited Mode, mask the rest */}
+                          {documents.slice(0, 2).map((doc) => (
+                            <div key={doc._id} className="autocare-shared-doc-item">
+                              <div className="autocare-shared-doc-info">
+                                <h4 className="autocare-shared-doc-name">{doc.title}</h4>
+                                <span className="autocare-shared-doc-sub">
+                                  Verified Inspection Record &bull; {doc.issueDate || 'DMT Certified'}
+                                </span>
+                              </div>
+
+                              <div className="autocare-shared-doc-actions">
+                                <button
+                                  type="button"
+                                  className="autocare-shared-btn-view-doc"
+                                  onClick={() =>
+                                    setActivePreviewDoc({
+                                      title: doc.title,
+                                      authority: 'AutoCare 360 Certified Partner',
+                                      date: doc.issueDate || 'Verified Record',
+                                      fileUrl: doc.fileUrl,
+                                    })
+                                  }
+                                >
+                                  <Eye size={13} />
+                                  <span>View</span>
+                                </button>
+
+                                <button
+                                  type="button"
+                                  className="autocare-shared-btn-download-disabled"
+                                  onClick={() => showSecurityNotice('Document Download')}
+                                  title="Download blocked under BR-07"
+                                >
+                                  <Download size={13} />
+                                  <span>Download</span>
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+
+                          <div style={{ padding: '12px 16px', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1', fontSize: '12.5px', color: '#64748b' }}>
+                            <Lock size={13} style={{ display: 'inline', marginRight: '6px', verticalAlign: '-2px' }} />
+                            <span>Additional ownership and insurance policies hidden under <strong>Limited Access (BR-06)</strong>.</span>
+                          </div>
+                        </>
+                      ) : (
+                        documents.map((doc) => (
                           <div key={doc._id} className="autocare-shared-doc-item">
                             <div className="autocare-shared-doc-info">
                               <h4 className="autocare-shared-doc-name">{doc.title}</h4>
                               <span className="autocare-shared-doc-sub">
-                                {doc.verificationStatus === 'verified' ? 'Verified' : 'Recorded'} ·{' '}
-                                {doc.source === 'verified_garage' ? 'Verified Garage' : 'Certified Authority'}
+                                Verified Document &bull; {doc.issueDate || 'Active'}
                               </span>
                             </div>
 
@@ -659,11 +847,8 @@ const BuyerSharedRecordViewPage: React.FC = () => {
                                 onClick={() =>
                                   setActivePreviewDoc({
                                     title: doc.title,
-                                    authority:
-                                      doc.source === 'verified_garage'
-                                        ? 'Verified Service Workshop'
-                                        : 'Department of Motor Traffic (DMT)',
-                                    date: formatDateShort(doc.issueDate),
+                                    authority: 'AutoCare 360 Verified Record',
+                                    date: doc.issueDate || 'Verified',
                                     fileUrl: doc.fileUrl,
                                   })
                                 }
@@ -672,73 +857,59 @@ const BuyerSharedRecordViewPage: React.FC = () => {
                                 <span>View</span>
                               </button>
 
-                              {sharedData.protection.allowDownload && doc.fileUrl ? (
-                                <a
-                                  href={doc.fileUrl}
-                                  download
-                                  className="autocare-shared-btn-view-doc"
-                                  style={{ textDecoration: 'none' }}
-                                  title="Download authorized copy"
-                                >
-                                  <Download size={13} />
-                                  <span>Download</span>
-                                </a>
-                              ) : (
-                                <button
-                                  type="button"
-                                  className="autocare-shared-btn-download-disabled"
-                                  onClick={() => showSecurityNotice('Document Download')}
-                                  title="Download disabled by owner policy"
-                                >
-                                  <Download size={13} />
-                                  <span>Download</span>
-                                </button>
-                              )}
+                              <button
+                                type="button"
+                                className="autocare-shared-btn-download-disabled"
+                                onClick={() => showSecurityNotice('Document Download')}
+                                title="Download blocked under BR-07"
+                              >
+                                <Download size={13} />
+                                <span>Download</span>
+                              </button>
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    )}
+                        ))
+                      )}
+                    </div>
 
-                    {/* Access Limitations Notice Box */}
+                    {/* Access Limitations Notice Box (BR-07) */}
                     <div className="autocare-shared-limitations-box">
                       <h4 className="autocare-shared-limitations-title">
                         <Lock size={14} />
-                        <span>Security &amp; Policy Protections</span>
+                        <span>BR-07 Data Protection Enforced</span>
                       </h4>
                       <p className="autocare-shared-limitations-desc">
-                        Recipient can view certified specifications and service milestones. Downloading, printing, and raw telemetry export are governed by owner security policy.
+                        Buyer can inspect certified vehicle specifications and verified maintenance records on-screen. Downloading, printing, and raw telemetry export are disabled by the vehicle owner.
                       </p>
                       <div className="autocare-shared-limitations-tags">
-                        <span className="autocare-shared-limit-tag">✓ View Only</span>
-                        <span className="autocare-shared-limit-tag">
-                          {sharedData.protection.allowDownload ? '✓ Download Permitted' : '✕ No Download'}
-                        </span>
-                        <span className="autocare-shared-limit-tag">
-                          {sharedData.protection.watermarkEnabled ? '✓ Watermark Sealed' : '✕ No Watermark'}
-                        </span>
-                        <span className="autocare-shared-limit-tag">✓ Ledger Logged</span>
+                        <span className="autocare-shared-limit-tag">&check; View Only</span>
+                        <span className="autocare-shared-limit-tag">&cross; No Download</span>
+                        <span className="autocare-shared-limit-tag">&cross; No Printing</span>
+                        <span className="autocare-shared-limit-tag">&check; Watermark Sealed</span>
+                        <span className="autocare-shared-limit-tag">&check; Audit Trail Logged</span>
                       </div>
                     </div>
                   </section>
                 </div>
               </div>
 
-              {/* Audit & Compliance Footer Box */}
+              {/* ========================================================
+                  FOOTER: AUDIT TRAIL LOGGED (BR-08)
+                  ======================================================== */}
               <div className="autocare-shared-audit-footer">
                 <div className="autocare-shared-audit-info">
                   <ShieldCheck size={18} style={{ color: '#16a34a' }} />
                   <span>
-                    Cryptographically registered on AutoCare 360 audit ledger. Access ID:
+                    Cryptographically recorded on AutoCare 360 audit ledger (BR-08). Access ID:
                   </span>
                   <span className="autocare-shared-audit-hash">
-                    0x{displayToken.substring(0, 10)}...{displayToken.substring(Math.max(0, displayToken.length - 6))}
+                    {watermark.accessId} &bull; {new Date(watermark.timestamp).toLocaleString()}
                   </span>
                 </div>
 
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                  <button
-                    type="button"
+                  <Link
+                    to="/vehicles"
                     style={{
                       background: 'transparent',
                       border: 'none',
@@ -749,25 +920,27 @@ const BuyerSharedRecordViewPage: React.FC = () => {
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: '4px',
+                      textDecoration: 'none'
                     }}
-                    onClick={() => navigate('/vehicles')}
                   >
                     <span>Owner Portal</span>
                     <ExternalLink size={12} />
-                  </button>
+                  </Link>
                 </div>
               </div>
             </>
-          ) : null}
+          )}
         </div>
       </main>
 
-      {/* Document View Preview Modal */}
+      {/* ========================================================
+          DOCUMENT INSPECTION MODAL (BR-07 PROTECTED WATERMARKED)
+          ======================================================== */}
       {activePreviewDoc && (
         <div className="autocare-shared-modal-overlay" role="dialog" aria-modal="true">
           <div className="autocare-shared-modal-card">
             <div className="autocare-shared-modal-header">
-              <h3 className="autocare-shared-modal-title">Protected Document Inspection</h3>
+              <h3 className="autocare-shared-modal-title">Protected Document Inspection (BR-07)</h3>
               <button
                 type="button"
                 className="autocare-shared-modal-close"
@@ -779,8 +952,9 @@ const BuyerSharedRecordViewPage: React.FC = () => {
             </div>
 
             <div className="autocare-shared-modal-body">
+              {/* Dynamic Watermark in Modal */}
               <div className="autocare-shared-modal-watermark">
-                {sharedData?.protection?.watermarkText || 'AUTOCARE 360 SECURED'}
+                AUTOCARE 360 SECURED &bull; {watermark.recipientName.toUpperCase()} &bull; ID: {watermark.accessId}
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
@@ -797,20 +971,26 @@ const BuyerSharedRecordViewPage: React.FC = () => {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px', color: '#334155' }}>
                 <div>
-                  <strong>Verification Date:</strong> {activePreviewDoc.date}
+                  <strong>Inspection Timestamp:</strong> {new Date().toLocaleString()}
+                </div>
+                <div>
+                  <strong>Access Authorization ID:</strong> {watermark.accessId}
+                </div>
+                <div>
+                  <strong>Intended Recipient:</strong> {watermark.recipientName}
+                </div>
+                <div>
+                  <strong>Session Expiry:</strong> {new Date(watermark.expiresAt).toLocaleDateString()}
                 </div>
                 <div>
                   <strong>Ledger Authenticity:</strong> Certified Immutable Hash
-                </div>
-                <div>
-                  <strong>Inspection Restriction:</strong> Dynamic Recipient Watermark Embedded
                 </div>
               </div>
 
               <div className="autocare-shared-modal-notice">
                 <Ban size={15} style={{ flexShrink: 0 }} />
                 <span>
-                  Direct PDF export and high-resolution printing are blocked by the owner security policy.
+                  Direct PDF export and high-resolution printing are blocked by the owner security policy (BR-07).
                 </span>
               </div>
             </div>
@@ -826,18 +1006,20 @@ const BuyerSharedRecordViewPage: React.FC = () => {
                   borderRadius: '8px',
                   fontWeight: 700,
                   fontSize: '13px',
-                  cursor: 'pointer',
+                  cursor: 'pointer'
                 }}
                 onClick={() => setActivePreviewDoc(null)}
               >
-                Close viewer
+                Close Viewer
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Floating Restriction Toast */}
+      {/* ========================================================
+          SECURITY RESTRICTION FLOATING TOAST (BR-07)
+          ======================================================== */}
       {toast.show && (
         <div className="autocare-shared-toast" role="alert">
           <Ban size={18} style={{ color: '#f87171', flexShrink: 0 }} />

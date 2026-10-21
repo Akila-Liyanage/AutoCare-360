@@ -105,18 +105,69 @@ export const updateVehicle = async (
 };
 
 /**
- * Upload vehicle image (multipart/form-data)
+ * Upload a vehicle photo or update vehicle image:
+ * - uploadVehicleImage(file: File): Promise<string> -> POST /api/vehicles/upload-image
+ * - uploadVehicleImage(id: string, file: File): Promise<Vehicle> -> POST /api/vehicles/:id/image
+ */
+export async function uploadVehicleImage(file: File): Promise<string>;
+export async function uploadVehicleImage(id: string, file: File): Promise<Vehicle>;
+export async function uploadVehicleImage(
+  first: string | File,
+  second?: File
+): Promise<string | Vehicle> {
+  if (typeof first === 'string' && second instanceof File) {
+    const id = first;
+    const file = second;
+    const formData = new FormData();
+    formData.append('image', file);
+
+    const response = await api.post<CreateVehicleResponse>(`/vehicles/${id}/image`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    return response.data?.data?.vehicle;
+  } else if (first instanceof File) {
+    const file = first;
+    const formData = new FormData();
+    formData.append('image', file);
+
+    const response = await api.post<{
+      success: boolean;
+      message: string;
+      data: { imageUrl: string; filename: string };
+    }>('/vehicles/upload-image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    return response.data?.data?.imageUrl || '';
+  }
+
+  throw new Error('Invalid arguments provided to uploadVehicleImage.');
+}
+
+/**
+ * Upload/update a photo for an existing vehicle
  * POST /api/vehicles/:id/image
  */
-export const uploadVehicleImage = async (id: string, file: File): Promise<Vehicle> => {
+export const updateVehicleImage = async (id: string, file: File): Promise<string> => {
   const formData = new FormData();
   formData.append('image', file);
-  const response = await api.post<CreateVehicleResponse>(`/vehicles/${id}/image`, formData, {
+
+  const response = await api.post<{
+    success: boolean;
+    message: string;
+    data: { imageUrl: string; vehicle: Vehicle };
+  }>(`/vehicles/${id}/image`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
   });
-  return response.data?.data?.vehicle;
+
+  return response.data?.data?.imageUrl || '';
 };
 
 export default {
@@ -125,5 +176,6 @@ export default {
   createVehicle,
   updateVehicle,
   uploadVehicleImage,
+  updateVehicleImage,
 };
 
