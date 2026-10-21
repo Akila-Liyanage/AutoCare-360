@@ -50,6 +50,8 @@ export interface CreateShareLinkPayload {
 export interface CreateShareLinkResponseData {
   shareLink: ShareLink;
   rawToken: string;
+  shareUrl?: string;
+  qrCodeDataUrl?: string;
 }
 
 export interface CreateShareLinkResponse {

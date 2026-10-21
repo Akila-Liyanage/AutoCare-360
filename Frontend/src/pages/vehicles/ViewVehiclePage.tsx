@@ -18,7 +18,8 @@ import {
   ArrowLeft,
   Car,
   Upload,
-  Trash2
+  Trash2,
+  QrCode
 } from 'lucide-react';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
@@ -259,7 +260,10 @@ export const ViewVehiclePage: React.FC = () => {
         <div class="brand">AutoCare <span>360</span></div>
         <div style="font-size: 12px; color: #64748b; margin-top: 4px;">Universal Vehicle Passport & Maintenance Record System</div>
       </div>
-      <div class="badge">Cryptographically Certified</div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <img src="${window.location.origin}/api/share-links/public/${encodeURIComponent(vehicle.registrationNumber)}/qr" style="width: 68px; height: 68px; border-radius: 8px; border: 1px solid #cbd5e1; padding: 2px; background: #fff;" alt="Verify QR" onerror="this.style.display='none'" />
+        <div class="badge">Cryptographically Certified</div>
+      </div>
     </div>
 
     <div class="cert-title">OFFICIAL VEHICLE PASSPORT</div>
@@ -378,6 +382,16 @@ export const ViewVehiclePage: React.FC = () => {
             </div>
 
             <div className="autocare-view-header-actions">
+              <Link
+                to={`/sharing/qr?vehicleId=${vehicle?._id || id}`}
+                className="autocare-btn-share-records"
+                style={{ textDecoration: 'none', background: '#002B49', color: '#ffffff', border: 'none' }}
+                title="Generate and view verified QR Pass for this vehicle"
+              >
+                <QrCode size={16} />
+                <span>QR Pass</span>
+              </Link>
+
               <Link
                 to={{ pathname: '/sharing/secure-link', search: `?vehicleId=${vehicle?._id || id}` }}
                 className="autocare-btn-share-records"

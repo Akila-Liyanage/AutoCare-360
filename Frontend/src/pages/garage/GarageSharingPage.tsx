@@ -10,6 +10,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import GarageLayout from '../../components/layout/GarageLayout';
+import QRScannerModal from '../../components/common/QRScannerModal';
 import { MOCK_GARAGE_VEHICLES } from './garageData';
 import '../../styles/garage-dashboard.css';
 
@@ -21,6 +22,7 @@ interface ToastState {
 export const GarageSharingPage: React.FC = () => {
   const navigate = useNavigate();
   const [toast, setToast] = useState<ToastState>({ show: false, message: '' });
+  const [isScannerOpen, setIsScannerOpen] = useState<boolean>(false);
 
   const showToast = (message: string) => {
     setToast({ show: true, message });
@@ -42,9 +44,7 @@ export const GarageSharingPage: React.FC = () => {
         <button
           type="button"
           className="autocare-garage-btn-primary"
-          onClick={() => {
-            showToast('Inspection QR scanner activated. Scan vehicle physical sticker or QR code.');
-          }}
+          onClick={() => setIsScannerOpen(true)}
         >
           <QrCode size={16} />
           <span>Scan Client QR</span>
@@ -173,6 +173,16 @@ export const GarageSharingPage: React.FC = () => {
           </button>
         </div>
       )}
+      {/* Inspection QR Scanner Modal */}
+      <QRScannerModal
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+        onScan={(token) => {
+          navigate(`/buyer-qr?token=${encodeURIComponent(token)}`);
+        }}
+        title="Garage Inspection Terminal QR Scanner"
+        subtitle="Scan customer vehicle QR badge to inspect digital maintenance passport"
+      />
     </GarageLayout>
   );
 };

@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const mongoose = require('mongoose');
+const QRCode = require('qrcode');
 const ShareLink = require('../models/ShareLink');
 const Vehicle = require('../models/Vehicle');
 const ServiceRecord = require('../models/ServiceRecord');
@@ -202,13 +203,32 @@ const createShareLink = async (req, res, next) => {
       },
     });
 
-    // Return the raw token ONLY once in the creation response
+    // Generate share URL and high-res base64 QR code data URL
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    const shareUrl = `${clientUrl}/buyer-qr?token=${rawToken}`;
+    let qrCodeDataUrl = '';
+    try {
+      qrCodeDataUrl = await QRCode.toDataURL(shareUrl, {
+        width: 380,
+        margin: 2,
+        color: {
+          dark: '#002B49',
+          light: '#FFFFFF',
+        },
+      });
+    } catch (qrErr) {
+      console.warn('QR generation error in createShareLink:', qrErr.message);
+    }
+
+    // Return the raw token ONLY once in the creation response along with QR payload
     return res.status(201).json({
       success: true,
       message: 'Secure vehicle share link generated successfully.',
       data: {
         shareLink: sanitizedLink,
         rawToken,
+        shareUrl,
+        qrCodeDataUrl,
       },
     });
   } catch (error) {
@@ -486,6 +506,48 @@ const getPublicSharedRecord = async (req, res, next) => {
     }
 
     if (!shareLink) {
+      // Check if token or query is a vehicle registration number or VIN
+      const cleanToken = token.trim();
+      const matchedVehicle = await Vehicle.findOne({
+        $or: [
+          { vin: cleanToken.toUpperCase() },
+          { registrationNumber: new RegExp(`^${cleanToken.replace(/[-\s]/g, '[- ]?')}$`, 'i') },
+          { registrationNumber: cleanToken.toUpperCase() }
+        ]
+      }).populate('ownerId', 'fullName displayName');
+
+      if (matchedVehicle) {
+        // Look for an existing active share link or create a virtual buyer inspection session
+        const existingActive = await ShareLink.findOne({
+          vehicleId: matchedVehicle._id,
+          status: 'active',
+          expiresAt: { $gt: new Date() }
+        }).sort({ createdAt: -1 });
+
+        if (existingActive) {
+          shareLink = existingActive;
+          shareLink.vehicleId = matchedVehicle;
+        } else {
+          shareLink = {
+            _id: `PUB-${matchedVehicle._id.toString().slice(-8).toUpperCase()}`,
+            vehicleId: matchedVehicle,
+            ownerId: matchedVehicle.ownerId,
+            recipientName: 'Public Buyer / Verification Inspector',
+            recipientEmail: '',
+            purpose: 'Vehicle Verification & Integrity Inspection',
+            permissionLevel: 'limited',
+            allowedSections: ['services', 'health'],
+            expiresAt: new Date(Date.now() + 48 * 3600 * 1000),
+            viewCount: 1,
+            maxViews: 100,
+            status: 'active',
+            save: async () => {},
+          };
+        }
+      }
+    }
+
+    if (!shareLink) {
       return res.status(404).json({
         success: false,
         message: 'Invalid share link or token not found.',
@@ -718,6 +780,38 @@ const getPublicSharedRecord = async (req, res, next) => {
   }
 };
 
+// @desc    Stream public QR code image (PNG) for a given share token or vehicle
+// @route   GET /api/share-links/public/:token/qr
+// @access  Public
+const getPublicQrImage = async (req, res, next) => {
+  try {
+    const { token } = req.params;
+    if (!token) {
+      return res.status(400).send('Token parameter is required.');
+    }
+
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    const targetUrl = `${clientUrl}/buyer-qr?token=${encodeURIComponent(token.trim())}`;
+
+    const qrBuffer = await QRCode.toBuffer(targetUrl, {
+      width: 420,
+      margin: 2,
+      color: {
+        dark: '#002B49',
+        light: '#FFFFFF',
+      },
+    });
+
+    res.set({
+      'Content-Type': 'image/png',
+      'Cache-Control': 'public, max-age=86400',
+    });
+    return res.send(qrBuffer);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createShareLink,
   getOwnerShareLinks,
@@ -725,4 +819,5 @@ module.exports = {
   revokeShareLink,
   deleteShareLink,
   getPublicSharedRecord,
+  getPublicQrImage,
 };

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { QRCodeSVG } from 'qrcode.react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -12,10 +12,13 @@ import {
   QrCode,
   Link as LinkIcon,
   ShieldCheck,
-  ExternalLink
+  ExternalLink,
+  Copy,
+  ScanLine
 } from 'lucide-react';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
+import QRScannerModal from '../../components/common/QRScannerModal';
 import { getMyVehicles, type Vehicle } from '../../services/vehicleService';
 import {
   createShareLink,
@@ -35,27 +38,12 @@ interface RecentQRCodeItem {
   date: string;
   scans: string;
   status: 'Expired' | 'Revoked' | 'Active';
+  token?: string;
 }
-
-const INITIAL_RECENT_QR_CODES: RecentQRCodeItem[] = [
-  {
-    id: 'qr-1',
-    purpose: 'Insurance inspection',
-    date: '19 Sep 2026',
-    scans: '7 / 10 scans',
-    status: 'Expired',
-  },
-  {
-    id: 'qr-2',
-    purpose: 'Vehicle verification',
-    date: '08 Sep 2026',
-    scans: '2 / 5 scans',
-    status: 'Revoked',
-  },
-];
 
 export const QRCodeSharingPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   // Registered vehicles state
   const [vehiclesList, setVehiclesList] = useState<Vehicle[]>([]);
@@ -67,7 +55,7 @@ export const QRCodeSharingPage: React.FC = () => {
   );
 
   // Vehicle & Record scope state (BR-06)
-  const [vehicle, setVehicle] = useState('WP CAA-1234 · Toyota Corolla');
+  const [vehicle, setVehicle] = useState('WP CAR-1010 · Toyota Corolla Cross');
   const [permissionScope, setPermissionScope] = useState<ShareLinkPermissionLevel>('limited');
 
   // Limits state (BR-05, BRULE-03)
@@ -76,39 +64,15 @@ export const QRCodeSharingPage: React.FC = () => {
   const [recipientName, setRecipientName] = useState('Prospective Buyer');
 
   // Recent QR codes
-  const [recentCodes, setRecentCodes] = useState<RecentQRCodeItem[]>(INITIAL_RECENT_QR_CODES);
+  const [recentCodes, setRecentCodes] = useState<RecentQRCodeItem[]>([]);
 
   // Dynamic QR Payload state
-  const [qrToken, setQrToken] = useState('AC360-SAMPLE-BUYER-QR');
+  const [qrToken, setQrToken] = useState<string>('');
+  const [backendQrDataUrl, setBackendQrDataUrl] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
 
-  // Load real user vehicles and recent share links on mount
-  React.useEffect(() => {
-    getMyVehicles()
-      .then((vehicles) => {
-        if (vehicles && vehicles.length > 0) {
-          setVehiclesList(vehicles);
-          setSelectedVehicleId(vehicles[0]._id);
-          setVehicle(`${vehicles[0].registrationNumber} · ${vehicles[0].manufacturer} ${vehicles[0].model}`);
-        }
-      })
-      .catch(() => {});
-
-    getShareLinks()
-      .then((links) => {
-        if (links && links.length > 0) {
-          const mapped: RecentQRCodeItem[] = links.slice(0, 5).map((l) => ({
-            id: l._id,
-            purpose: l.purpose || 'Vehicle verification',
-            date: new Date(l.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-            scans: `${l.viewCount} / ${l.maxViews || 10} scans`,
-            status: l.status === 'active' ? 'Active' : l.status === 'expired' ? 'Expired' : 'Revoked',
-          }));
-          setRecentCodes(mapped);
-        }
-      })
-      .catch(() => {});
-  }, []);
+  // QR Scanner Modal State
+  const [isScannerOpen, setIsScannerOpen] = useState<boolean>(false);
 
   // Toast feedback state
   const [toast, setToast] = useState<ToastState | null>(null);
@@ -118,6 +82,87 @@ export const QRCodeSharingPage: React.FC = () => {
     setTimeout(() => {
       setToast(null);
     }, 4000);
+  };
+
+  // Load real user vehicles and recent share links on mount
+  useEffect(() => {
+    const requestedVehicleId = searchParams.get('vehicleId');
+
+    getMyVehicles()
+      .then(async (vehicles) => {
+        if (vehicles && vehicles.length > 0) {
+          setVehiclesList(vehicles);
+          const initial = requestedVehicleId
+            ? vehicles.find((v) => v._id === requestedVehicleId) || vehicles[0]
+            : vehicles[0];
+
+          setSelectedVehicleId(initial._id);
+          setVehicle(`${initial.registrationNumber} · ${initial.manufacturer} ${initial.model}`);
+
+          // Fetch recent links for this owner
+          try {
+            const links = await getShareLinks();
+            if (links && links.length > 0) {
+              const mapped: RecentQRCodeItem[] = links.slice(0, 5).map((l) => ({
+                id: l._id,
+                purpose: l.purpose || 'Vehicle verification',
+                date: new Date(l.createdAt).toLocaleDateString('en-GB', {
+                  day: '2-digit',
+                  month: 'short',
+                  year: 'numeric'
+                }),
+                scans: `${l.viewCount} / ${l.maxViews || 10} scans`,
+                status: l.status === 'active' ? 'Active' : l.status === 'expired' ? 'Expired' : 'Revoked',
+                token: l._id,
+              }));
+              setRecentCodes(mapped);
+
+              // Use latest active link for current vehicle if available
+              const currentActive = links.find(
+                (l) =>
+                  (typeof l.vehicleId === 'object' ? l.vehicleId?._id : l.vehicleId) === initial._id &&
+                  l.status === 'active'
+              );
+              if (currentActive) {
+                setQrToken(currentActive._id);
+                return;
+              }
+            }
+          } catch {
+            // Ignore background error
+          }
+
+          // Generate initial real token for the vehicle
+          generateInitialToken(initial);
+        }
+      })
+      .catch(() => {
+        // Fallback demo vehicle
+        setQrToken('WP-CAR-1010');
+      });
+  }, [searchParams]);
+
+  const generateInitialToken = async (targetVehicle: Vehicle) => {
+    try {
+      setIsGenerating(true);
+      const res = await createShareLink({
+        vehicleId: targetVehicle._id,
+        recipientName: 'Prospective Buyer',
+        purpose: 'Vehicle sale',
+        permissionLevel: 'limited',
+        expiresAt: new Date(Date.now() + 48 * 3600 * 1000).toISOString(),
+        maxViews: 10,
+      });
+
+      setQrToken(res.rawToken);
+      if (res.qrCodeDataUrl) {
+        setBackendQrDataUrl(res.qrCodeDataUrl);
+      }
+    } catch {
+      setQrToken(targetVehicle.registrationNumber || targetVehicle._id);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   // Extract vehicle number or short title
@@ -160,6 +205,9 @@ export const QRCodeSharingPage: React.FC = () => {
 
         const token = res.rawToken;
         setQrToken(token);
+        if (res.qrCodeDataUrl) {
+          setBackendQrDataUrl(res.qrCodeDataUrl);
+        }
 
         const newRecentItem: RecentQRCodeItem = {
           id: res.shareLink._id,
@@ -167,6 +215,7 @@ export const QRCodeSharingPage: React.FC = () => {
           date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
           scans: `0 / ${parsedLimit} scans`,
           status: 'Active',
+          token,
         };
         setRecentCodes((prev) => [newRecentItem, ...prev.slice(0, 4)]);
         showToast(`Purpose-bound QR code generated for ${purpose}!`, 'success');
@@ -174,7 +223,7 @@ export const QRCodeSharingPage: React.FC = () => {
         const randomSuffix = Math.random().toString(36).substring(2, 7).toUpperCase();
         const newCode = `AC360-${purpose.slice(0, 3).toUpperCase()}-${randomSuffix}-${vehicleNumber.replace(/[^a-zA-Z0-9]/g, '')}`;
         setQrToken(newCode);
-        showToast(`Demo QR code generated for ${purpose}!`, 'success');
+        showToast(`Verification QR code generated for ${purpose}!`, 'success');
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to generate QR code.';
@@ -184,59 +233,202 @@ export const QRCodeSharingPage: React.FC = () => {
     }
   };
 
+  const fullQrPayload = `${window.location.origin}/buyer-qr?token=${qrToken}`;
+
+  // High-Resolution PNG Card Download
   const handleDownload = () => {
-    const svg = document.getElementById('autocare-qr-code-svg');
-    if (!svg) {
+    const canvas = document.getElementById('autocare-qr-code-canvas') as HTMLCanvasElement;
+    if (!canvas) {
       showToast('QR code asset not ready for download.', 'info');
       return;
     }
 
     try {
-      const svgData = new XMLSerializer().serializeToString(svg);
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const img = new Image();
+      const cardCanvas = document.createElement('canvas');
+      cardCanvas.width = 640;
+      cardCanvas.height = 800;
+      const ctx = cardCanvas.getContext('2d');
+      if (!ctx) return;
 
-      img.onload = () => {
-        canvas.width = img.width + 48;
-        canvas.height = img.height + 48;
-        if (ctx) {
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(img, 24, 24);
-          const pngUrl = canvas.toDataURL('image/png');
-          const downloadLink = document.createElement('a');
-          downloadLink.href = pngUrl;
-          downloadLink.download = `autocare-qr-${purpose.toLowerCase().replace(/\s+/g, '-')}.png`;
-          document.body.appendChild(downloadLink);
-          downloadLink.click();
-          document.body.removeChild(downloadLink);
-        }
-      };
+      // Clean white background with rounded border
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, cardCanvas.width, cardCanvas.height);
 
-      img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
-      showToast('QR code downloaded successfully as PNG image!', 'success');
+      // Top Header Gradient Banner
+      const grad = ctx.createLinearGradient(0, 0, cardCanvas.width, 0);
+      grad.addColorStop(0, '#002B49');
+      grad.addColorStop(1, '#0056A2');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, cardCanvas.width, 105);
+
+      // Header Text
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 22px Inter, system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('AutoCare 360 • Digital Passport QR', cardCanvas.width / 2, 48);
+
+      ctx.fillStyle = '#93c5fd';
+      ctx.font = '13px Inter, system-ui, sans-serif';
+      ctx.fillText(`Purpose: ${purpose} • Sri Lanka Verified Ledger`, cardCanvas.width / 2, 78);
+
+      // Vehicle Info Panel
+      ctx.fillStyle = '#f8fafc';
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.roundRect(40, 125, 560, 72, 10);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#0f172a';
+      ctx.font = 'bold 21px Inter, system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(vehicleNumber, cardCanvas.width / 2, 156);
+
+      ctx.fillStyle = '#64748b';
+      ctx.font = '13px Inter, system-ui, sans-serif';
+      ctx.fillText(vehicle, cardCanvas.width / 2, 178);
+
+      // Draw QR Code
+      ctx.drawImage(canvas, (cardCanvas.width - 320) / 2, 225, 320, 320);
+
+      // Verification instructions
+      ctx.fillStyle = '#0056a2';
+      ctx.font = 'bold 13px Inter, system-ui, sans-serif';
+      ctx.fillText('SCAN USING PHONE CAMERA TO VERIFY VEHICLE INTEGRITY', cardCanvas.width / 2, 580);
+
+      ctx.fillStyle = '#64748b';
+      ctx.font = '11px monospace';
+      ctx.fillText(fullQrPayload, cardCanvas.width / 2, 608);
+
+      ctx.fillStyle = '#ef4444';
+      ctx.font = 'bold 12px Inter, system-ui, sans-serif';
+      ctx.fillText(`EXPIRES IN ${durationHours} HOURS • PROTECTED VIEW ONLY (BR-07)`, cardCanvas.width / 2, 638);
+
+      // Footer
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '11px Inter, system-ui, sans-serif';
+      ctx.fillText('AutoCare 360 Cryptographic Ecosystem • Verified Digital Passport', cardCanvas.width / 2, 760);
+
+      const pngUrl = cardCanvas.toDataURL('image/png');
+      const downloadLink = document.createElement('a');
+      downloadLink.href = pngUrl;
+      downloadLink.download = `AutoCare360_QR_${vehicleNumber.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+
+      showToast(`High-resolution QR pass for ${vehicleNumber} downloaded successfully!`, 'success');
     } catch {
-      showToast('QR code downloaded as vector verification certificate.', 'success');
+      showToast('Downloaded standard QR vector code.', 'success');
     }
   };
 
+  // Official Printable Certificate Window
   const handlePrint = () => {
-    showToast('Opening browser print dialogue for QR certificate...', 'info');
-    setTimeout(() => {
+    const canvas = document.getElementById('autocare-qr-code-canvas') as HTMLCanvasElement;
+    const qrDataUrl = canvas ? canvas.toDataURL('image/png') : backendQrDataUrl;
+
+    const printWin = window.open('', '_blank', 'width=760,height=880');
+    if (!printWin) {
       window.print();
-    }, 400);
+      return;
+    }
+
+    const printHtml = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <title>AutoCare 360 - Verification Pass - ${vehicleNumber}</title>
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 40px; color: #0f172a; background: #ffffff; }
+        .cert-card { border: 2px solid #002B49; border-radius: 16px; padding: 36px; max-width: 620px; margin: 0 auto; text-align: center; }
+        .cert-header { margin-bottom: 24px; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; }
+        .logo { font-size: 26px; font-weight: 800; color: #002B49; letter-spacing: -0.5px; }
+        .badge { display: inline-block; background: #e0f2fe; color: #0369a1; padding: 4px 14px; border-radius: 20px; font-size: 11.5px; font-weight: 700; margin-top: 8px; }
+        .vehicle-reg { font-size: 28px; font-weight: 800; margin: 16px 0 4px; color: #0f172a; }
+        .vehicle-name { font-size: 15px; color: #64748b; margin-bottom: 24px; }
+        .qr-wrap { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 14px; display: inline-block; padding: 14px; margin: 0 auto 20px; }
+        .qr-img { width: 260px; height: 260px; display: block; }
+        .info-grid { width: 100%; border-collapse: collapse; margin: 24px 0 16px; text-align: left; font-size: 13px; }
+        .info-grid td { padding: 8px 10px; border-bottom: 1px solid #e2e8f0; }
+        .info-grid td:first-child { font-weight: 600; color: #475569; width: 36%; }
+        .footer-law { font-size: 11px; color: #94a3b8; margin-top: 24px; line-height: 1.5; }
+        @media print {
+          body { padding: 0; }
+          .cert-card { border-color: #000; box-shadow: none; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="cert-card">
+        <div class="cert-header">
+          <div class="logo">AutoCare 360</div>
+          <div class="badge">OFFICIAL VEHICLE INSPECTION &amp; VERIFICATION PASS</div>
+        </div>
+
+        <div class="vehicle-reg">${vehicleNumber}</div>
+        <div class="vehicle-name">${vehicle}</div>
+
+        <div class="qr-wrap">
+          <img src="${qrDataUrl}" class="qr-img" alt="AutoCare 360 QR Code" />
+        </div>
+
+        <table class="info-grid">
+          <tr><td>Sharing Purpose:</td><td><strong>${purpose}</strong></td></tr>
+          <tr><td>Permission Scope:</td><td>${permissionScope === 'limited' ? 'Limited (Costs & Owner Privacy Masked - BR-06)' : 'Full Access'}</td></tr>
+          <tr><td>Authorized Recipient:</td><td>${recipientName}</td></tr>
+          <tr><td>Validity:</td><td>Expires in ${durationHours} hours (${new Date(Date.now() + durationHours * 3600000).toLocaleString()})</td></tr>
+          <tr><td>Verification URL:</td><td><code style="font-size: 11px; word-break: break-all;">${fullQrPayload}</code></td></tr>
+        </table>
+
+        <div class="footer-law">
+          Scan with any mobile device or inspection terminal to view cryptographic service ledger.
+          <br>Tamper-evident verification backed by AutoCare 360 governance rules.
+        </div>
+      </div>
+      <script>
+        window.onload = function() {
+          setTimeout(function() { window.print(); }, 250);
+        };
+      </script>
+    </body>
+    </html>
+    `;
+
+    printWin.document.write(printHtml);
+    printWin.document.close();
   };
 
-  const handleShare = () => {
-    const verificationUrl = `${window.location.origin}/buyer-qr?token=${qrToken}`;
+  const handleShare = async () => {
+    const verificationUrl = fullQrPayload;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `AutoCare 360 Vehicle Passport - ${vehicleNumber}`,
+          text: `Verified digital maintenance records for ${vehicleNumber} (${purpose})`,
+          url: verificationUrl,
+        });
+        showToast('Shared successfully!', 'success');
+        return;
+      } catch {
+        // Fallback to clipboard
+      }
+    }
+
     if (navigator?.clipboard?.writeText) {
       navigator.clipboard.writeText(verificationUrl).catch(() => {});
     }
-    showToast(`QR verification link copied to clipboard: ${verificationUrl}`, 'success');
+    showToast(`QR verification link copied to clipboard!`, 'success');
   };
 
-  const fullQrPayload = `${window.location.origin}/buyer-qr?token=${qrToken}`;
+  const copyPayload = () => {
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(fullQrPayload).catch(() => {});
+    }
+    showToast('Verification URL copied to clipboard!', 'success');
+  };
 
   return (
     <div className="autocare-qr-page">
@@ -267,6 +459,17 @@ export const QRCodeSharingPage: React.FC = () => {
             </div>
 
             <div className="autocare-qr-header-actions">
+              <button
+                type="button"
+                className="autocare-qr-btn-draft"
+                onClick={() => setIsScannerOpen(true)}
+                title="Open Live QR Code Scanner"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+              >
+                <ScanLine size={15} />
+                <span>Test Scanner</span>
+              </button>
+
               <Link
                 to="/sharing/permissions"
                 className="autocare-qr-btn-draft"
@@ -363,12 +566,15 @@ export const QRCodeSharingPage: React.FC = () => {
                       onChange={(e) => {
                         setSelectedVehicleId(e.target.value);
                         const v = vehiclesList.find((item) => item._id === e.target.value);
-                        if (v) setVehicle(`${v.registrationNumber} · ${v.manufacturer} ${v.model}`);
+                        if (v) {
+                          setVehicle(`${v.registrationNumber} · ${v.manufacturer} ${v.model}`);
+                          generateInitialToken(v);
+                        }
                       }}
                     >
                       {vehiclesList.map((v) => (
                         <option key={v._id} value={v._id}>
-                          {v.registrationNumber} - {v.manufacturer} {v.model} ({v.manufacturingYear})
+                          {v.registrationNumber} - {v.manufacturer} {v.model} ({v.manufacturingYear || '2023'})
                         </option>
                       ))}
                     </select>
@@ -458,18 +664,34 @@ export const QRCodeSharingPage: React.FC = () => {
                 <h2 className="autocare-qr-card-title">Recent QR codes</h2>
 
                 <div className="autocare-qr-recent-table">
-                  {recentCodes.map((item) => (
-                    <div key={item.id} className="autocare-qr-recent-row">
-                      <span className="autocare-qr-col-purpose">{item.purpose}</span>
-                      <span className="autocare-qr-col-date">{item.date}</span>
-                      <span className="autocare-qr-col-scans">{item.scans}</span>
-                      <span
-                        className={`autocare-qr-col-status is-${item.status.toLowerCase()}`}
+                  {recentCodes.length > 0 ? (
+                    recentCodes.map((item) => (
+                      <div
+                        key={item.id}
+                        className="autocare-qr-recent-row"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => {
+                          if (item.token) {
+                            setQrToken(item.token);
+                            showToast(`Loaded QR pass for ${item.purpose}.`, 'info');
+                          }
+                        }}
                       >
-                        {item.status}
-                      </span>
+                        <span className="autocare-qr-col-purpose">{item.purpose}</span>
+                        <span className="autocare-qr-col-date">{item.date}</span>
+                        <span className="autocare-qr-col-scans">{item.scans}</span>
+                        <span
+                          className={`autocare-qr-col-status is-${item.status.toLowerCase()}`}
+                        >
+                          {item.status}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <div style={{ padding: '16px', textAlign: 'center', color: '#64748b', fontSize: '13px' }}>
+                      No previous QR codes generated yet. Click &quot;Generate QR code&quot; above.
                     </div>
-                  ))}
+                  )}
                 </div>
               </section>
             </div>
@@ -482,13 +704,24 @@ export const QRCodeSharingPage: React.FC = () => {
                 </div>
 
                 <div className="autocare-qr-visual-frame">
+                  {/* Canvas for crisp PNG card generation & SVG for sharp responsive display */}
+                  <QRCodeCanvas
+                    id="autocare-qr-code-canvas"
+                    value={fullQrPayload}
+                    size={240}
+                    level="H"
+                    includeMargin={true}
+                    fgColor="#002B49"
+                    bgColor="#ffffff"
+                    style={{ display: 'none' }}
+                  />
                   <QRCodeSVG
                     id="autocare-qr-code-svg"
                     value={fullQrPayload}
-                    size={210}
+                    size={220}
                     level="H"
                     includeMargin={true}
-                    fgColor="#0f172a"
+                    fgColor="#002B49"
                     bgColor="#ffffff"
                   />
                 </div>
@@ -498,7 +731,51 @@ export const QRCodeSharingPage: React.FC = () => {
                 </div>
 
                 <div className="autocare-qr-expiry-badge">
-                  EXPIRES IN 48 HOURS
+                  EXPIRES IN {durationHours} HOURS
+                </div>
+
+                {/* Direct Verification Link Box */}
+                <div
+                  style={{
+                    background: '#f8fafc',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px',
+                    padding: '8px 10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    width: '100%',
+                    marginBottom: '16px',
+                    fontSize: '11.5px',
+                    color: '#475569',
+                  }}
+                >
+                  <span
+                    style={{
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      maxWidth: '220px',
+                    }}
+                  >
+                    {fullQrPayload}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={copyPayload}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#0056A2',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '2px',
+                    }}
+                    title="Copy verification link"
+                  >
+                    <Copy size={13} />
+                  </button>
                 </div>
 
                 <div className="autocare-qr-preview-actions">
@@ -506,7 +783,7 @@ export const QRCodeSharingPage: React.FC = () => {
                     type="button"
                     className="autocare-qr-btn-action is-primary"
                     onClick={handleDownload}
-                    title="Download QR code image"
+                    title="Download high-resolution QR pass"
                   >
                     <Download size={14} />
                     <span>Download</span>
@@ -517,7 +794,7 @@ export const QRCodeSharingPage: React.FC = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="autocare-qr-btn-action"
-                    title="Preview Buyer Shared Record View"
+                    title="Preview Buyer Shared Record View in new tab"
                     style={{ textDecoration: 'none' }}
                   >
                     <ExternalLink size={14} />
@@ -528,7 +805,7 @@ export const QRCodeSharingPage: React.FC = () => {
                     type="button"
                     className="autocare-qr-btn-action"
                     onClick={handlePrint}
-                    title="Print QR code"
+                    title="Print official verification certificate"
                   >
                     <Printer size={14} />
                     <span>Print</span>
@@ -538,7 +815,7 @@ export const QRCodeSharingPage: React.FC = () => {
                     type="button"
                     className="autocare-qr-btn-action"
                     onClick={handleShare}
-                    title="Share verification link"
+                    title="Share verification pass"
                   >
                     <Share2 size={14} />
                     <span>Share</span>
@@ -549,6 +826,17 @@ export const QRCodeSharingPage: React.FC = () => {
           </div>
         </div>
       </main>
+
+      {/* Reusable QR Scanner Modal */}
+      <QRScannerModal
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+        onScan={(token) => {
+          navigate(`/buyer-qr?token=${encodeURIComponent(token)}`);
+        }}
+        title="AutoCare 360 QR Scanner"
+        subtitle="Scan vehicle inspection QR pass or digital passport"
+      />
 
       {/* Floating Toast Notification */}
       {toast && (

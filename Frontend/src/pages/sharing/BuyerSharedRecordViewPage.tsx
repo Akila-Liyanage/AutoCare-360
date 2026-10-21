@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useSearchParams, Link } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
 import {
   ShieldCheck,
   Lock,
@@ -14,10 +14,15 @@ import {
   X,
   ExternalLink,
   Info,
-  Car
+  Car,
+  Camera,
+  ScanLine,
+  Search,
+  QrCode
 } from 'lucide-react';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
+import QRScannerModal from '../../components/common/QRScannerModal';
 import defaultVehicleImg from '../../assets/vehicles/default-vehicle-hero.png';
 import fallbackVehicleImg from '../../assets/auth/vehicle_owner_bg.jpg';
 import { resolveImageUrl } from '../../utils/imageUrl';
@@ -36,11 +41,20 @@ interface ToastState {
 }
 
 export const BuyerSharedRecordViewPage: React.FC = () => {
+  const navigate = useNavigate();
   const { token: routeToken } = useParams<{ token: string }>();
   const [searchParams] = useSearchParams();
 
-  // Active token from either route param or ?token= query parameter
-  const activeToken = routeToken || searchParams.get('token') || '';
+  // Active token from route param, ?token=, ?vin=, or ?reg= query parameters
+  const activeToken =
+    routeToken ||
+    searchParams.get('token') ||
+    searchParams.get('vin') ||
+    searchParams.get('reg') ||
+    '';
+
+  const [searchInput, setSearchInput] = useState<string>(activeToken);
+  const [isScannerOpen, setIsScannerOpen] = useState<boolean>(false);
 
   // Real data from backend if token provided
   const [loading, setLoading] = useState<boolean>(!!activeToken);
@@ -259,6 +273,13 @@ export const BuyerSharedRecordViewPage: React.FC = () => {
     ? resolveImageUrl(vehicle.imageUrl)
     : defaultVehicleImg;
 
+  // Handle search by plate / VIN / token
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchInput.trim()) return;
+    navigate(`/buyer-qr?token=${encodeURIComponent(searchInput.trim())}`);
+  };
+
   return (
     <div
       className="autocare-shared-page autocare-shared-protected-area"
@@ -272,6 +293,112 @@ export const BuyerSharedRecordViewPage: React.FC = () => {
       <main className="autocare-shared-main">
         <div className="autocare-shared-container">
           
+          {/* Quick QR Scanner & Verification Lookup Bar */}
+          <div
+            style={{
+              display: 'flex',
+              gap: '12px',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '16px',
+              background: '#ffffff',
+              padding: '12px 18px',
+              borderRadius: '14px',
+              border: '1px solid #e2e8f0',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+              flexWrap: 'wrap'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#002B49' }}>
+              <ScanLine size={18} style={{ color: '#0056A2' }} />
+              <strong style={{ fontSize: '13.5px' }}>Verify Vehicle QR:</strong>
+            </div>
+
+            <form
+              onSubmit={handleSearchSubmit}
+              style={{ display: 'flex', gap: '8px', flex: 1, minWidth: '260px', maxWidth: '580px' }}
+            >
+              <input
+                type="text"
+                placeholder="Scan QR, paste token, or enter vehicle plate (e.g. WP CAR-1010)..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                style={{
+                  flex: 1,
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid #cbd5e1',
+                  fontSize: '13px',
+                  outline: 'none',
+                }}
+              />
+              <button
+                type="submit"
+                style={{
+                  background: '#002B49',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  fontWeight: 600,
+                  fontSize: '12.5px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <Search size={14} />
+                <span>Verify</span>
+              </button>
+            </form>
+
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                type="button"
+                onClick={() => setIsScannerOpen(true)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: '#0056A2',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '8px 14px',
+                  borderRadius: '8px',
+                  fontSize: '12.5px',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+                title="Scan QR Code with camera or upload image"
+              >
+                <Camera size={14} />
+                <span>Scan QR Pass</span>
+              </button>
+
+              <Link
+                to="/sharing/qr"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: '#f8fafc',
+                  color: '#003874',
+                  border: '1px solid #cbd5e1',
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  fontSize: '12.5px',
+                  fontWeight: 600,
+                  textDecoration: 'none'
+                }}
+                title="Create a new QR Code for vehicle"
+              >
+                <QrCode size={14} />
+                <span>Create QR</span>
+              </Link>
+            </div>
+          </div>
+
           {/* ========================================================
               TOP BAR: Protected View & Security Session Badge (BR-07)
               ======================================================== */}
@@ -1034,6 +1161,17 @@ export const BuyerSharedRecordViewPage: React.FC = () => {
           </button>
         </div>
       )}
+
+      {/* Interactive QR Scanner Modal */}
+      <QRScannerModal
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+        onScan={(token) => {
+          navigate(`/buyer-qr?token=${encodeURIComponent(token)}`);
+        }}
+        title="AutoCare 360 Verification Scanner"
+        subtitle="Point camera at physical sticker or upload QR image"
+      />
 
       <Footer />
     </div>
