@@ -39,6 +39,7 @@ export const GarageDashboardPage: React.FC = () => {
   // Live KPI and recent entries state (backed by real API data with fallback)
   const [kpis, setKpis] = useState<GarageKPI[]>(MOCK_GARAGE_KPIS);
   const [recentEntries, setRecentEntries] = useState<RecentVerifiedEntry[]>(MOCK_RECENT_ENTRIES);
+  const [garageRecords, setGarageRecords] = useState<GarageRecordItem[]>(MOCK_GARAGE_RECORDS);
 
   useEffect(() => {
     let isMounted = true;
@@ -55,6 +56,35 @@ export const GarageDashboardPage: React.FC = () => {
         }
       } catch {
         // Fallback gracefully to mock data
+      }
+
+      try {
+        const recordsRes = await api.get('/garage/my-records');
+        if (
+          isMounted &&
+          recordsRes.data?.data?.records &&
+          Array.isArray(recordsRes.data.data.records) &&
+          recordsRes.data.data.records.length > 0
+        ) {
+          const mapped: GarageRecordItem[] = recordsRes.data.data.records.map((r: any) => ({
+            id: r._id,
+            vehicleId: r.vehicleId?._id || '6ad8a02b9ba9651cdcf01886',
+            vehicleRef: r.vehicleId
+              ? `${r.vehicleId.manufacturer} ${r.vehicleId.model} (${r.vehicleId.registrationNumber})`
+              : 'Vehicle Record',
+            customerName: r.vehicleId?.ownerId?.fullName || r.vehicleId?.ownerId?.displayName || 'Chathura Perera',
+            date: new Date(r.serviceDate).toLocaleDateString('en-GB', {
+              day: '2-digit',
+              month: 'short',
+              year: 'numeric',
+            }),
+            status: r.verificationStatus === 'verified' ? 'Verified' : 'Pending link',
+            statusColor: r.verificationStatus === 'verified' ? 'green' : 'amber',
+          }));
+          setGarageRecords(mapped);
+        }
+      } catch {
+        // Fallback gracefully
       }
     };
     fetchGarageStats();
@@ -299,7 +329,7 @@ export const GarageDashboardPage: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {MOCK_GARAGE_RECORDS.map((rec) => (
+            {garageRecords.map((rec) => (
               <tr key={rec.id}>
                 <td className="autocare-garage-td-ref">{rec.vehicleRef}</td>
                 <td className="autocare-garage-td-customer">{rec.customerName}</td>

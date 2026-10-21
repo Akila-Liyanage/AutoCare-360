@@ -265,6 +265,32 @@ const createServiceRecord = async (req, res, next) => {
       }
     }
 
+    // Auto-sync VehicleDocument if an invoice file was uploaded (BR-03, FR-02)
+    if (serviceRecord.invoiceUrl) {
+      try {
+        const VehicleDocument = require('../models/VehicleDocument');
+        const path = require('path');
+        const fileName = path.basename(serviceRecord.invoiceUrl);
+        await VehicleDocument.create({
+          vehicleId: vehicle._id,
+          ownerId: vehicle.ownerId,
+          documentType: 'Invoice',
+          title: `Certified Invoice — ${serviceRecord.serviceType}`,
+          description: `Service invoice issued by ${resolvedGarageName} for ${vehicle.registrationNumber}`,
+          fileName: fileName,
+          originalName: fileName,
+          fileUrl: serviceRecord.invoiceUrl,
+          mimeType: fileName.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg',
+          fileSize: 1024 * 1024,
+          issueDate: serviceRecord.serviceDate,
+          verificationStatus: isGarage ? 'verified' : 'self_reported',
+          notes: `Certified maintenance milestone #${serviceRecord._id}`,
+        });
+      } catch (docErr) {
+        console.warn('[VehicleDocument Sync Notice]:', docErr.message);
+      }
+    }
+
     return res.status(201).json({
       success: true,
       message: 'Service record created successfully.',

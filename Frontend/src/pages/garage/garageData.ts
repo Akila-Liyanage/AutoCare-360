@@ -176,7 +176,7 @@ export const MOCK_OCR_WARNING: OCRWarningItem = {
 export const MOCK_GARAGE_RECORDS: GarageRecordItem[] = [
   {
     id: 'rec-owner-1',
-    vehicleId: '6ad896d86ebb4fffb4bf7bed',
+    vehicleId: '6ad8a02b9ba9651cdcf01886',
     vehicleRef: 'WP CAR-1010 · Toyota Corolla Cross',
     customerName: 'Chathura Perera',
     date: '15 Sep 2026',
@@ -185,7 +185,7 @@ export const MOCK_GARAGE_RECORDS: GarageRecordItem[] = [
   },
   {
     id: 'rec-owner-2',
-    vehicleId: '6ad896d86ebb4fffb4bf7bee',
+    vehicleId: '6ad8a02c9ba9651cdcf01887',
     vehicleRef: 'WP CAS-4521 · Honda Vezel e:HEV',
     customerName: 'Chathura Perera',
     date: '10 Aug 2026',
@@ -193,37 +193,19 @@ export const MOCK_GARAGE_RECORDS: GarageRecordItem[] = [
     statusColor: 'green',
   },
   {
-    id: 'rec-1',
-    vehicleId: 'veh-1',
-    vehicleRef: 'WP ABC-1234 · Toyota Aqua',
-    customerName: 'Kaveesha P.',
-    date: '21 Sep 2026',
+    id: 'rec-owner-3',
+    vehicleId: '6ad88947b9a5bdcf08a9c485',
+    vehicleRef: 'CAA-1234 · Toyota Prius Hybrid',
+    customerName: 'Nisitha Kalanka',
+    date: '02 Sep 2026',
     status: 'Verified',
     statusColor: 'green',
-  },
-  {
-    id: 'rec-2',
-    vehicleId: 'veh-3',
-    vehicleRef: 'WP CAD-1212 · Suzuki Wagon R',
-    customerName: 'Nadeesha S.',
-    date: '02 Sep 2026',
-    status: 'Pending link',
-    statusColor: 'amber',
-  },
-  {
-    id: 'rec-3',
-    vehicleId: 'veh-2',
-    vehicleRef: 'WP CAS-9988 · Honda Vezel',
-    customerName: 'Ruwan D.',
-    date: '18 Jul 2026',
-    status: 'Service due',
-    statusColor: 'red',
   },
 ];
 
 export const MOCK_GARAGE_VEHICLES: GarageVehicle[] = [
   {
-    id: '6ad896d86ebb4fffb4bf7bed',
+    id: '6ad8a02b9ba9651cdcf01886',
     registration: 'WP CAR-1010',
     vin: 'JT2BF28K4W0129481',
     make: 'Toyota',
@@ -325,7 +307,7 @@ export const MOCK_GARAGE_VEHICLES: GarageVehicle[] = [
     ],
   },
   {
-    id: '6ad896d86ebb4fffb4bf7bee',
+    id: '6ad8a02c9ba9651cdcf01887',
     registration: 'WP CAS-4521',
     vin: 'JHMRU3850MC204192',
     make: 'Honda',
