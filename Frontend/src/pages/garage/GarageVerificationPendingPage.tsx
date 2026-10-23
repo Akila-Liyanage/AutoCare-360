@@ -129,7 +129,7 @@ export const GarageVerificationPendingPage: React.FC = () => {
             </div>
           )}
 
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center', width: '100%' }}>
             <button
               type="button"
               onClick={handleRefresh}
@@ -137,6 +137,7 @@ export const GarageVerificationPendingPage: React.FC = () => {
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
+                justifyContent: 'center',
                 gap: '8px',
                 padding: '11px 22px',
                 backgroundColor: '#0056a2',
@@ -146,6 +147,8 @@ export const GarageVerificationPendingPage: React.FC = () => {
                 fontSize: '14px',
                 fontWeight: 600,
                 cursor: checking ? 'not-allowed' : 'pointer',
+                flex: '1 1 180px',
+                minHeight: '44px',
               }}
             >
               <RefreshCw
@@ -161,6 +164,7 @@ export const GarageVerificationPendingPage: React.FC = () => {
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
+                justifyContent: 'center',
                 gap: '8px',
                 padding: '11px 22px',
                 backgroundColor: '#ffffff',
@@ -170,6 +174,8 @@ export const GarageVerificationPendingPage: React.FC = () => {
                 fontSize: '14px',
                 fontWeight: 600,
                 cursor: 'pointer',
+                flex: '1 1 140px',
+                minHeight: '44px',
               }}
             >
               <LogOut size={16} />

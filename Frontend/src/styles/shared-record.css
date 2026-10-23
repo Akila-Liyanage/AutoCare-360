@@ -944,30 +944,131 @@
 }
 
 @media (max-width: 640px) {
+  .autocare-shared-container {
+    padding: 0 16px;
+  }
+
+  .autocare-shared-title {
+    font-size: 24px;
+  }
+
   .autocare-shared-session-bar {
     flex-direction: column;
     align-items: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
+  }
+
+  .autocare-shared-session-left {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .autocare-shared-session-dot {
+    display: none;
+  }
+
+  .autocare-shared-session-right {
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
   }
 
   .autocare-shared-control-bar {
     flex-direction: column;
     align-items: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
+  }
+
+  .autocare-shared-scope-selector {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .autocare-shared-scope-btn {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+  }
+
+  .autocare-shared-hero-card {
+    padding: 18px 14px;
   }
 
   .autocare-shared-metrics-grid {
     grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .autocare-shared-spec-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
   }
 
   .autocare-shared-service-item {
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
+    padding: 12px 14px;
   }
 
   .autocare-shared-doc-item {
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;
+    padding: 12px 14px;
+  }
+
+  .autocare-shared-doc-actions {
+    width: 100%;
+  }
+
+  .autocare-shared-btn-view-doc,
+  .autocare-shared-btn-download-disabled {
+    flex: 1;
+    justify-content: center;
+    min-height: 40px;
+  }
+
+  .autocare-shared-audit-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 14px 16px;
+  }
+
+  .autocare-shared-audit-hash {
+    overflow-wrap: anywhere;
+    word-break: break-all;
+  }
+}
+
+@media (max-width: 430px) {
+  .autocare-shared-modal-card {
+    width: calc(100vw - 24px) !important;
+    max-width: none !important;
+    padding: 20px 16px;
+  }
+}
+
+@media (max-width: 360px) {
+  .autocare-shared-container {
+    padding: 0 10px;
+  }
+
+  .autocare-shared-title {
+    font-size: 20px;
+  }
+
+  .autocare-shared-hero-image-box {
+    height: 160px;
+  }
+
+  .autocare-shared-metric-val {
+    font-size: 20px;
   }
 }
 

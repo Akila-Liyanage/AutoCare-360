@@ -329,14 +329,54 @@
   border: none;
   color: #334155;
   cursor: pointer;
-  padding: 4px;
+  padding: 8px;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 8px;
+  align-items: center;
+  justify-content: center;
+}
+
+.autocare-mobile-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 1040;
+  animation: autocareBackdropFade 0.2s ease;
+}
+
+@keyframes autocareBackdropFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .autocare-mobile-drawer {
-  display: none;
+  display: block;
+  position: fixed;
+  top: 72px;
+  left: 0;
+  right: 0;
+  max-height: calc(100vh - 72px);
+  overflow-y: auto;
   background: #ffffff;
   border-top: 1px solid #e2e8f0;
-  padding: 16px 24px;
+  padding: 16px 20px 28px 20px;
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.18);
+  z-index: 1050;
+  animation: autocareDrawerSlide 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes autocareDrawerSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .autocare-mobile-nav {
@@ -1984,6 +2024,88 @@
     font-size: 16px;
   }
 }
+
+@media (max-width: 430px) {
+  .autocare-navbar-container {
+    padding: 0 12px;
+    gap: 8px;
+  }
+
+  .autocare-navbar-logo {
+    height: 30px;
+    max-width: 130px;
+  }
+
+  .autocare-navbar-actions {
+    gap: 6px;
+  }
+
+  .autocare-nav-profile-btn {
+    padding: 2px 4px 2px 2px;
+    gap: 0;
+  }
+
+  .autocare-nav-chevron {
+    display: none;
+  }
+
+  .autocare-profile-menu {
+    right: -8px;
+    width: calc(100vw - 24px);
+    max-width: 290px;
+  }
+
+  .autocare-my-vehicles-container {
+    padding: 0 16px;
+  }
+
+  .autocare-my-vehicles-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .autocare-card-footer {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .autocare-card-action-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 360px) {
+  .autocare-navbar-container {
+    padding: 0 8px;
+    gap: 4px;
+  }
+
+  .autocare-navbar-logo {
+    height: 26px;
+    max-width: 105px;
+  }
+
+  .autocare-nav-mobile-toggle {
+    min-width: 40px;
+    min-height: 40px;
+    padding: 6px;
+  }
+
+  .autocare-my-vehicles-container {
+    padding: 0 10px;
+  }
+
+  .autocare-my-vehicles-title {
+    font-size: 22px;
+  }
+
+  .autocare-vehicle-card {
+    border-radius: 12px;
+  }
+}
+
 
 /* --------------------------------------------------------------------------
    11. ADD VEHICLE FULL-PAGE FORM (Figma Reference "Add vehicle(1).png")

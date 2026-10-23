@@ -172,8 +172,8 @@ const mapBackendDocument = (doc: BackendVehicleDocument): VehicleDocument => {
     ledgerHash,
     verifiedBy:
       doc.source === 'verified_garage'
-        ? 'Verified Workshop Ledger Node'
-        : 'AutoCare 360 Verification Protocol',
+        ? 'Verified Workshop Record'
+        : 'AutoCare 360 System Record',
     verificationDate: formattedVerificationDate,
     notes: doc.notes || doc.description || '',
     fileUrl: doc.fileUrl,
@@ -412,9 +412,9 @@ const VehicleDocumentsPage: React.FC = () => {
     showToast(`Downloading verified certificate: ${doc.title || doc.fileName}`);
   };
 
-  // Verify certificate action
-  const handleVerify = (doc: VehicleDocument) => {
-    showToast(`Certificate verified on chain! Signature: ${doc.ledgerHash}`);
+  // View document details action
+  const handleViewDetails = (doc: VehicleDocument) => {
+    setPreviewDoc(doc);
   };
 
   // Handle file selection from dropzone
@@ -520,7 +520,7 @@ const VehicleDocumentsPage: React.FC = () => {
             <div className="autocare-docs-title-group">
               <h1 className="autocare-docs-title">Vehicle Documents</h1>
               <p className="autocare-docs-subtitle">
-                Cryptographically verified records, regulatory compliance certificates, and immutable ownership deeds.
+                Official vehicle records, regulatory compliance certificates, and ownership documents.
               </p>
             </div>
 
@@ -780,11 +780,11 @@ const VehicleDocumentsPage: React.FC = () => {
                     <button
                       type="button"
                       className="autocare-doc-btn-verify"
-                      onClick={() => handleVerify(doc)}
-                      title="Verify on cryptographic audit ledger"
+                      onClick={() => handleViewDetails(doc)}
+                      title="View document certificate details"
                     >
                       <ShieldCheck size={14} />
-                      <span>Audit ledger</span>
+                      <span>View Details</span>
                     </button>
                   </div>
                 </div>
@@ -938,7 +938,7 @@ const VehicleDocumentsPage: React.FC = () => {
         <div className="autocare-docs-modal-overlay" role="dialog" aria-modal="true">
           <div className="autocare-docs-modal-card" style={{ maxWidth: '640px' }}>
             <div className="autocare-docs-modal-header">
-              <h3 className="autocare-docs-modal-title">Document Verification Preview</h3>
+              <h3 className="autocare-docs-modal-title">Document Certificate Details</h3>
               <button
                 type="button"
                 className="autocare-docs-modal-close"
@@ -952,7 +952,7 @@ const VehicleDocumentsPage: React.FC = () => {
             {/* Certified Certificate Display Box */}
             <div className="autocare-docs-cert-preview">
               <div className="autocare-docs-cert-watermark">
-                AUTOCARE 360 VERIFIED
+                AUTOCARE 360 RECORD
               </div>
 
               <div className="autocare-docs-cert-header">
@@ -976,10 +976,10 @@ const VehicleDocumentsPage: React.FC = () => {
                   <strong>Validity:</strong> {previewDoc.expiryDate || 'Permanent'}
                 </div>
                 <div>
-                  <strong>Verified By:</strong> {previewDoc.verifiedBy} ({previewDoc.verificationDate})
+                  <strong>Recorded By:</strong> {previewDoc.verifiedBy} ({previewDoc.verificationDate})
                 </div>
                 <div>
-                  <strong>Ledger Seal:</strong>{' '}
+                  <strong>Document Reference:</strong>{' '}
                   <code style={{ fontSize: '12px', color: '#0056A2' }}>{previewDoc.ledgerHash}</code>
                 </div>
                 {previewDoc.notes && (

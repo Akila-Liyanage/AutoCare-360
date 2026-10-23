@@ -46,6 +46,39 @@ export const Navbar: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Close menus on Escape key
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setDropdownOpen(false);
+        setMobileMenuOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Close menus on route change
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDropdownOpen(false);
+      setMobileMenuOpen(false);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [location.pathname]);
+
+  // Prevent background scroll when mobile drawer is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileMenuOpen]);
+
   const handleLogout = () => {
     setDropdownOpen(false);
     setMobileMenuOpen(false);
@@ -309,16 +342,33 @@ export const Navbar: React.FC = () => {
             type="button"
             className="autocare-nav-mobile-toggle"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Toggle navigation menu"
+            aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            aria-expanded={mobileMenuOpen}
+            aria-controls="autocare-mobile-drawer"
           >
             {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
       </div>
 
+      {/* Backdrop overlay for mobile drawer */}
+      {mobileMenuOpen && (
+        <div
+          className="autocare-mobile-backdrop"
+          onClick={() => setMobileMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="autocare-mobile-drawer">
+        <div
+          id="autocare-mobile-drawer"
+          className="autocare-mobile-drawer"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Mobile Navigation"
+        >
           <nav className="autocare-mobile-nav">
             {navLinks.map((link) => (
               <Link

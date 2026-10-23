@@ -700,6 +700,7 @@
   .autocare-services-tabs {
     overflow-x: auto;
     padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
   }
 
   .autocare-service-detail-panel {
@@ -725,3 +726,42 @@
     width: 100%;
   }
 }
+
+@media (max-width: 640px) {
+  .autocare-services-container {
+    padding: 0 16px;
+  }
+
+  .autocare-services-title {
+    font-size: 26px;
+  }
+
+  .autocare-btn-add-service-record {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  .autocare-service-card-item {
+    padding: 14px 16px;
+  }
+
+  .autocare-service-detail-panel {
+    padding: 18px 14px;
+  }
+}
+
+@media (max-width: 360px) {
+  .autocare-services-container {
+    padding: 0 10px;
+  }
+
+  .autocare-services-title {
+    font-size: 22px;
+  }
+
+  .autocare-service-title-text {
+    font-size: 14.5px;
+  }
+}
+

@@ -126,8 +126,12 @@ export const RegisterPage: React.FC = () => {
 
     if (!formData.phone.trim()) {
       newErrors.phone = 'Phone number is required.';
-    } else if (formData.phone.trim().length < 7) {
-      newErrors.phone = 'Please enter a valid phone number.';
+    } else {
+      const cleanPhone = formData.phone.trim().replace(/[\s-]/g, '');
+      const phoneRegex = /^(\+?\d{9,15}|0\d{9})$/;
+      if (!phoneRegex.test(cleanPhone)) {
+        newErrors.phone = 'Please enter a valid phone number (e.g. 0771234567 or +94771234567).';
+      }
     }
 
     if (!formData.password) {
@@ -155,8 +159,12 @@ export const RegisterPage: React.FC = () => {
       }
       if (!formData.vin.trim()) {
         newErrors.vin = 'VIN / Chassis number is required.';
-      } else if (formData.vin.trim().length < 11 || formData.vin.trim().length > 17) {
-        newErrors.vin = 'VIN must be between 11 and 17 characters.';
+      } else {
+        const cleanVin = formData.vin.trim().toUpperCase();
+        const vinRegex = /^[A-HJ-NPR-Z0-9]{17}$/;
+        if (!vinRegex.test(cleanVin)) {
+          newErrors.vin = 'VIN must be exactly 17 characters excluding letters I, O, and Q.';
+        }
       }
       if (!formData.licensePlate.trim()) {
         newErrors.licensePlate = 'License plate number is required.';
@@ -165,8 +173,8 @@ export const RegisterPage: React.FC = () => {
         newErrors.odometer = 'Current odometer reading is required.';
       } else {
         const odoNum = Number(formData.odometer.replace(/,/g, '').trim());
-        if (isNaN(odoNum) || odoNum < 0) {
-          newErrors.odometer = 'Please enter a valid numeric mileage.';
+        if (isNaN(odoNum) || odoNum < 0 || !Number.isInteger(odoNum)) {
+          newErrors.odometer = 'Odometer reading must be a whole non-negative number.';
         }
       }
     } else {

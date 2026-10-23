@@ -327,6 +327,8 @@ export const TransferVehiclePage: React.FC = () => {
       errors.recipientEmail = 'Recipient email address is required.';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.recipientEmail.trim())) {
       errors.recipientEmail = 'Please provide a valid email address.';
+    } else if (user?.email && formData.recipientEmail.trim().toLowerCase() === user.email.trim().toLowerCase()) {
+      errors.recipientEmail = 'You cannot transfer a vehicle to your own account email.';
     }
 
     if (!formData.acknowledged) {
@@ -775,11 +777,11 @@ export const TransferVehiclePage: React.FC = () => {
                       </h2>
                       <span className="autocare-transfer-hero-badge">
                         <CheckCircle2 size={13} />
-                        <span>AI Trust Score: 98%</span>
+                        <span>Passport Status: Verified</span>
                       </span>
                     </div>
                     <p className="autocare-transfer-hero-hash">
-                      Global Immutable Record: <code>{ownerHash}</code>
+                      Digital Passport Reference: <code>{ownerHash}</code>
                     </p>
                   </div>
                 </div>
@@ -881,7 +883,7 @@ export const TransferVehiclePage: React.FC = () => {
               {/* 3. Middle Split Section: Specifications (Left) + Scores (Right) */}
               <section
                 className="autocare-transfer-middle-grid"
-                aria-label="Official Specifications and Trust Score"
+                aria-label="Official Specifications and Passport Verification"
               >
                 {/* Left Column: Official Registration Specifications */}
                 <div className="autocare-transfer-specs-card">
@@ -938,11 +940,11 @@ export const TransferVehiclePage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Right Column: Passport Trust Score & Odometer Authenticity */}
+                {/* Right Column: Passport Verification & Odometer Authenticity */}
                 <div className="autocare-transfer-right-stack">
-                  {/* Card 1: Passport Trust Score */}
+                  {/* Card 1: Passport Verification */}
                   <div className="autocare-transfer-score-card">
-                    <h2 className="autocare-transfer-card-heading">Passport Trust Score</h2>
+                    <h2 className="autocare-transfer-card-heading">Passport Verification Status</h2>
 
                     <div className="autocare-transfer-circle-container">
                       <svg
@@ -1620,14 +1622,14 @@ export const TransferVehiclePage: React.FC = () => {
                   />
                 </div>
 
-                {/* Cryptographic Security Callout */}
+                {/* Ownership Transfer Notice Callout */}
                 <div className="autocare-transfer-security-callout">
                   <ShieldCheck size={20} className="autocare-transfer-security-icon" />
                   <div className="autocare-transfer-security-text">
-                    <strong>Decentralized Ownership Reassignment Protocol</strong>
-                    Reassigning this vehicle passport will transfer sovereignty of all verified maintenance
-                    logs and telemetry entries to the designated recipient. An immutable audit event will be
-                    logged to the AutoCare Blockchain ledger.
+                    <strong>Official Ownership Reassignment Protocol</strong>
+                    Reassigning this vehicle passport will transfer management of all verified maintenance
+                    logs and digital passport records to the designated recipient. An audit record will be
+                    logged to the AutoCare system registry.
                   </div>
                 </div>
 

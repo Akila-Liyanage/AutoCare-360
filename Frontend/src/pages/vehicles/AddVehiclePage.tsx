@@ -855,13 +855,13 @@ export const AddVehiclePage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Automatic AI Baseline Container (Visual Placeholder Only) */}
+                {/* Automatic Passport Baseline Notice */}
                 <div className="autocare-ai-baseline-box">
                   <h3 className="autocare-ai-baseline-title">
-                    Automatic AI Health &amp; Trust Score Baseline: 95/100
+                    Digital Passport Baseline Initialized
                   </h3>
                   <p className="autocare-ai-baseline-desc">
-                    Onboarding Initializes An Accredited Delivery Certificate And Guarantees That Any Subsequent Workshop Entries Adhere To Monotonic Odometer Increments.
+                    Onboarding creates a verified digital passport for your vehicle and tracks all future workshop maintenance entries and odometer readings.
                   </p>
                 </div>
               </div>

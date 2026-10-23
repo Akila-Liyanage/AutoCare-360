@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Bell,
@@ -41,6 +41,38 @@ export const GarageLayout: React.FC<GarageLayoutProps> = ({
 
   // Floating Action Toast State
   const [toast, setToast] = useState<ToastState>({ show: false, message: '' });
+
+  // Escape key handler to close mobile menu & modals
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setMobileMenuOpen(false);
+        setShowProfileModal(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Close mobile drawer on route change safely
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setMobileMenuOpen(false);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [location.pathname]);
+
+  // Prevent background scrolling while drawer is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileMenuOpen]);
 
   const showToast = (message: string) => {
     setToast({ show: true, message });
@@ -87,22 +119,43 @@ export const GarageLayout: React.FC<GarageLayoutProps> = ({
 
   return (
     <div className="autocare-garage-layout">
+      {/* Backdrop overlay for mobile drawer */}
+      {mobileMenuOpen && (
+        <div
+          className="autocare-garage-sidebar-backdrop"
+          onClick={() => setMobileMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* ====================================================================
-          LEFT SIDEBAR — Verified Garage Navigation
+          LEFT SIDEBAR — Verified Garage Navigation (Off-canvas drawer on mobile)
           ==================================================================== */}
       <aside
+        id="autocare-garage-sidebar"
         className={`autocare-garage-sidebar ${mobileMenuOpen ? 'is-mobile-open' : ''}`}
         aria-label="Garage Navigation Sidebar"
       >
         <div>
-          {/* Logo Card */}
-          <Link
-            to="/garage/dashboard"
-            className="autocare-garage-logo-card"
-            aria-label="AutoCare 360 Garage Dashboard"
-          >
-            <img src={logoImg} alt="AutoCare 360" />
-          </Link>
+          {/* Logo Card with mobile close button */}
+          <div className="autocare-garage-sidebar-header-row">
+            <Link
+              to="/garage/dashboard"
+              className="autocare-garage-logo-card"
+              aria-label="AutoCare 360 Garage Dashboard"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <img src={logoImg} alt="AutoCare 360" />
+            </Link>
+            <button
+              type="button"
+              className="autocare-garage-sidebar-close-btn"
+              onClick={() => setMobileMenuOpen(false)}
+              aria-label="Close Navigation Sidebar"
+            >
+              <X size={20} />
+            </button>
+          </div>
 
           {/* Sidebar Menu Items */}
           <nav className="autocare-garage-menu" aria-label="Garage Navigation">
@@ -152,8 +205,9 @@ export const GarageLayout: React.FC<GarageLayoutProps> = ({
               type="button"
               className="autocare-garage-sidebar-toggle"
               onClick={() => setMobileMenuOpen((prev) => !prev)}
-              aria-label="Toggle Navigation Sidebar"
-              style={{ display: 'none', marginRight: '8px' }}
+              aria-label={mobileMenuOpen ? 'Close Navigation Sidebar' : 'Open Navigation Sidebar'}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="autocare-garage-sidebar"
             >
               <Menu size={20} />
             </button>
@@ -290,7 +344,7 @@ export const GarageLayout: React.FC<GarageLayoutProps> = ({
                 </span>
               </div>
               <div className="autocare-garage-profile-spec-row">
-                <span className="autocare-garage-profile-spec-label">Blockchain Key Signature</span>
+                <span className="autocare-garage-profile-spec-label">Garage Account Key</span>
                 <span className="autocare-garage-profile-spec-val">0x9f4a...81c2 (Active)</span>
               </div>
               <div className="autocare-garage-profile-spec-row">
@@ -305,7 +359,7 @@ export const GarageLayout: React.FC<GarageLayoutProps> = ({
                 className="autocare-garage-btn-primary"
                 onClick={() => {
                   setShowProfileModal(false);
-                  showToast('Accreditation certificate verified on SLT Mobitel Trust Network.');
+                  showToast('Accreditation certificate verified.');
                 }}
               >
                 Close

@@ -131,11 +131,11 @@ export const GarageVehicleDetailsPage: React.FC = () => {
 
       setShowAddRecordModal(false);
       showToast(
-        `Verified maintenance record published for ${vehicle.registration}. Owner passport & expense tracking synchronized!`
+        `Service record logged for ${vehicle.registration}. Owner passport & expense tracking synchronized!`
       );
     } catch {
       setShowAddRecordModal(false);
-      showToast(`Maintenance record published for ${vehicle.registration}.`);
+      showToast(`Service record logged for ${vehicle.registration}.`);
     }
   };
 
@@ -145,11 +145,13 @@ export const GarageVehicleDetailsPage: React.FC = () => {
       const isMongoId = /^[0-9a-fA-F]{24}$/.test(vehicle.id);
       const targetId = isMongoId ? vehicle.id : '6ad896d86ebb4fffb4bf7bed';
       const cleanEstimate = parseFloat(quoteEstimate.replace(/[^0-9.]/g, '')) || 25000;
+      const validUntilDate = new Date();
+      validUntilDate.setDate(validUntilDate.getDate() + (parseInt(quoteValidDays, 10) || 14));
       await api.post('/garage/quotations', {
         vehicleId: targetId,
         items: [{ description: quoteParts, quantity: 1, unitPrice: cleanEstimate, total: cleanEstimate }],
         totalAmount: cleanEstimate,
-        validUntil: new Date(Date.now() + (parseInt(quoteValidDays) || 14) * 86400000),
+        validUntil: validUntilDate,
         notes: 'Official workshop quotation generated per BR-03.',
       });
       setShowQuoteModal(false);
@@ -656,10 +658,10 @@ export const GarageVehicleDetailsPage: React.FC = () => {
         >
           <div>
             <h2 className="autocare-garage-records-title" style={{ margin: '0 0 4px 0' }}>
-              Service &amp; Maintenance Ledger
+              Service &amp; Maintenance Records
             </h2>
             <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>
-              Immutable records published to the blockchain with owner cryptographic approval.
+              Verified maintenance records logged for vehicle digital passport.
             </p>
           </div>
 

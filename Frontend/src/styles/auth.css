@@ -764,3 +764,23 @@
     gap: 12px;
   }
 }
+
+@media (max-width: 360px) {
+  .autocare-auth-page {
+    padding: 12px 8px;
+  }
+
+  .autocare-auth-header,
+  .autocare-auth-card-header {
+    padding: 14px 12px;
+  }
+
+  .autocare-auth-card-body {
+    padding: 14px 12px;
+  }
+
+  .autocare-auth-title {
+    font-size: 18px;
+  }
+}
+

@@ -32,6 +32,38 @@ interface ServiceRecordRow {
   record: GarageVehicleServiceHistoryItem;
 }
 
+interface ApiRawRecordPayload {
+  _id: string;
+  vehicleId?: {
+    _id?: string;
+    registrationNumber?: string;
+    vin?: string;
+    manufacturer?: string;
+    model?: string;
+    currentMileage?: number;
+    ownerId?: {
+      _id?: string;
+      fullName?: string;
+      displayName?: string;
+      email?: string;
+      phone?: string;
+    };
+  };
+  serviceDate: string;
+  serviceType?: string;
+  notes?: string;
+  partsCost?: number;
+  labourCost?: number;
+  totalCost?: number;
+  mileage?: number;
+  status?: string;
+  workPerformed?: string;
+  partsReplaced?: string[];
+  verificationStatus?: string;
+  garageName?: string;
+  technicianName?: string;
+}
+
 export const GarageServiceRecordsPage: React.FC = () => {
   const navigate = useNavigate();
 
@@ -60,7 +92,7 @@ export const GarageServiceRecordsPage: React.FC = () => {
       try {
         const res = await api.get('/garage/my-records');
         if (isMounted && res.data?.data?.records && Array.isArray(res.data.data.records)) {
-          const mapped: ServiceRecordRow[] = res.data.data.records.map((r: any) => ({
+          const mapped: ServiceRecordRow[] = res.data.data.records.map((r: ApiRawRecordPayload) => ({
             vehicle: {
               id: r.vehicleId?._id || 'veh-1',
               registration: r.vehicleId?.registrationNumber || 'WP-Unknown',

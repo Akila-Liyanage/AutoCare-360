@@ -880,6 +880,10 @@
 }
 
 @media (max-width: 360px) {
+  .autocare-admin-container {
+    padding: 0 10px;
+  }
+
   .autocare-admin-title {
     font-size: 19px;
   }

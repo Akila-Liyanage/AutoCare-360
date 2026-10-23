@@ -795,9 +795,14 @@
 }
 
 @media (max-width: 640px) {
+  .autocare-docs-container {
+    padding: 0 16px;
+  }
+
   .autocare-docs-header-row {
     flex-direction: column;
     align-items: flex-start;
+    gap: 16px;
   }
 
   .autocare-docs-header-actions {
@@ -807,24 +812,75 @@
   .autocare-docs-btn-upload {
     width: 100%;
     justify-content: center;
+    min-height: 44px;
   }
 
   .autocare-docs-metrics-grid {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
 
   .autocare-docs-toolbar {
     flex-direction: column;
     align-items: stretch;
+    gap: 14px;
+  }
+
+  .autocare-docs-search-wrap {
+    min-width: 0;
+    width: 100%;
   }
 
   .autocare-docs-card-actions {
     flex-direction: column;
     align-items: stretch;
+    gap: 8px;
   }
 
   .autocare-doc-btn-view,
   .autocare-doc-btn-download {
+    width: 100%;
     justify-content: center;
+    min-height: 44px;
+  }
+
+  .autocare-doc-card-title,
+  .autocare-doc-file-name {
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 }
+
+@media (max-width: 430px) {
+  .autocare-docs-modal-card {
+    width: calc(100vw - 24px) !important;
+    max-width: none !important;
+    padding: 20px 16px;
+  }
+
+  .autocare-docs-modal-footer {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+
+  .autocare-docs-modal-footer button {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 360px) {
+  .autocare-docs-container {
+    padding: 0 10px;
+  }
+
+  .autocare-docs-title {
+    font-size: 22px;
+  }
+
+  .autocare-docs-metric-value {
+    font-size: 24px;
+  }
+}
+

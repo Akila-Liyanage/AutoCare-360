@@ -50,7 +50,7 @@
 
 .autocare-view-header-left {
   flex: 1;
-  min-width: 300px;
+  min-width: 0;
 }
 
 .autocare-view-header-title {
@@ -934,32 +934,118 @@
 }
 
 @media (max-width: 640px) {
+  .autocare-view-vehicle-container {
+    padding: 0 16px;
+  }
+
+  .autocare-view-header-title {
+    font-size: 26px;
+  }
+
   .autocare-view-header-row {
     flex-direction: column;
     align-items: flex-start;
+    gap: 16px;
   }
 
   .autocare-view-header-actions {
     width: 100%;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .autocare-btn-share-records,
+  .autocare-btn-add-record {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .autocare-view-hero-card {
+    grid-template-columns: 1fr;
+    border-radius: 12px;
+  }
+
+  .autocare-view-hero-media {
+    min-height: 200px;
+    padding: 16px;
+  }
+
+  .autocare-view-hero-content {
+    padding: 20px 16px;
+  }
+
+  .autocare-view-hero-title-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .autocare-view-hero-title {
+    font-size: 22px;
+  }
+
+  .autocare-view-spec-strip {
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 
   .autocare-view-metrics-grid {
     grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .autocare-view-card {
+    padding: 20px 16px;
+  }
+
+  .autocare-view-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .autocare-view-hero-actions {
+    flex-direction: column;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .autocare-btn-download-passport,
+  .autocare-btn-edit-vehicle,
+  .autocare-btn-transfer-ownership {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  .autocare-view-service-item,
+  .autocare-view-doc-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
   }
 
   .autocare-view-integrity-grid {
     grid-template-columns: 1fr;
     gap: 8px;
   }
+}
 
-  .autocare-view-hero-content {
-    padding: 24px 20px;
+@media (max-width: 360px) {
+  .autocare-view-vehicle-container {
+    padding: 0 10px;
   }
 
-  .autocare-view-spec-strip {
-    grid-template-columns: 1fr;
-    gap: 12px;
+  .autocare-view-header-title {
+    font-size: 22px;
+  }
+
+  .autocare-view-hero-title {
+    font-size: 20px;
+  }
+
+  .autocare-view-metric-value {
+    font-size: 22px;
   }
 }
 
