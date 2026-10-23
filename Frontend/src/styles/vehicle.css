@@ -962,3 +962,210 @@
     gap: 12px;
   }
 }
+
+/* ==========================================================================
+   OFFICIAL VEHICLE PASSPORT PRINT & PDF STYLES (BR-01, FR-01)
+   ========================================================================== */
+.autocare-passport-print-document {
+  display: none;
+}
+
+@media print {
+  /* Hide all interactive app chrome and buttons */
+  header,
+  footer,
+  nav,
+  .autocare-navbar,
+  .autocare-footer,
+  .autocare-view-hero-actions,
+  .autocare-btn-download-passport,
+  .autocare-btn-edit-vehicle,
+  .autocare-btn-transfer-ownership,
+  .autocare-modal-backdrop,
+  .autocare-toast-banner,
+  .autocare-view-category-badge,
+  .autocare-view-hero-card,
+  .autocare-view-metrics-grid,
+  .autocare-view-integrity-grid,
+  .autocare-view-two-col-grid,
+  .autocare-view-service-card,
+  button,
+  a {
+    display: none !important;
+  }
+
+  body,
+  .autocare-view-vehicle-page,
+  .autocare-view-vehicle-main,
+  .autocare-view-vehicle-container {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    width: 100% !important;
+  }
+
+  .autocare-passport-print-document {
+    display: block !important;
+    border: 3px double #0056a2;
+    padding: 32px;
+    border-radius: 12px;
+    max-width: 800px;
+    margin: 0 auto;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+
+  .autocare-print-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 18px;
+    margin-bottom: 22px;
+  }
+
+  .autocare-print-brand {
+    font-size: 26px;
+    font-weight: 800;
+    color: #0056a2;
+    letter-spacing: -0.5px;
+    margin: 0;
+  }
+
+  .autocare-print-brand span {
+    color: #00b4eb;
+  }
+
+  .autocare-print-tagline {
+    font-size: 12px;
+    color: #64748b;
+    margin: 4px 0 0 0;
+  }
+
+  .autocare-print-meta {
+    text-align: right;
+  }
+
+  .autocare-print-pill {
+    background: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #10b981;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    display: inline-block;
+  }
+
+  .autocare-print-date {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 6px;
+  }
+
+  .autocare-print-title-block {
+    margin-bottom: 20px;
+  }
+
+  .autocare-print-veh-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0 0 6px 0;
+  }
+
+  .autocare-print-reg-vin {
+    font-size: 13.5px;
+    color: #475569;
+  }
+
+  .autocare-print-reg-vin strong {
+    color: #0056a2;
+  }
+
+  .autocare-print-reg-vin code {
+    font-family: monospace;
+    background: #f1f5f9;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12.5px;
+  }
+
+  .autocare-print-specs-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 24px;
+  }
+
+  .autocare-print-spec-cell {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .autocare-print-spec-cell .spec-lbl {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #64748b;
+    letter-spacing: 0.4px;
+  }
+
+  .autocare-print-spec-cell .spec-val {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+    margin-top: 2px;
+  }
+
+  .autocare-print-services-block {
+    margin-top: 20px;
+    page-break-inside: avoid;
+  }
+
+  .autocare-print-section-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 10px 0;
+  }
+
+  .autocare-print-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .autocare-print-table th {
+    background: #f1f5f9;
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 2px solid #cbd5e1;
+    color: #475569;
+    font-size: 11px;
+    text-transform: uppercase;
+  }
+
+  .autocare-print-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #e2e8f0;
+    color: #1e293b;
+  }
+
+  .autocare-print-footer {
+    margin-top: 28px;
+    padding-top: 14px;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #94a3b8;
+  }
+}
+

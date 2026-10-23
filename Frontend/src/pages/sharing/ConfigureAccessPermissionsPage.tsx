@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
   Calendar,
@@ -114,8 +114,8 @@ const ConfigureAccessPermissionsPage: React.FC = () => {
     const newKey = `https://autocare360.lk/verify/auth_token=${randomHash1}...${randomHash2}`;
     setCredentialsKey(newKey);
     showToast(
-      `Verifiable cryptographic link generated successfully for ${recipientEntity || 'recipient'}. Registered on audit ledger.`,
-      'success'
+      `Preview share link generated for ${recipientEntity || 'recipient'}. For live tokenized access, use Secure Link Sharing.`,
+      'info'
     );
   };
 
@@ -145,17 +145,65 @@ const ConfigureAccessPermissionsPage: React.FC = () => {
             </button>
           </div>
 
+          {/* Demo / Preview Mode Banner */}
+          <div
+            className="autocare-demo-banner"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              backgroundColor: '#fffbeb',
+              border: '1px solid #fde68a',
+              borderRadius: '12px',
+              padding: '14px 18px',
+              marginBottom: '20px',
+              flexWrap: 'wrap',
+              gap: '12px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <AlertCircle size={20} style={{ color: '#d97706', flexShrink: 0 }} />
+              <div>
+                <strong style={{ fontSize: '14px', color: '#92400e', display: 'block' }}>
+                  Demo / Preview Mode
+                </strong>
+                <span style={{ fontSize: '13px', color: '#b45309' }}>
+                  Field-level data protection configuration is a preview UI. For active sharing, generate a live time-locked link in Secure Link Sharing.
+                </span>
+              </div>
+            </div>
+            <Link
+              to="/sharing/secure-link"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 16px',
+                backgroundColor: '#0056a2',
+                color: '#ffffff',
+                fontSize: '13px',
+                fontWeight: 600,
+                borderRadius: '8px',
+                textDecoration: 'none',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <span>Go to Secure Link Sharing</span>
+              <ArrowLeft size={14} style={{ transform: 'rotate(180deg)' }} />
+            </Link>
+          </div>
+
           {/* Top Header Block matching Figma */}
           <header className="autocare-protect-header">
             <div className="autocare-protect-context-tag">
-              <span className="autocare-protect-tag-blue">SECURE DECENTRALIZED SHARING</span>
+              <span className="autocare-protect-tag-blue">SECURE VERIFIED SHARING</span>
               <span className="autocare-protect-tag-dot">•</span>
               <span className="autocare-protect-tag-muted">VEHICLE INDEX: WP ABC-1234</span>
             </div>
 
             <h1 className="autocare-protect-title">Configure Access Permissions</h1>
             <p className="autocare-protect-subtitle">
-              Generate time-locked, cryptographically verified share-links and secure QR authorization certificates. All viewing transactions are registered permanently on the system audit ledger.
+              Configure custom data visibility parameters for secure tokenized vehicle passport access and verification.
             </p>
           </header>
 

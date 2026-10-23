@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
   ArrowLeft, 
   Camera, 
@@ -8,9 +8,9 @@ import {
   Trash2, 
   Edit3, 
   Check, 
-  X,
-  Zap,
-  Car
+  X, 
+  Zap, 
+  Car 
 } from 'lucide-react';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
@@ -18,7 +18,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { 
   getMyVehicles, 
   createVehicle, 
-  uploadVehicleImage,
+  uploadVehicleImage, 
   type Vehicle, 
   type CreateVehiclePayload 
 } from '../../services/vehicleService';
@@ -27,7 +27,21 @@ import { resolveImageUrl } from '../../utils/imageUrl';
 export const AddVehiclePage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const initialVeh = (
+    location.state as {
+      initialVehicle?: {
+        manufacturer?: string;
+        model?: string;
+        manufacturingYear?: string | number;
+        vin?: string;
+        registrationNumber?: string;
+        currentMileage?: string | number;
+      };
+    } | null
+  )?.initialVehicle;
 
   // Top Preview Section State (GET /api/vehicles)
   const [existingVehicles, setExistingVehicles] = useState<Vehicle[]>([]);
@@ -35,19 +49,19 @@ export const AddVehiclePage: React.FC = () => {
 
   // Form State
   const [formData, setFormData] = useState(() => ({
-    manufacturer: '',
-    model: '',
-    manufacturingYear: 2024,
+    manufacturer: initialVeh?.manufacturer || '',
+    model: initialVeh?.model || '',
+    manufacturingYear: initialVeh?.manufacturingYear ? Number(initialVeh.manufacturingYear) : 2024,
     vehicleType: 'Sedan',
     fuelType: 'Petrol',
     transmission: 'Automatic',
     color: 'Deep Metallic Blue',
     customColor: '',
-    vin: '',
-    registrationNumber: '',
+    vin: initialVeh?.vin || '',
+    registrationNumber: initialVeh?.registrationNumber || '',
     engineNumber: '',
     registrationJurisdiction: 'Western Province, Sri Lanka',
-    currentMileage: '' as string | number,
+    currentMileage: initialVeh?.currentMileage ?? ('' as string | number),
     lastServiceDate: '',
     nextServiceMileage: '' as string | number,
     contactPhone: user?.phone || '',

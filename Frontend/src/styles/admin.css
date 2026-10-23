@@ -1,0 +1,890 @@
+/* ==========================================================================
+   Admin Garage Verification Module Styles — AutoCare 360
+   BRD BRULE-01, FR-05: Administrative Partner Verification Console
+   ========================================================================== */
+
+@import './variables.css';
+
+.autocare-admin-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f8fafc;
+  color: #0f172a;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.autocare-admin-main {
+  flex: 1;
+  padding: 32px 0 72px 0;
+}
+
+.autocare-admin-container {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* Header & Breadcrumb */
+.autocare-admin-header {
+  margin-bottom: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.autocare-admin-top-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.autocare-admin-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  font-size: 12.5px;
+  font-weight: 700;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.autocare-admin-title {
+  font-size: 28px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.25;
+}
+
+.autocare-admin-subtitle {
+  font-size: 14.5px;
+  color: #64748b;
+  margin: 4px 0 0 0;
+  max-width: 720px;
+  line-height: 1.5;
+}
+
+/* Navigation back link */
+.autocare-admin-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  color: #0056A2;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: fit-content;
+}
+
+.autocare-admin-back-btn:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+/* Controls Bar: Tabs + Search */
+.autocare-admin-controls {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* Tabs */
+.autocare-admin-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  max-width: 100%;
+  padding-bottom: 2px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.autocare-admin-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #f1f5f9;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #475569;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.18s ease;
+  min-height: 40px;
+}
+
+.autocare-admin-tab:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.autocare-admin-tab.is-active {
+  background: #0056A2;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 86, 162, 0.24);
+}
+
+.autocare-admin-tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(0, 0, 0, 0.08);
+  color: inherit;
+}
+
+.autocare-admin-tab.is-active .autocare-admin-tab-count {
+  background: rgba(255, 255, 255, 0.28);
+  color: #ffffff;
+}
+
+/* Search Box */
+.autocare-admin-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  max-width: 440px;
+  min-width: 240px;
+}
+
+.autocare-admin-search-input-wrap {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.autocare-admin-search-icon {
+  position: absolute;
+  left: 12px;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.autocare-admin-search-input {
+  width: 100%;
+  padding: 9px 36px 9px 38px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: #0f172a;
+  outline: none;
+  transition: all 0.2s ease;
+  min-height: 42px;
+}
+
+.autocare-admin-search-input:focus {
+  background: #ffffff;
+  border-color: #0056A2;
+  box-shadow: 0 0 0 3px rgba(0, 86, 162, 0.12);
+}
+
+.autocare-admin-search-clear {
+  position: absolute;
+  right: 10px;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.autocare-admin-search-clear:hover {
+  color: #475569;
+}
+
+.autocare-admin-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.autocare-admin-refresh-btn:hover {
+  background: #f1f5f9;
+  color: #0056A2;
+  border-color: #0056A2;
+}
+
+/* Status Badges */
+.autocare-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.autocare-status-badge.status-pending {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+}
+
+.autocare-status-badge.status-active {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+}
+
+.autocare-status-badge.status-suspended {
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  color: #9f1239;
+}
+
+/* Garages Table Container */
+.autocare-admin-table-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.autocare-admin-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.autocare-admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13.5px;
+}
+
+.autocare-admin-table th {
+  background: #f8fafc;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 14px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.autocare-admin-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #1e293b;
+  vertical-align: middle;
+}
+
+.autocare-admin-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.autocare-admin-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Workshop name & Contact in table */
+.autocare-admin-workshop-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.autocare-admin-workshop-title {
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 14px;
+}
+
+.autocare-admin-workshop-reg {
+  font-size: 12px;
+  color: #64748b;
+  font-family: monospace;
+}
+
+.autocare-admin-contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+}
+
+.autocare-admin-contact-name {
+  font-weight: 600;
+  color: #334155;
+}
+
+.autocare-admin-contact-sub {
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* Action Button Group */
+.autocare-admin-actions-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.autocare-admin-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.18s ease;
+  min-height: 36px;
+}
+
+.autocare-admin-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.autocare-admin-btn-secondary {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: #334155;
+}
+
+.autocare-admin-btn-secondary:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+.autocare-admin-btn-primary {
+  background: #0056A2;
+  color: #ffffff;
+}
+
+.autocare-admin-btn-primary:hover:not(:disabled) {
+  background: #004583;
+}
+
+.autocare-admin-btn-success {
+  background: #059669;
+  color: #ffffff;
+}
+
+.autocare-admin-btn-success:hover:not(:disabled) {
+  background: #047857;
+}
+
+.autocare-admin-btn-danger {
+  background: #ffffff;
+  border-color: #fecdd3;
+  color: #e11d48;
+}
+
+.autocare-admin-btn-danger:hover:not(:disabled) {
+  background: #fff1f2;
+  border-color: #fda4af;
+  color: #be123c;
+}
+
+/* Mobile Cards View (hidden on desktop, active on mobile) */
+.autocare-admin-cards-view {
+  display: none;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.autocare-admin-card-item {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.autocare-admin-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.autocare-admin-card-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 12px;
+  padding: 10px 0;
+  border-top: 1px solid #f1f5f9;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 13px;
+}
+
+.autocare-admin-card-label {
+  font-size: 11px;
+  color: #64748b;
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.autocare-admin-card-value {
+  color: #1e293b;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.autocare-admin-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.autocare-admin-card-actions .autocare-admin-btn {
+  flex: 1;
+  min-width: 110px;
+}
+
+/* Empty, Loading, Error States */
+.autocare-admin-state-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 24px;
+  gap: 14px;
+}
+
+.autocare-admin-state-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.autocare-admin-state-icon.is-empty {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.autocare-admin-state-icon.is-error {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.autocare-admin-state-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.autocare-admin-state-text {
+  font-size: 14px;
+  color: #64748b;
+  max-width: 420px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Garage Details Page Styles */
+.autocare-admin-details-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  margin-top: 20px;
+}
+
+.autocare-admin-section-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  margin-bottom: 24px;
+}
+
+.autocare-admin-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.autocare-admin-section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.autocare-admin-field-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px 24px;
+}
+
+.autocare-admin-field-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.autocare-admin-field-item.full-width {
+  grid-column: 1 / -1;
+}
+
+.autocare-admin-field-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.autocare-admin-field-value {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.autocare-admin-field-value.highlight {
+  color: #0056A2;
+}
+
+/* Sidebar action card on Details Page */
+.autocare-admin-action-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.autocare-admin-action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.autocare-admin-action-buttons .autocare-admin-btn {
+  width: 100%;
+  padding: 10px 16px;
+  font-size: 14px;
+}
+
+/* Document List */
+.autocare-admin-doc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.autocare-admin-doc-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  gap: 12px;
+}
+
+.autocare-admin-doc-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* Rejection/Suspension Info Banner */
+.autocare-admin-rejection-banner {
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: #9f1239;
+}
+
+.autocare-admin-rejection-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+}
+
+.autocare-admin-rejection-text {
+  font-size: 13px;
+  margin: 0;
+  line-height: 1.5;
+  color: #881337;
+}
+
+/* Modal Overlay & Card */
+.autocare-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 999;
+}
+
+.autocare-modal-card {
+  background: #ffffff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+}
+
+.autocare-modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.autocare-modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.autocare-modal-close {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.18s ease;
+}
+
+.autocare-modal-close:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.autocare-modal-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  font-size: 14px;
+  color: #334155;
+  line-height: 1.5;
+}
+
+.autocare-modal-textarea {
+  width: 100%;
+  min-height: 110px;
+  padding: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: #0f172a;
+  outline: none;
+  resize: vertical;
+  transition: all 0.2s ease;
+}
+
+.autocare-modal-textarea:focus {
+  border-color: #0056A2;
+  box-shadow: 0 0 0 3px rgba(0, 86, 162, 0.12);
+}
+
+.autocare-modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+
+/* ==========================================================================
+   Responsive Breakpoints: 1024px, 768px, 430px, 390px, 375px, 360px, 320px
+   ========================================================================== */
+
+@media (max-width: 1024px) {
+  .autocare-admin-details-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .autocare-admin-main {
+    padding: 20px 0 48px 0;
+  }
+
+  .autocare-admin-title {
+    font-size: 24px;
+  }
+
+  .autocare-admin-controls {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 14px;
+  }
+
+  .autocare-admin-tabs {
+    width: 100%;
+  }
+
+  .autocare-admin-search-wrap {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  /* Switch table to cards view on mobile screens */
+  .autocare-admin-table-card {
+    display: none;
+  }
+
+  .autocare-admin-cards-view {
+    display: flex;
+  }
+
+  .autocare-admin-field-list {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+}
+
+@media (max-width: 430px) {
+  .autocare-admin-container {
+    padding: 0 14px;
+  }
+
+  .autocare-admin-title {
+    font-size: 21px;
+  }
+
+  .autocare-admin-subtitle {
+    font-size: 13.5px;
+  }
+
+  .autocare-admin-tab {
+    padding: 6px 12px;
+    font-size: 12.5px;
+    min-height: 36px;
+  }
+
+  .autocare-modal-card {
+    max-width: 95vw;
+  }
+
+  .autocare-modal-body {
+    padding: 16px;
+  }
+
+  .autocare-modal-footer {
+    padding: 12px 16px;
+    flex-direction: column-reverse;
+  }
+
+  .autocare-modal-footer .autocare-admin-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 360px) {
+  .autocare-admin-title {
+    font-size: 19px;
+  }
+
+  .autocare-admin-card-grid {
+    grid-template-columns: 1fr;
+  }
+}

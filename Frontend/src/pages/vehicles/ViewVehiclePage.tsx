@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import {
   Share2,
   Plus,
-  Download,
+  Printer,
   Pencil,
   ArrowRightLeft,
   ShieldCheck,
@@ -205,135 +205,10 @@ export const ViewVehiclePage: React.FC = () => {
     return `0x${prefix}...${suffix}`;
   };
 
-  // Official Vehicle Passport HTML/PDF Generator & Downloader (BR-01, FR-01)
-  const handleDownloadPassport = () => {
+  // Official Vehicle Passport Print / PDF Save Handler (BR-01, FR-01)
+  const handlePrintPassport = () => {
     if (!vehicle) return;
-
-    try {
-      const reg = vehicle.registrationNumber || 'VEHICLE';
-      const nowStr = new Date().toLocaleDateString('en-GB', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-      });
-
-      const certHtml = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>AutoCare 360 Digital Passport - ${reg}</title>
-  <style>
-    @page { size: A4; margin: 15mm; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #0f172a; margin: 0; padding: 24px; background: #fff; }
-    .cert-container { border: 3px double #0056a2; padding: 32px; border-radius: 12px; max-width: 800px; margin: 0 auto; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
-    .cert-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; }
-    .brand { font-size: 26px; font-weight: 800; color: #0056a2; letter-spacing: -0.5px; }
-    .brand span { color: #00b4eb; }
-    .badge { background: #ecfdf5; color: #065f46; border: 1px solid #10b981; padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; text-transform: uppercase; }
-    .cert-title { font-size: 22px; font-weight: 800; margin: 24px 0 6px 0; color: #0f172a; letter-spacing: 0.5px; }
-    .cert-sub { font-size: 13px; color: #64748b; margin-bottom: 24px; }
-    .spec-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 24px; background: #f8fafc; padding: 18px; border-radius: 8px; border: 1px solid #e2e8f0; }
-    .spec-item { display: flex; flex-direction: column; }
-    .spec-label { font-size: 11px; text-transform: uppercase; font-weight: 700; color: #64748b; }
-    .spec-val { font-size: 15px; font-weight: 600; color: #0f172a; margin-top: 3px; }
-    .health-section { background: linear-gradient(135deg, #0056a2, #003874); color: white; padding: 18px 24px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-    .health-score { font-size: 32px; font-weight: 800; color: #38bdf8; }
-    .records-table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
-    .records-table th { background: #f1f5f9; text-align: left; padding: 10px 12px; border-bottom: 2px solid #cbd5e1; font-size: 12px; color: #475569; }
-    .records-table td { padding: 10px 12px; border-bottom: 1px solid #e2e8f0; }
-    .footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #94a3b8; }
-    @media print {
-      body { padding: 0; }
-      .cert-container { border: 2px solid #0056a2; box-shadow: none; }
-      .no-print { display: none; }
-    }
-  </style>
-</head>
-<body>
-  <div class="no-print" style="max-width: 800px; margin: 0 auto 16px auto; display: flex; justify-content: flex-end; gap: 10px;">
-    <button onclick="window.print()" style="background: #0056a2; color: #fff; border: none; padding: 8px 18px; border-radius: 6px; font-weight: 600; cursor: pointer;">Print / Save as PDF</button>
-  </div>
-  <div class="cert-container">
-    <div class="cert-header">
-      <div>
-        <div class="brand">AutoCare <span>360</span></div>
-        <div style="font-size: 12px; color: #64748b; margin-top: 4px;">Universal Vehicle Passport & Maintenance Record System</div>
-      </div>
-      <div class="badge">Cryptographically Certified</div>
-    </div>
-
-    <div class="cert-title">OFFICIAL VEHICLE PASSPORT</div>
-    <div class="cert-sub">Issued under National Digital Vehicle Registry Standards • Certificate Date: ${nowStr}</div>
-
-    <div class="spec-grid">
-      <div class="spec-item"><span class="spec-label">Registration Number</span><span class="spec-val" style="color: #0056a2; font-size: 18px;">${vehicle.registrationNumber}</span></div>
-      <div class="spec-item"><span class="spec-label">VIN / Chassis Number</span><span class="spec-val" style="font-family: monospace;">${vehicle.vin || 'JT2BF28K4W0129481'}</span></div>
-      <div class="spec-item"><span class="spec-label">Make & Model</span><span class="spec-val">${vehicle.manufacturer} ${vehicle.model} (${vehicle.manufacturingYear})</span></div>
-      <div class="spec-item"><span class="spec-label">Current Odometer</span><span class="spec-val">${(vehicle.currentMileage || 32500).toLocaleString()} km</span></div>
-      <div class="spec-item"><span class="spec-label">Fuel & Transmission</span><span class="spec-val">${vehicle.fuelType || 'Hybrid'} • ${vehicle.transmission || 'Automatic'}</span></div>
-      <div class="spec-item"><span class="spec-label">Color & Engine</span><span class="spec-val">${vehicle.color || 'Pearl White'} • ${vehicle.engineNumber ? 'Engine ' + vehicle.engineNumber : '1,798 cc'}</span></div>
-    </div>
-
-    <div class="health-section">
-      <div>
-        <div style="font-size: 12px; text-transform: uppercase; font-weight: 700; opacity: 0.85;">AI Trust & Health Index</div>
-        <div style="font-size: 13.5px; margin-top: 4px;">Tamper-Proof Verification Verified by Network Garages</div>
-      </div>
-      <div class="health-score">${(vehicle as any).healthScore || 94}/100</div>
-    </div>
-
-    <div style="font-weight: 700; font-size: 14px; margin-bottom: 8px;">Recent Maintenance Milestones (${recentServices.length} Records)</div>
-    <table class="records-table">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Mileage</th>
-          <th>Service Description</th>
-          <th>Provider</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${recentServices.map((r: any) => `
-          <tr>
-            <td>${new Date(r.serviceDate).toLocaleDateString('en-GB')}</td>
-            <td>${(r.mileage || 0).toLocaleString()} km</td>
-            <td><strong>${r.serviceType}</strong><br><span style="font-size: 11px; color: #64748b;">${r.workPerformed || ''}</span></td>
-            <td>${r.garageName || 'Verified Partner'}</td>
-            <td><span style="color: #059669; font-weight: 700;">${r.verificationStatus === 'verified' ? '✓ Certified' : 'Logged'}</span></td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>
-
-    <div class="footer">
-      <div>Digital Ledger Hash: <code>${getLedgerHash(vehicle)}</code></div>
-      <div>AutoCare 360 Ecosystem • Sri Lanka</div>
-    </div>
-  </div>
-</body>
-</html>`;
-
-      const blob = new Blob([certHtml], { type: 'text/html;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `AutoCare360_Passport_${reg.replace(/[^a-zA-Z0-9_-]/g, '_')}.html`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      // Open print preview window
-      const printWin = window.open('', '_blank');
-      if (printWin) {
-        printWin.document.write(certHtml);
-        printWin.document.close();
-      }
-
-      showToast(`Vehicle Passport for ${reg} downloaded! You can also save as PDF from the new tab.`);
-    } catch {
-      showToast('Failed to generate passport certificate. Please try again.');
-    }
+    window.print();
   };
 
   return (
@@ -342,6 +217,89 @@ export const ViewVehiclePage: React.FC = () => {
 
       <main className="autocare-view-vehicle-main">
         <div className="autocare-view-vehicle-container">
+          {/* Printable Passport Document (Rendered only on print / PDF export) */}
+          {vehicle && (
+            <div className="autocare-passport-print-document">
+              <div className="autocare-print-header">
+                <div>
+                  <h1 className="autocare-print-brand">AutoCare <span>360</span></h1>
+                  <p className="autocare-print-tagline">Universal Vehicle Digital Passport &amp; Service Chronology</p>
+                </div>
+                <div className="autocare-print-meta">
+                  <div className="autocare-print-pill">Verified Official Record</div>
+                  <div className="autocare-print-date">Generated: {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+                </div>
+              </div>
+
+              <div className="autocare-print-title-block">
+                <h2 className="autocare-print-veh-title">
+                  {vehicle.manufacturingYear} {vehicle.manufacturer} {vehicle.model}
+                </h2>
+                <div className="autocare-print-reg-vin">
+                  Registration Number: <strong>{vehicle.registrationNumber}</strong> • VIN: <code>{vehicle.vin}</code>
+                </div>
+              </div>
+
+              <div className="autocare-print-specs-grid">
+                <div className="autocare-print-spec-cell">
+                  <span className="spec-lbl">Vehicle Category</span>
+                  <span className="spec-val">{vehicle.vehicleType || 'Motor Car'}</span>
+                </div>
+                <div className="autocare-print-spec-cell">
+                  <span className="spec-lbl">Current Recorded Mileage</span>
+                  <span className="spec-val">{vehicle.currentMileage ? vehicle.currentMileage.toLocaleString() : '0'} km</span>
+                </div>
+                <div className="autocare-print-spec-cell">
+                  <span className="spec-lbl">Current Registered Owner</span>
+                  <span className="spec-val">{user?.fullName || 'Registered Owner'}</span>
+                </div>
+                <div className="autocare-print-spec-cell">
+                  <span className="spec-lbl">Engine Number</span>
+                  <span className="spec-val">{vehicle.engineNumber || 'N/A'}</span>
+                </div>
+                <div className="autocare-print-spec-cell">
+                  <span className="spec-lbl">Transmission &amp; Fuel</span>
+                  <span className="spec-val">{vehicle.transmission || 'Automatic'} • {vehicle.fuelType || 'Petrol'}</span>
+                </div>
+                <div className="autocare-print-spec-cell">
+                  <span className="spec-lbl">Passport Status</span>
+                  <span className="spec-val">{vehicle.status || 'Active'}</span>
+                </div>
+              </div>
+
+              {recentServices && recentServices.length > 0 && (
+                <div className="autocare-print-services-block">
+                  <h3 className="autocare-print-section-title">Recent Authorized Service Chronology</h3>
+                  <table className="autocare-print-table">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Mileage</th>
+                        <th>Service Description</th>
+                        <th>Workshop / Center</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recentServices.map((svc) => (
+                        <tr key={svc._id}>
+                          <td>{svc.serviceDate ? new Date(svc.serviceDate).toLocaleDateString('en-GB') : 'N/A'}</td>
+                          <td>{svc.mileage ? `${svc.mileage.toLocaleString()} km` : 'N/A'}</td>
+                          <td><strong>{svc.serviceType || 'Routine Maintenance'}</strong>{svc.workPerformed ? ` - ${svc.workPerformed}` : (svc.notes ? ` - ${svc.notes}` : '')}</td>
+                          <td>{svc.garageName || 'Certified Center'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              <div className="autocare-print-footer">
+                <div>AutoCare 360 Ecosystem • Sri Lanka</div>
+                <div>Official Vehicle Digital Passport Document</div>
+              </div>
+            </div>
+          )}
+
           {/* Breadcrumb Navigation & Top Category */}
           <div style={{ marginBottom: '8px' }}>
             <span className="autocare-view-category-badge">
@@ -577,11 +535,11 @@ export const ViewVehiclePage: React.FC = () => {
                     <button
                       type="button"
                       className="autocare-btn-download-passport"
-                      onClick={handleDownloadPassport}
-                      title="Download and print official vehicle passport"
+                      onClick={handlePrintPassport}
+                      title="Print or save official vehicle passport as PDF"
                     >
-                      <Download size={15} />
-                      <span>Download passport</span>
+                      <Printer size={15} />
+                      <span>Print / Save Passport</span>
                     </button>
 
                     <button

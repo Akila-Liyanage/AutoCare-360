@@ -15,6 +15,9 @@ import {
   Ban,
   RefreshCw,
   Car,
+  ArrowRightLeft,
+  Inbox,
+  Check,
 } from 'lucide-react';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
@@ -25,6 +28,9 @@ import { getVehicleById, getMyVehicles, type Vehicle } from '../../services/vehi
 import {
   createTransferRequest,
   getOutgoingTransfers,
+  getIncomingTransfers,
+  acceptTransfer,
+  rejectTransfer,
   cancelTransfer,
   type TransferRequest,
   type CreateTransferPayload,
@@ -80,6 +86,22 @@ export const TransferVehiclePage: React.FC = () => {
 
   // Cancel action state
   const [isCancelling, setIsCancelling] = useState(false);
+
+  // Transfer Tabs: 'outgoing' (Sent Transfers) | 'incoming' (Incoming Transfers)
+  const [activeTab, setActiveTab] = useState<'outgoing' | 'incoming'>('outgoing');
+
+  // Incoming Transfers State
+  const [incomingTransfers, setIncomingTransfers] = useState<TransferRequest[]>([]);
+  const [incomingLoading, setIncomingLoading] = useState<boolean>(false);
+  const [incomingError, setIncomingError] = useState<string | null>(null);
+
+  // Processing transfer ID and action (for loading indicators on Accept / Reject)
+  const [processingTransferId, setProcessingTransferId] = useState<string | null>(null);
+  const [processingAction, setProcessingAction] = useState<'accept' | 'reject' | null>(null);
+
+  // Rejection dialog state
+  const [rejectingTransfer, setRejectingTransfer] = useState<TransferRequest | null>(null);
+  const [rejectReason, setRejectReason] = useState<string>('');
 
   // Transfer Form State
   const [formData, setFormData] = useState<TransferFormData>({
@@ -143,7 +165,18 @@ export const TransferVehiclePage: React.FC = () => {
       }
 
       if (!currentVehicle) {
-        setPageError('No registered vehicles found for your account. Please add a vehicle first.');
+        try {
+          const incoming = await getIncomingTransfers();
+          setIncomingTransfers(incoming);
+          if (incoming.length > 0) {
+            setActiveTab('incoming');
+            setPageLoading(false);
+            return;
+          }
+        } catch {
+          // ignore
+        }
+        setPageError('No registered vehicles found for your account. Please add a vehicle first, or check incoming transfers.');
         setPageLoading(false);
         return;
       }
@@ -222,6 +255,21 @@ export const TransferVehiclePage: React.FC = () => {
     }
   }, [user]);
 
+  const loadIncomingTransfers = useCallback(async () => {
+    setIncomingLoading(true);
+    setIncomingError(null);
+    try {
+      const incoming = await getIncomingTransfers();
+      setIncomingTransfers(incoming);
+    } catch (err: unknown) {
+      console.warn('Failed to load incoming transfers:', err);
+      const msg = err instanceof Error ? err.message : 'Unable to load incoming transfers.';
+      setIncomingError(msg);
+    } finally {
+      setIncomingLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     let isMounted = true;
 
@@ -229,7 +277,10 @@ export const TransferVehiclePage: React.FC = () => {
       const locState = location.state as { vehicleId?: string; vehicle?: Vehicle } | null;
       const resolvedId = id || locState?.vehicleId || locState?.vehicle?._id;
       if (isMounted) {
-        await loadPageData(resolvedId);
+        await Promise.allSettled([
+          loadPageData(resolvedId),
+          loadIncomingTransfers(),
+        ]);
       }
     };
 
@@ -238,7 +289,7 @@ export const TransferVehiclePage: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [id, location.state, loadPageData]);
+  }, [id, location.state, loadPageData, loadIncomingTransfers]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -376,6 +427,53 @@ export const TransferVehiclePage: React.FC = () => {
     }
   };
 
+  const handleAcceptTransfer = async (transferId: string) => {
+    setProcessingTransferId(transferId);
+    setProcessingAction('accept');
+    try {
+      await acceptTransfer(transferId);
+      showToast('Ownership transfer accepted! The vehicle passport has been reassigned to your account.', 'success');
+      await loadIncomingTransfers();
+      const myVehicles = await getMyVehicles();
+      if (myVehicles.length > 0) {
+        setVehicle(myVehicles[0]);
+      }
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { message?: string } }; message?: string };
+      const msg =
+        errorObj?.response?.data?.message ||
+        errorObj?.message ||
+        'Failed to accept transfer request. This feature may require backend completion.';
+      showToast(msg, 'info');
+    } finally {
+      setProcessingTransferId(null);
+      setProcessingAction(null);
+    }
+  };
+
+  const handleConfirmReject = async () => {
+    if (!rejectingTransfer) return;
+    setProcessingTransferId(rejectingTransfer._id);
+    setProcessingAction('reject');
+    try {
+      await rejectTransfer(rejectingTransfer._id, rejectReason.trim() || undefined);
+      showToast('Transfer request declined.', 'info');
+      setRejectingTransfer(null);
+      setRejectReason('');
+      await loadIncomingTransfers();
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { message?: string } }; message?: string };
+      const msg =
+        errorObj?.response?.data?.message ||
+        errorObj?.message ||
+        'Failed to decline transfer request.';
+      showToast(msg, 'info');
+    } finally {
+      setProcessingTransferId(null);
+      setProcessingAction(null);
+    }
+  };
+
   const handleCancelBack = () => {
     navigate(`/vehicles/${vehicle?._id || id || ''}`);
   };
@@ -441,16 +539,118 @@ export const TransferVehiclePage: React.FC = () => {
                 <Bell size={18} />
               </button>
 
-              {/* AutoCare Blockchain Secured Capsule Pill */}
+              {/* AutoCare Verified Registry Capsule Pill */}
               <div className="autocare-transfer-badge-secured" role="status">
                 <span className="autocare-transfer-dot-secured" aria-hidden="true" />
-                <span>AutoCare Blockchain Secured</span>
+                <span>AutoCare Verified Registry</span>
               </div>
             </div>
           </header>
 
-          {/* Page Loading State */}
-          {pageLoading && (
+          {/* Transfer Tabs: Sent Transfers vs. Incoming Transfers */}
+          <div
+            className="autocare-transfer-tabs-bar"
+            role="tablist"
+            style={{
+              display: 'flex',
+              gap: '12px',
+              borderBottom: '2px solid #e2e8f0',
+              marginBottom: '24px',
+              paddingBottom: '0',
+            }}
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'outgoing'}
+              onClick={() => setActiveTab('outgoing')}
+              style={{
+                padding: '12px 20px',
+                fontSize: '14.5px',
+                fontWeight: 700,
+                color: activeTab === 'outgoing' ? '#0056a2' : '#64748b',
+                borderBottom: activeTab === 'outgoing' ? '3px solid #0056a2' : '3px solid transparent',
+                background: 'none',
+                borderTop: 'none',
+                borderLeft: 'none',
+                borderRight: 'none',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                marginBottom: '-2px',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <Zap size={16} />
+              <span>Sent Transfers</span>
+              {vehicleTransfers.length > 0 && (
+                <span
+                  style={{
+                    backgroundColor: '#e0f2fe',
+                    color: '#0369a1',
+                    padding: '2px 8px',
+                    borderRadius: '12px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                  }}
+                >
+                  {vehicleTransfers.length}
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'incoming'}
+              onClick={() => {
+                setActiveTab('incoming');
+                if (incomingTransfers.length === 0) {
+                  void loadIncomingTransfers();
+                }
+              }}
+              style={{
+                padding: '12px 20px',
+                fontSize: '14.5px',
+                fontWeight: 700,
+                color: activeTab === 'incoming' ? '#0056a2' : '#64748b',
+                borderBottom: activeTab === 'incoming' ? '3px solid #0056a2' : '3px solid transparent',
+                background: 'none',
+                borderTop: 'none',
+                borderLeft: 'none',
+                borderRight: 'none',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                marginBottom: '-2px',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <ArrowRightLeft size={16} />
+              <span>Incoming Transfers</span>
+              {incomingTransfers.length > 0 && (
+                <span
+                  style={{
+                    backgroundColor: '#fef3c7',
+                    color: '#b45309',
+                    padding: '2px 8px',
+                    borderRadius: '12px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                  }}
+                >
+                  {incomingTransfers.filter((t) => t.status === 'pending').length || incomingTransfers.length}
+                </span>
+              )}
+            </button>
+          </div>
+
+          {activeTab === 'outgoing' && (
+            <>
+              {/* Page Loading State */}
+              {pageLoading && (
             <div
               style={{
                 display: 'flex',
@@ -879,8 +1079,333 @@ export const TransferVehiclePage: React.FC = () => {
               </section>
             </>
           )}
-        </div>
-      </main>
+        </>
+      )}
+
+      {/* 5. Incoming Transfers Tab Content */}
+      {activeTab === 'incoming' && (
+        <section className="autocare-incoming-transfers-section" aria-label="Incoming Ownership Transfers">
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '20px',
+              flexWrap: 'wrap',
+              gap: '12px',
+            }}
+          >
+            <div>
+              <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', margin: '0 0 4px 0' }}>
+                Incoming Ownership Transfers
+              </h2>
+              <p style={{ fontSize: '13.5px', color: '#64748b', margin: 0 }}>
+                Vehicles assigned to your registered account by previous owners. Review and accept to transfer sovereign digital passport.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => void loadIncomingTransfers()}
+              disabled={incomingLoading}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 16px',
+                backgroundColor: '#ffffff',
+                color: '#0056a2',
+                border: '1px solid #bfdbfe',
+                borderRadius: '8px',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: incomingLoading ? 'not-allowed' : 'pointer',
+              }}
+            >
+              <RefreshCw
+                size={14}
+                className={incomingLoading ? 'spin' : ''}
+                style={incomingLoading ? { animation: 'spin 1s linear infinite' } : {}}
+              />
+              <span>Refresh List</span>
+            </button>
+          </div>
+
+          {incomingLoading && (
+            <div style={{ textAlign: 'center', padding: '60px 0', color: '#64748b' }}>
+              <Loader2
+                size={32}
+                className="spin"
+                style={{ color: '#0056A2', margin: '0 auto 12px', animation: 'spin 1s linear infinite' }}
+              />
+              <p style={{ fontSize: '14px', fontWeight: 600 }}>Loading incoming transfer records...</p>
+            </div>
+          )}
+
+          {!incomingLoading && incomingError && (
+            <div
+              style={{
+                backgroundColor: '#fef2f2',
+                border: '1px solid #fecaca',
+                borderRadius: '12px',
+                padding: '20px',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '12px',
+                color: '#991b1b',
+                marginBottom: '20px',
+              }}
+            >
+              <AlertCircle size={20} style={{ flexShrink: 0, color: '#dc2626' }} />
+              <div>
+                <h4 style={{ margin: '0 0 4px 0', fontSize: '15px', fontWeight: 700 }}>
+                  Unable to fetch incoming transfers
+                </h4>
+                <p style={{ margin: 0, fontSize: '13.5px' }}>{incomingError}</p>
+              </div>
+            </div>
+          )}
+
+          {!incomingLoading && !incomingError && incomingTransfers.length === 0 && (
+            <div
+              style={{
+                backgroundColor: '#ffffff',
+                border: '1px solid #e2e8f0',
+                borderRadius: '16px',
+                padding: '52px 24px',
+                textAlign: 'center',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+              }}
+            >
+              <div
+                style={{
+                  width: '60px',
+                  height: '60px',
+                  borderRadius: '50%',
+                  backgroundColor: '#eff6ff',
+                  color: '#0056a2',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 16px',
+                }}
+              >
+                <Inbox size={30} />
+              </div>
+              <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0f172a', marginBottom: '8px' }}>
+                No Incoming Transfers Found
+              </h3>
+              <p
+                style={{
+                  fontSize: '14px',
+                  color: '#64748b',
+                  maxWidth: '440px',
+                  margin: '0 auto 20px',
+                  lineHeight: 1.5,
+                }}
+              >
+                You have no pending ownership transfer requests. When another vehicle owner initiates an ownership handover to your email ({user?.email || 'your email'}), it will appear here.
+              </p>
+            </div>
+          )}
+
+          {!incomingLoading && !incomingError && incomingTransfers.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {incomingTransfers.map((t) => {
+                const veh = typeof t.vehicleId === 'object' && t.vehicleId !== null ? t.vehicleId : null;
+                const sender = typeof t.fromOwnerId === 'object' && t.fromOwnerId !== null ? t.fromOwnerId : null;
+                const isPending = t.status === 'pending';
+                const isProcessingThis = processingTransferId === t._id;
+
+                const vehTitle = veh
+                  ? `${veh.manufacturer} ${veh.model}`
+                  : 'Vehicle Digital Passport';
+                const regPlate = veh?.registrationNumber || 'Registration Pending';
+                const vin = veh?.vin || 'VIN on file';
+                const senderName =
+                  sender?.fullName ||
+                  sender?.email ||
+                  (typeof t.fromOwnerId === 'string' ? t.fromOwnerId : 'Previous Registered Owner');
+                const dateStr = new Date(t.requestedAt || t.createdAt).toLocaleDateString(undefined, {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                });
+
+                return (
+                  <div
+                    key={t._id}
+                    style={{
+                      backgroundColor: '#ffffff',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '16px',
+                      padding: '24px',
+                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.04)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '16px',
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        flexWrap: 'wrap',
+                        gap: '12px',
+                      }}
+                    >
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+                          <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                            {vehTitle}
+                          </h3>
+                          <span
+                            style={{
+                              padding: '3px 10px',
+                              borderRadius: '12px',
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.4px',
+                              backgroundColor:
+                                t.status === 'completed' || t.status === 'accepted'
+                                  ? '#ecfdf5'
+                                  : t.status === 'pending'
+                                  ? '#fffbeb'
+                                  : t.status === 'rejected'
+                                  ? '#fef2f2'
+                                  : '#f1f5f9',
+                              color:
+                                t.status === 'completed' || t.status === 'accepted'
+                                  ? '#047857'
+                                  : t.status === 'pending'
+                                  ? '#b45309'
+                                  : t.status === 'rejected'
+                                  ? '#b91c1c'
+                                  : '#64748b',
+                              border:
+                                t.status === 'completed' || t.status === 'accepted'
+                                  ? '1px solid #a7f3d0'
+                                  : t.status === 'pending'
+                                  ? '1px solid #fde68a'
+                                  : t.status === 'rejected'
+                                  ? '1px solid #fecaca'
+                                  : '1px solid #cbd5e1',
+                            }}
+                          >
+                            {t.status.toUpperCase()}
+                          </span>
+                        </div>
+
+                        <div style={{ fontSize: '13.5px', color: '#475569', display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                          <span>Reg: <strong>{regPlate}</strong></span>
+                          <span>•</span>
+                          <span>
+                            VIN: <code style={{ fontFamily: 'monospace', background: '#f1f5f9', padding: '1px 5px', borderRadius: '4px' }}>{vin}</code>
+                          </span>
+                        </div>
+                      </div>
+
+                      {isPending && (
+                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleAcceptTransfer(t._id)}
+                            disabled={isProcessingThis}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              padding: '9px 18px',
+                              backgroundColor: '#16a34a',
+                              color: '#ffffff',
+                              border: 'none',
+                              borderRadius: '8px',
+                              fontSize: '13.5px',
+                              fontWeight: 700,
+                              cursor: isProcessingThis ? 'not-allowed' : 'pointer',
+                              transition: 'all 0.2s ease',
+                            }}
+                          >
+                            {isProcessingThis && processingAction === 'accept' ? (
+                              <Loader2 size={14} className="spin" style={{ animation: 'spin 1s linear infinite' }} />
+                            ) : (
+                              <Check size={14} />
+                            )}
+                            <span>Accept Transfer</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setRejectingTransfer(t);
+                              setRejectReason('');
+                            }}
+                            disabled={isProcessingThis}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              padding: '9px 18px',
+                              backgroundColor: '#ffffff',
+                              color: '#dc2626',
+                              border: '1px solid #fecaca',
+                              borderRadius: '8px',
+                              fontSize: '13.5px',
+                              fontWeight: 600,
+                              cursor: isProcessingThis ? 'not-allowed' : 'pointer',
+                              transition: 'all 0.2s ease',
+                            }}
+                          >
+                            <Ban size={14} />
+                            <span>Decline</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                        gap: '12px',
+                        backgroundColor: '#f8fafc',
+                        padding: '14px 18px',
+                        borderRadius: '10px',
+                        fontSize: '13px',
+                      }}
+                    >
+                      <div>
+                        <span style={{ color: '#64748b', display: 'block', fontSize: '11px', textTransform: 'uppercase', fontWeight: 700 }}>
+                          Transfer Initiated By
+                        </span>
+                        <span style={{ color: '#1e293b', fontWeight: 600 }}>{senderName}</span>
+                      </div>
+                      <div>
+                        <span style={{ color: '#64748b', display: 'block', fontSize: '11px', textTransform: 'uppercase', fontWeight: 700 }}>
+                          Request Date
+                        </span>
+                        <span style={{ color: '#1e293b', fontWeight: 600 }}>{dateStr}</span>
+                      </div>
+                      {t.transferReason && (
+                        <div>
+                          <span style={{ color: '#64748b', display: 'block', fontSize: '11px', textTransform: 'uppercase', fontWeight: 700 }}>
+                            Reason / Handover Note
+                          </span>
+                          <span style={{ color: '#1e293b', fontWeight: 500 }}>{t.transferReason}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      )}
+    </div>
+  </main>
 
       {/* 5. Transfer Ownership Modal / Dialog */}
       {isModalOpen && vehicle && (
@@ -1155,6 +1680,98 @@ export const TransferVehiclePage: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 6. Decline Incoming Transfer Modal */}
+      {rejectingTransfer && (
+        <div
+          className="autocare-transfer-modal-backdrop"
+          onClick={() => !processingTransferId && setRejectingTransfer(null)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="autocare-transfer-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '460px' }}>
+            <div className="autocare-transfer-modal-header">
+              <div className="autocare-transfer-modal-title-group">
+                <h2>Decline Transfer Request</h2>
+                <p>Are you sure you want to decline this incoming vehicle ownership handover?</p>
+              </div>
+              <button
+                type="button"
+                className="autocare-transfer-modal-close"
+                onClick={() => !processingTransferId && setRejectingTransfer(null)}
+                aria-label="Close"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="autocare-transfer-modal-body">
+              <label style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>
+                Decline Reason (Optional)
+              </label>
+              <textarea
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="e.g., Unrecognized vehicle or wrong recipient email"
+                rows={3}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid #cbd5e1',
+                  fontSize: '13.5px',
+                  fontFamily: 'inherit',
+                  resize: 'vertical',
+                }}
+              />
+            </div>
+            <div
+              className="autocare-transfer-modal-footer"
+              style={{ padding: '16px 24px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}
+            >
+              <button
+                type="button"
+                onClick={() => setRejectingTransfer(null)}
+                disabled={!!processingTransferId}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#f1f5f9',
+                  color: '#475569',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '8px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmReject}
+                disabled={!!processingTransferId}
+                style={{
+                  padding: '8px 18px',
+                  backgroundColor: '#dc2626',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontWeight: 600,
+                  cursor: processingTransferId ? 'not-allowed' : 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                {processingTransferId === rejectingTransfer._id && processingAction === 'reject' ? (
+                  <Loader2 size={14} className="spin" style={{ animation: 'spin 1s linear infinite' }} />
+                ) : (
+                  <Ban size={14} />
+                )}
+                <span>Confirm Decline</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -98,10 +98,20 @@ export const LoginPage: React.FC = () => {
 
       // Smooth brief transition to authenticated workspace
       setTimeout(() => {
-        if (selectedRole === 'garage' || response.data?.user?.role === 'garage') {
-          navigate('/garage/dashboard');
+        const authenticatedUser = response.data?.user;
+        const resolvedRole = authenticatedUser?.role || selectedRole;
+        const resolvedStatus = authenticatedUser?.status;
+
+        if (resolvedRole === 'admin') {
+          navigate('/admin/garages');
+        } else if (resolvedRole === 'garage') {
+          if (resolvedStatus === 'pending') {
+            navigate('/garage/verification-pending');
+          } else {
+            navigate('/garage/dashboard');
+          }
         } else {
-          navigate('/dashboard');
+          navigate('/vehicles');
         }
       }, 700);
     } catch (err: unknown) {

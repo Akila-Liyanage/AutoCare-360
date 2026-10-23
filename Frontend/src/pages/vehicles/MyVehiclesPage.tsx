@@ -2,13 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   PlusCircle,
-  Trash2,
-  Edit3,
+  FileText,
   Car,
   AlertCircle,
-  RefreshCw,
-  Info,
-  X
+  RefreshCw
 } from 'lucide-react';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
@@ -21,7 +18,6 @@ export const MyVehiclesPage: React.FC = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [infoNotice, setInfoNotice] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -79,14 +75,6 @@ export const MyVehiclesPage: React.FC = () => {
     };
   };
 
-  // Safe handler for Remove button (DELETE is out of scope in this phase)
-  const handleRemoveClick = (e: React.MouseEvent, vehicle: Vehicle) => {
-    e.stopPropagation();
-    setInfoNotice(
-      `Deletion for "${vehicle.manufacturer} ${vehicle.model} (${vehicle.registrationNumber})" is restricted in this phase. Vehicle passport deletion will be supported in future releases.`
-    );
-  };
-
   return (
     <div className="autocare-my-vehicles-page">
       <Navbar />
@@ -105,24 +93,6 @@ export const MyVehiclesPage: React.FC = () => {
               View All
             </button>
           </div>
-
-          {/* Safe Non-destructive notice for Remove action */}
-          {infoNotice && (
-            <div className="autocare-notice-banner" role="status">
-              <div className="autocare-notice-content">
-                <Info size={18} className="autocare-notice-icon" />
-                <span>{infoNotice}</span>
-              </div>
-              <button
-                type="button"
-                className="autocare-notice-close"
-                onClick={() => setInfoNotice(null)}
-                aria-label="Dismiss notice"
-              >
-                <X size={16} />
-              </button>
-            </div>
-          )}
 
           {/* 1. Loading State */}
           {loading && (
@@ -231,17 +201,38 @@ export const MyVehiclesPage: React.FC = () => {
                           </div>
                         )}
 
-                        {/* Top-Right: Red Remove Button */}
-                        <button
-                          type="button"
-                          className="autocare-card-remove-btn"
-                          onClick={(e) => handleRemoveClick(e, vehicle)}
-                          title="Remove Vehicle (Not available in this phase)"
-                          aria-label={`Remove ${vehicle.manufacturer} ${vehicle.model}`}
+                        {/* Top-Right: Truthful Vehicle Status Badge */}
+                        <span
+                          className="autocare-card-status-badge"
+                          style={{
+                            position: 'absolute',
+                            top: '12px',
+                            right: '12px',
+                            padding: '4px 10px',
+                            borderRadius: '12px',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.4px',
+                            backgroundColor: vehicle.status === 'Archived' ? '#f1f5f9' : '#ecfdf5',
+                            color: vehicle.status === 'Archived' ? '#64748b' : '#047857',
+                            border: vehicle.status === 'Archived' ? '1px solid #cbd5e1' : '1px solid #a7f3d0',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            zIndex: 2,
+                          }}
                         >
-                          <Trash2 size={12} />
-                          <span>Remove</span>
-                        </button>
+                          <span
+                            style={{
+                              width: '6px',
+                              height: '6px',
+                              borderRadius: '50%',
+                              backgroundColor: vehicle.status === 'Archived' ? '#94a3b8' : '#10b981',
+                            }}
+                          />
+                          {vehicle.status || 'Active'}
+                        </span>
                       </div>
 
                       {/* Middle: Vehicle Metadata */}
@@ -270,7 +261,7 @@ export const MyVehiclesPage: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Bottom: Blue Full-Width Edit Action Bar navigating to /vehicles/:id */}
+                      {/* Bottom: Blue Full-Width View Passport Action Bar */}
                       <button
                         type="button"
                         className="autocare-card-edit-btn"
@@ -278,10 +269,10 @@ export const MyVehiclesPage: React.FC = () => {
                           e.stopPropagation();
                           navigate(`/vehicles/${vehicle._id}`);
                         }}
-                        aria-label={`Edit ${vehicle.manufacturer} ${vehicle.model}`}
+                        aria-label={`View passport for ${vehicle.manufacturer} ${vehicle.model}`}
                       >
-                        <Edit3 size={16} />
-                        <span>Edit</span>
+                        <FileText size={16} />
+                        <span>View Passport</span>
                       </button>
                     </div>
                   );
