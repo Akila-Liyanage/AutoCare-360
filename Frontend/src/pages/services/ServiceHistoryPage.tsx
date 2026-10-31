@@ -283,16 +283,16 @@ export const ServiceHistoryPage: React.FC = () => {
       errors.serviceType = 'Service type / category is required.';
     }
 
-    if (formMileage === '' || isNaN(Number(formMileage)) || Number(formMileage) < 0) {
-      errors.mileage = 'Please enter a valid non-negative mileage.';
+    if (formMileage === '' || isNaN(Number(formMileage)) || Number(formMileage) < 0 || !Number.isInteger(Number(formMileage))) {
+      errors.mileage = 'Please enter a valid whole non-negative mileage.';
     }
 
     if (!formWorkPerformed.trim()) {
       errors.workPerformed = 'Description of work performed is required.';
     }
 
-    if (formTotalCost !== '' && (isNaN(Number(formTotalCost)) || Number(formTotalCost) < 0)) {
-      errors.totalCost = 'Total cost must be a non-negative number.';
+    if (formTotalCost !== '' && (isNaN(Number(formTotalCost)) || Number(formTotalCost) <= 0)) {
+      errors.totalCost = 'Total cost must be greater than 0.';
     }
 
     setFormErrors(errors);
@@ -669,7 +669,7 @@ export const ServiceHistoryPage: React.FC = () => {
               {/* Security / Status Badge */}
               <div className="autocare-services-security-badge" role="status">
                 <span className="autocare-services-security-dot" />
-                <span>AutoCare Blockchain Secured</span>
+                <span>AutoCare Verified Records</span>
               </div>
             </div>
           </div>

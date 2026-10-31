@@ -474,18 +474,47 @@
 }
 
 @media (max-width: 640px) {
+  .autocare-sharing-container {
+    padding: 0 16px;
+  }
+
   .autocare-sharing-header-row {
     flex-direction: column;
     align-items: flex-start;
+    gap: 16px;
   }
 
   .autocare-sharing-header-actions {
     width: 100%;
-    justify-content: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .autocare-sharing-btn-primary,
+  .autocare-sharing-btn-secondary {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
   }
 
   .autocare-sharing-field-row-2,
   .autocare-sharing-field-row-3 {
     grid-template-columns: 1fr;
   }
+
+  .autocare-sharing-link-box {
+    overflow-wrap: anywhere;
+    word-break: break-all;
+  }
 }
+
+@media (max-width: 360px) {
+  .autocare-sharing-container {
+    padding: 0 10px;
+  }
+
+  .autocare-sharing-title {
+    font-size: 22px;
+  }
+}
+

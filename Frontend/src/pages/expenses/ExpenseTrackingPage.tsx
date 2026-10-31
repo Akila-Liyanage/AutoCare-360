@@ -387,8 +387,8 @@ export const ExpenseTrackingPage: React.FC = () => {
     }
 
     const parsedAmt = Number(newAmount);
-    if (newAmount === '' || isNaN(parsedAmt) || parsedAmt < 0) {
-      errors.amount = 'Valid non-negative expense amount is required.';
+    if (newAmount === '' || isNaN(parsedAmt) || parsedAmt <= 0) {
+      errors.amount = 'Valid expense amount greater than 0 is required.';
     }
 
     if (!newExpenseDate) {
@@ -1028,7 +1028,7 @@ export const ExpenseTrackingPage: React.FC = () => {
                 )}
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div className="autocare-docs-grid-2col">
                 <div className="autocare-docs-form-group">
                   <label className="autocare-docs-form-label">Amount (LKR) *</label>
                   <input
@@ -1074,7 +1074,7 @@ export const ExpenseTrackingPage: React.FC = () => {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div className="autocare-docs-grid-2col">
                 <div className="autocare-docs-form-group">
                   <label className="autocare-docs-form-label">Vendor / Station</label>
                   <input

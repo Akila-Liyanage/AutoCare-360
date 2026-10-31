@@ -9,9 +9,90 @@
   box-sizing: border-box;
 }
 
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   font-family: system-ui, -apple-system, sans-serif;
   background-color: #f8fafc;
   color: #0f172a;
   min-height: 100vh;
 }
+
+/* Global Typography & Safe Wrap for Long Mono Strings (BR-01, BR-06) */
+code, pre, .mono-text, [data-mono],
+.autocare-vin-display, .autocare-hash, .autocare-mono,
+.autocare-vin-badge, .autocare-code-pill,
+.autocare-view-spec-value.is-mono,
+.autocare-shared-vin-code {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Global Media & Container Constraints */
+img, svg, video, canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Contained Horizontal Scroll for All Tables */
+.table-responsive,
+.autocare-table-wrapper,
+.autocare-table-container,
+.autocare-garage-table-container,
+.autocare-garage-records-table-wrap,
+.autocare-admin-table-container,
+[class*="table-wrap"],
+[class*="table-container"] {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Universal Mobile Modal Constraints */
+.autocare-modal-container,
+.autocare-garage-modal,
+.autocare-modal-card {
+  max-width: 92vw;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+@media (max-width: 430px) {
+  .autocare-modal-container,
+  .autocare-garage-modal,
+  .autocare-modal-card {
+    width: calc(100vw - 24px) !important;
+    max-width: none !important;
+    margin: 12px auto;
+  }
+
+  .autocare-modal-footer,
+  .autocare-garage-modal-footer {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+
+  .autocare-modal-footer button,
+  .autocare-garage-modal-footer button {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+}
+
+/* Mobile Touch Target Standards (min ~44px for primary controls) */
+@media (max-width: 768px) {
+  .autocare-nav-icon-btn,
+  .autocare-nav-mobile-toggle,
+  .autocare-garage-sidebar-toggle,
+  .autocare-modal-close-btn,
+  .autocare-garage-modal-close-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}

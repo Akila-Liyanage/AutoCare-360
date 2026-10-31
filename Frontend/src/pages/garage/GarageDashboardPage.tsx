@@ -27,6 +27,29 @@ interface ToastState {
   message: string;
 }
 
+interface ApiRecordPayload {
+  _id: string;
+  vehicleId?: {
+    _id?: string;
+    manufacturer?: string;
+    model?: string;
+    registrationNumber?: string;
+    ownerId?: {
+      fullName?: string;
+      displayName?: string;
+    };
+  };
+  serviceDate: string;
+  serviceType?: string;
+  notes?: string;
+  totalCost?: number;
+  partsCost?: number;
+  labourCost?: number;
+  mileage?: number;
+  status?: string;
+  verificationStatus?: string;
+}
+
 export const GarageDashboardPage: React.FC = () => {
   const navigate = useNavigate();
 
@@ -66,7 +89,7 @@ export const GarageDashboardPage: React.FC = () => {
           Array.isArray(recordsRes.data.data.records) &&
           recordsRes.data.data.records.length > 0
         ) {
-          const mapped: GarageRecordItem[] = recordsRes.data.data.records.map((r: any) => ({
+          const mapped: GarageRecordItem[] = recordsRes.data.data.records.map((r: ApiRecordPayload) => ({
             id: r._id,
             vehicleId: r.vehicleId?._id || '6ad8a02b9ba9651cdcf01886',
             vehicleRef: r.vehicleId
@@ -208,11 +231,11 @@ export const GarageDashboardPage: React.FC = () => {
           </div>
         </section>
 
-        {/* Right Column: Active AI OCR Queue */}
-        <section className="autocare-garage-panel" aria-label="Active AI OCR Queue">
+        {/* Right Column: Active OCR Queue (Demo / Sample Data) */}
+        <section className="autocare-garage-panel" aria-label="Sample OCR Queue">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
             <h2 className="autocare-garage-panel-title" style={{ margin: 0 }}>
-              Active AI OCR Queue
+              Sample OCR Queue (Demo)
             </h2>
             <span
               style={{
@@ -434,10 +457,10 @@ export const GarageDashboardPage: React.FC = () => {
                 className="autocare-garage-btn-primary"
                 onClick={() => {
                   setShowOcrModal(false);
-                  showToast('Invoice fields successfully converted to ledger draft.');
+                  showToast('Sample OCR data extracted for preview.');
                 }}
               >
-                Accept OCR Extracted Data
+                Accept Sample Extracted Data (Demo)
               </button>
             </div>
           </div>

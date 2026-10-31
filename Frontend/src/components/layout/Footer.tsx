@@ -38,7 +38,7 @@ export const Footer: React.FC = () => {
         <div className="autocare-footer-col">
           <h4 className="autocare-footer-heading">Resources</h4>
           <ul className="autocare-footer-links">
-            <li><span>Immutable Audit Ledger</span></li>
+            <li><span>Certified Audit History</span></li>
             <li><span>Smart Odometer Rollback Guard</span></li>
             <li><span>Dynamic QR Watermarking</span></li>
             <li><span>Owner Data Sovereignty</span></li>

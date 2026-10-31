@@ -982,6 +982,11 @@
 }
 
 @media (max-width: 640px) {
+  .autocare-profile-container,
+  .autocare-edit-container {
+    padding: 0 16px;
+  }
+
   .autocare-edit-form-grid {
     grid-template-columns: 1fr;
     gap: 16px;
@@ -990,12 +995,36 @@
   .autocare-edit-banner-actions {
     flex-direction: column;
     width: 100%;
+    gap: 8px;
   }
 
   .autocare-btn-cancel,
   .autocare-btn-save {
     width: 100%;
     justify-content: center;
+    min-height: 44px;
+  }
+
+  .autocare-profile-vehicle-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .autocare-profile-vehicle-thumb {
+    width: 100%;
+    height: 140px;
   }
 }
+
+@media (max-width: 360px) {
+  .autocare-profile-container,
+  .autocare-edit-container {
+    padding: 0 10px;
+  }
+
+  .autocare-profile-header-title {
+    font-size: 22px;
+  }
+}
+
 

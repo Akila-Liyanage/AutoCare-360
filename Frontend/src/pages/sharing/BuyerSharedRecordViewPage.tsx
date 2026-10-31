@@ -66,6 +66,16 @@ export const BuyerSharedRecordViewPage: React.FC = () => {
   const [myVehicles, setMyVehicles] = useState<Vehicle[]>([]);
   const [selectedDemoVehicle, setSelectedDemoVehicle] = useState<Vehicle | null>(null);
 
+  // Pure reactive timestamp for countdown calculations
+  const [nowTimestamp, setNowTimestamp] = useState<number>(() => Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNowTimestamp(Date.now());
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
+
   // Show BR-07 security notice toast
   const showSecurityNotice = (actionName: string) => {
     setToast({
@@ -103,7 +113,9 @@ export const BuyerSharedRecordViewPage: React.FC = () => {
   // Fetch real public shared record from Backend when token is available
   useEffect(() => {
     if (!activeToken) {
-      setLoading(false);
+      const timer = setTimeout(() => {
+        setLoading(false);
+      }, 0);
       // Fetch user's vehicles for demo selector if logged in
       getMyVehicles()
         .then((vehicles) => {
@@ -113,12 +125,14 @@ export const BuyerSharedRecordViewPage: React.FC = () => {
           }
         })
         .catch(() => {});
-      return;
+      return () => clearTimeout(timer);
     }
 
     let isMounted = true;
-    setLoading(true);
-    setApiError(null);
+    const initTimer = setTimeout(() => {
+      setLoading(true);
+      setApiError(null);
+    }, 0);
 
     getPublicSharedRecord(activeToken)
       .then((data) => {
@@ -156,6 +170,7 @@ export const BuyerSharedRecordViewPage: React.FC = () => {
 
     return () => {
       isMounted = false;
+      clearTimeout(initTimer);
     };
   }, [activeToken]);
 
@@ -164,8 +179,8 @@ export const BuyerSharedRecordViewPage: React.FC = () => {
   const watermark = publicData?.watermark || {
     recipientName: viewerName,
     accessId: `ACC-${(activeToken || '8F9E2B7C').slice(0, 8).toUpperCase()}`,
-    timestamp: new Date().toISOString(),
-    expiresAt: new Date(Date.now() + 48 * 3600 * 1000).toISOString(),
+    timestamp: new Date(nowTimestamp).toISOString(),
+    expiresAt: new Date(nowTimestamp + 48 * 3600 * 1000).toISOString(),
     purpose: 'Vehicle Sale / Buyer Verification',
   };
 
@@ -244,7 +259,7 @@ export const BuyerSharedRecordViewPage: React.FC = () => {
   // Calculated expiration countdown string (BRULE-03)
   const calculateTimeRemaining = (expiresAtStr: string): string => {
     try {
-      const diffMs = new Date(expiresAtStr).getTime() - Date.now();
+      const diffMs = new Date(expiresAtStr).getTime() - nowTimestamp;
       if (diffMs <= 0) return 'Expired';
       const hours = Math.floor(diffMs / (1000 * 60 * 60));
       const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
@@ -528,7 +543,7 @@ export const BuyerSharedRecordViewPage: React.FC = () => {
                   </div>
 
                   <p className="autocare-shared-hero-desc">
-                    Verified {vehicle?.vehicleType || 'Sedan'} with cryptographically certified maintenance history, immutable odometer increments, and tamper-proof ledger binding.
+                    Verified {vehicle?.vehicleType || 'Sedan'} with certified maintenance history, recorded odometer increments, and verified digital passport records.
                   </p>
 
                   <div className="autocare-shared-quick-specs">
@@ -542,14 +557,14 @@ export const BuyerSharedRecordViewPage: React.FC = () => {
                     <div className="autocare-shared-spec-item">
                       <span className="autocare-shared-spec-label">Verified Odometer</span>
                       <span className="autocare-shared-spec-val">
-                        {vehicle?.currentMileage ? `${vehicle.currentMileage.toLocaleString()} km` : '24,500 km'} [AUTHENTICATED]
+                        {vehicle?.currentMileage ? `${vehicle.currentMileage.toLocaleString()} km` : 'Recorded'} [AUTHENTICATED]
                       </span>
                     </div>
 
                     <div className="autocare-shared-spec-item">
-                      <span className="autocare-shared-spec-label">AI Trust Score</span>
+                      <span className="autocare-shared-spec-label">Passport Status</span>
                       <span className="autocare-shared-spec-val" style={{ color: '#15803d' }}>
-                        {healthAssessment.trustScore} / 100 ({healthAssessment.trustLevel})
+                        {vehicle?.status || 'Active'} ({healthAssessment.trustLevel})
                       </span>
                     </div>
                   </div>
@@ -571,7 +586,7 @@ export const BuyerSharedRecordViewPage: React.FC = () => {
                 </div>
 
                 <div className="autocare-shared-metric-card">
-                  <span className="autocare-shared-metric-label">Passport Trust Score</span>
+                  <span className="autocare-shared-metric-label">Passport Confidence</span>
                   <div className="autocare-shared-metric-val" style={{ color: '#15803d' }}>
                     {healthAssessment.trustScore} / 100
                   </div>
@@ -684,8 +699,8 @@ export const BuyerSharedRecordViewPage: React.FC = () => {
                         <span className="autocare-shared-spec-row-label">Registered Owner (BR-06)</span>
                         <span className="autocare-shared-spec-row-val">
                           {scopeMode === 'Full Records' ? (
-                            (vehicle && 'ownerName' in vehicle && (vehicle as Record<string, any>).ownerName) ||
-                            (vehicle && 'owner' in vehicle && typeof (vehicle as Record<string, any>).owner === 'object' && (vehicle as Record<string, any>).owner?.fullName) ||
+                            (vehicle && 'ownerName' in vehicle && typeof (vehicle as Record<string, unknown>).ownerName === 'string' && (vehicle as Record<string, unknown>).ownerName as string) ||
+                            (vehicle && 'owner' in vehicle && typeof (vehicle as Record<string, unknown>).owner === 'object' && (vehicle as Record<string, unknown>).owner !== null && ((vehicle as Record<string, unknown>).owner as { fullName?: string }).fullName) ||
                             'K. A. Perera (Verified Owner)'
                           ) : (
                             <span className="autocare-shared-masked">
@@ -983,7 +998,7 @@ export const BuyerSharedRecordViewPage: React.FC = () => {
                   <strong>Session Expiry:</strong> {new Date(watermark.expiresAt).toLocaleDateString()}
                 </div>
                 <div>
-                  <strong>Ledger Authenticity:</strong> Certified Immutable Hash
+                  <strong>Record Authenticity:</strong> Digital Passport Reference
                 </div>
               </div>
 

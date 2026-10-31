@@ -25,6 +25,29 @@ interface ToastState {
   message: string;
 }
 
+interface ApiGarageVehiclePayload {
+  _id: string;
+  registrationNumber: string;
+  vin: string;
+  manufacturer: string;
+  model: string;
+  manufacturingYear: number;
+  color?: string;
+  fuelType?: string;
+  transmission?: string;
+  engineNumber?: string;
+  currentMileage?: number;
+  lastServiceDate?: string;
+  status?: string;
+  ownerId?: {
+    _id?: string;
+    fullName?: string;
+    displayName?: string;
+    email?: string;
+    phone?: string;
+  };
+}
+
 export const GarageVehiclesPage: React.FC = () => {
   const navigate = useNavigate();
 
@@ -49,7 +72,7 @@ export const GarageVehiclesPage: React.FC = () => {
           Array.isArray(res.data.data.vehicles) &&
           res.data.data.vehicles.length > 0
         ) {
-          const apiVehicles: GarageVehicle[] = res.data.data.vehicles.map((v: any) => ({
+          const apiVehicles: GarageVehicle[] = res.data.data.vehicles.map((v: ApiGarageVehiclePayload) => ({
             id: v._id,
             registration: v.registrationNumber,
             vin: v.vin,

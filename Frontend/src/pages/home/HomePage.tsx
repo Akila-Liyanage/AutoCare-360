@@ -159,14 +159,14 @@ export const HomePage: React.FC = () => {
             </div>
 
             <div className="autocare-capabilities-grid">
-              {/* Card 1: Immutable Audit Ledger */}
+              {/* Card 1: Certified Audit History */}
               <div className="autocare-cap-card">
                 <div className="autocare-cap-icon-box is-blue">
                   <Lock size={22} />
                 </div>
-                <h3 className="autocare-cap-title">Immutable Audit Ledger</h3>
+                <h3 className="autocare-cap-title">Certified Audit History</h3>
                 <p className="autocare-cap-desc">
-                  Every maintenance entry, inspection timestamp, and part replacement is permanently anchored. Zero retroactive manipulation or undocumented gaps.
+                  Every maintenance entry, inspection timestamp, and part replacement is securely recorded. Zero retroactive manipulation or undocumented gaps.
                 </p>
               </div>
 
@@ -347,7 +347,7 @@ export const HomePage: React.FC = () => {
                   </li>
                   <li>
                     <CheckCircle2 size={18} className="autocare-comp-icon is-green" />
-                    <span>Automated predictive maintenance alerts & algorithmic Trust Score (0–100)</span>
+                    <span>Automated predictive maintenance alerts &amp; digital passport confidence tracking</span>
                   </li>
                 </ul>
               </div>

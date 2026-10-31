@@ -445,3 +445,44 @@
     padding: 20px 18px;
   }
 }
+
+@media (max-width: 640px) {
+  .autocare-create-notif-container {
+    padding: 0 16px;
+  }
+
+  .autocare-create-notif-title {
+    font-size: 24px;
+  }
+
+  .autocare-schedule-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .autocare-create-notif-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .autocare-btn-schedule-notif,
+  .autocare-btn-cancel-notif {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 360px) {
+  .autocare-create-notif-container {
+    padding: 0 10px;
+  }
+
+  .autocare-create-notif-title {
+    font-size: 20px;
+  }
+
+  .autocare-form-card {
+    padding: 16px 12px;
+  }
+}
+

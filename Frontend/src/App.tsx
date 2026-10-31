@@ -1,6 +1,8 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AuthProvider from './context/AuthContext';
+import OwnerProtectedRoute from './components/auth/OwnerProtectedRoute';
+import GarageProtectedRoute from './components/auth/GarageProtectedRoute';
 import HomePage from './pages/home/HomePage';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
@@ -31,6 +33,10 @@ import GarageDocumentsPage from './pages/garage/GarageDocumentsPage';
 import GarageSharingPage from './pages/garage/GarageSharingPage';
 import GarageAuditTrailPage from './pages/garage/GarageAuditTrailPage';
 import AddMaintenanceRecordPage from './pages/garage/AddMaintenanceRecordPage';
+import GarageVerificationPendingPage from './pages/garage/GarageVerificationPendingPage';
+import AdminProtectedRoute from './components/auth/AdminProtectedRoute';
+import AdminGarageVerificationPage from './pages/admin/AdminGarageVerificationPage';
+import AdminGarageDetailsPage from './pages/admin/AdminGarageDetailsPage';
 import './App.css';
 
 export const App: React.FC = () => {
@@ -38,67 +44,84 @@ export const App: React.FC = () => {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Core Landing & Overview */}
+          {/* Core Landing & Overview (Public) */}
           <Route path="/" element={<HomePage />} />
           <Route path="/dashboard" element={<Navigate to="/" replace />} />
 
-          {/* Authentication & Password Recovery Flow */}
+          {/* Authentication & Password Recovery Flow (Public) */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/verify-code" element={<VerifyCodePage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-          {/* Vehicle Digital Passport — Phase 2E View Flow */}
-          <Route path="/vehicles" element={<MyVehiclesPage />} />
-          <Route path="/vehicles/:id" element={<ViewVehiclePage />} />
-          <Route path="/vehicles/:id/transfer" element={<TransferVehiclePage />} />
-          <Route path="/vehicles/:id/documents" element={<VehicleDocumentsPage />} />
-          <Route path="/vehicles/add" element={<AddVehiclePage />} />
-
-          {/* Maintenance & Service Records History */}
-          <Route path="/service-history" element={<ServiceHistoryPage />} />
-          <Route path="/services" element={<ServiceHistoryPage />} />
-
-          {/* Notifications */}
-          <Route path="/notifications" element={<NotificationsPage />} />
-          <Route path="/notifications/create" element={<CreateNotificationPage />} />
-
-          {/* Expense Tracking */}
-          <Route path="/expenses" element={<ExpenseTrackingPage />} />
-
-          {/* Secure Link Sharing — BR-05 */}
-          <Route path="/sharing/secure-link" element={<SecureLinkSharingPage />} />
-
-          {/* QR Code Sharing — BR-06 */}
-          <Route path="/sharing/qr" element={<QRCodeSharingPage />} />
-
-          {/* Access Permission Management — BR-06 */}
-          <Route path="/sharing/permissions" element={<AccessPermissionManagementPage />} />
-
-          {/* Data Protection / Configure Access Permissions */}
-          <Route path="/sharing/protection" element={<ConfigureAccessPermissionsPage />} />
-
-          {/* Buyer / Public Shared Record View — Protected Passports & Verification (BR-05, BR-06, BR-07) */}
+          {/* Buyer / Public Shared Record View — Protected Passports & Verification (BR-05, BR-06, BR-07 Public) */}
           <Route path="/buyer-qr" element={<BuyerSharedRecordViewPage />} />
           <Route path="/shared/vehicle/:token" element={<BuyerSharedRecordViewPage />} />
           <Route path="/shared/:token" element={<BuyerSharedRecordViewPage />} />
           <Route path="/verify/qr" element={<BuyerSharedRecordViewPage />} />
 
-          {/* Verified Garage Service Management — BR-03 */}
-          <Route path="/garage/dashboard" element={<GarageDashboardPage />} />
-          <Route path="/garage/vehicles" element={<GarageVehiclesPage />} />
-          <Route path="/garage/vehicles/:id" element={<GarageVehicleDetailsPage />} />
-          <Route path="/garage/service-records" element={<GarageServiceRecordsPage />} />
-          <Route path="/garage/maintenance/new" element={<AddMaintenanceRecordPage />} />
-          <Route path="/garage/services/new" element={<Navigate to="/garage/maintenance/new" replace />} />
-          <Route path="/garage/documents" element={<GarageDocumentsPage />} />
-          <Route path="/garage/sharing" element={<GarageSharingPage />} />
-          <Route path="/garage/audit" element={<GarageAuditTrailPage />} />
-          <Route path="/garage" element={<Navigate to="/garage/dashboard" replace />} />
+          {/* Garage Accreditation Review Screen */}
+          <Route path="/garage/verification-pending" element={<GarageVerificationPendingPage />} />
 
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/profile/edit" element={<EditProfilePage />} />
+          {/* Vehicle Owner Workspace (OwnerProtectedRoute Guarded) */}
+          <Route element={<OwnerProtectedRoute />}>
+            {/* Vehicle Digital Passport — Phase 2E View Flow */}
+            <Route path="/vehicles" element={<MyVehiclesPage />} />
+            <Route path="/vehicles/:id" element={<ViewVehiclePage />} />
+            <Route path="/vehicles/:id/transfer" element={<TransferVehiclePage />} />
+            <Route path="/vehicles/transfer" element={<TransferVehiclePage />} />
+            <Route path="/vehicles/:id/documents" element={<VehicleDocumentsPage />} />
+            <Route path="/vehicles/add" element={<AddVehiclePage />} />
+
+            {/* Maintenance & Service Records History */}
+            <Route path="/service-history" element={<ServiceHistoryPage />} />
+            <Route path="/services" element={<ServiceHistoryPage />} />
+
+            {/* Notifications */}
+            <Route path="/notifications" element={<NotificationsPage />} />
+            <Route path="/notifications/create" element={<CreateNotificationPage />} />
+
+            {/* Expense Tracking */}
+            <Route path="/expenses" element={<ExpenseTrackingPage />} />
+
+            {/* Secure Link Sharing — BR-05 */}
+            <Route path="/sharing/secure-link" element={<SecureLinkSharingPage />} />
+
+            {/* QR Code Sharing — BR-06 */}
+            <Route path="/sharing/qr" element={<QRCodeSharingPage />} />
+
+            {/* Access Permission Management — BR-06 */}
+            <Route path="/sharing/permissions" element={<AccessPermissionManagementPage />} />
+
+            {/* Data Protection / Configure Access Permissions */}
+            <Route path="/sharing/protection" element={<ConfigureAccessPermissionsPage />} />
+
+            {/* Profile Management */}
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/profile/edit" element={<EditProfilePage />} />
+          </Route>
+
+          {/* Verified Garage Service Management Workspace (GarageProtectedRoute Guarded) */}
+          <Route element={<GarageProtectedRoute />}>
+            <Route path="/garage/dashboard" element={<GarageDashboardPage />} />
+            <Route path="/garage/vehicles" element={<GarageVehiclesPage />} />
+            <Route path="/garage/vehicles/:id" element={<GarageVehicleDetailsPage />} />
+            <Route path="/garage/service-records" element={<GarageServiceRecordsPage />} />
+            <Route path="/garage/maintenance/new" element={<AddMaintenanceRecordPage />} />
+            <Route path="/garage/services/new" element={<Navigate to="/garage/maintenance/new" replace />} />
+            <Route path="/garage/documents" element={<GarageDocumentsPage />} />
+            <Route path="/garage/sharing" element={<GarageSharingPage />} />
+            <Route path="/garage/audit" element={<GarageAuditTrailPage />} />
+            <Route path="/garage" element={<Navigate to="/garage/dashboard" replace />} />
+          </Route>
+
+          {/* System Administrator Console (AdminProtectedRoute Guarded) */}
+          <Route element={<AdminProtectedRoute />}>
+            <Route path="/admin/garages" element={<AdminGarageVerificationPage />} />
+            <Route path="/admin/garages/:id" element={<AdminGarageDetailsPage />} />
+            <Route path="/admin" element={<Navigate to="/admin/garages" replace />} />
+          </Route>
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />

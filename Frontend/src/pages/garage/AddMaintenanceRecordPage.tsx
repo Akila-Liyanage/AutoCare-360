@@ -40,6 +40,29 @@ interface ToastState {
   message: string;
 }
 
+interface ApiVehiclePayload {
+  _id: string;
+  registrationNumber: string;
+  vin: string;
+  manufacturer: string;
+  model: string;
+  manufacturingYear: number;
+  color?: string;
+  fuelType?: string;
+  transmission?: string;
+  engineNumber?: string;
+  currentMileage?: number;
+  lastServiceDate?: string;
+  status?: string;
+  ownerId?: {
+    _id?: string;
+    fullName?: string;
+    displayName?: string;
+    email?: string;
+    phone?: string;
+  };
+}
+
 export const AddMaintenanceRecordPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -62,7 +85,7 @@ export const AddMaintenanceRecordPage: React.FC = () => {
           Array.isArray(res.data.data.vehicles) &&
           res.data.data.vehicles.length > 0
         ) {
-          const apiVehicles: GarageVehicle[] = res.data.data.vehicles.map((v: any) => ({
+          const apiVehicles: GarageVehicle[] = res.data.data.vehicles.map((v: ApiVehiclePayload) => ({
             id: v._id,
             registration: v.registrationNumber,
             vin: v.vin,
@@ -393,7 +416,7 @@ export const AddMaintenanceRecordPage: React.FC = () => {
 
       setPublishedTxHash(txHash);
       setShowSuccessModal(true);
-      showToast(`Certified record committed! Owner's passport, expense ledger & AI trust score updated.`);
+      showToast(`Service record submitted successfully! Vehicle history and expenses updated.`);
     } catch (err: unknown) {
       const msg =
         err &&
@@ -446,7 +469,7 @@ export const AddMaintenanceRecordPage: React.FC = () => {
             Add Verified Maintenance Record
           </h1>
           <p className="autocare-garage-main-subtitle">
-            Commit immutable maintenance entries to the client's Digital Passport on the SLT Mobitel Trust Network.
+            Log certified maintenance entries to the client's Digital Passport on AutoCare 360.
           </p>
         </div>
 
@@ -1382,10 +1405,10 @@ export const AddMaintenanceRecordPage: React.FC = () => {
               </div>
 
               <h2 style={{ fontSize: '22px', fontWeight: 800, color: '#0f172a', margin: '0 0 6px 0' }}>
-                Maintenance Record Published!
+                Maintenance Record Submitted!
               </h2>
               <p style={{ fontSize: '13.5px', color: '#64748b', margin: '0 0 20px 0' }}>
-                Tamper-proof entry committed to <strong>{selectedVehicle.registration}</strong> digital passport ledger.
+                Service entry recorded for <strong>{selectedVehicle.registration}</strong> digital passport.
               </p>
 
               <div
@@ -1411,7 +1434,7 @@ export const AddMaintenanceRecordPage: React.FC = () => {
                   <strong>LKR {computedTotal.toLocaleString()}</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#64748b' }}>Ledger Transaction</span>
+                  <span style={{ color: '#64748b' }}>Record Reference</span>
                   <code style={{ fontSize: '11px', color: '#0056a2' }}>{publishedTxHash.slice(0, 16)}...</code>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>

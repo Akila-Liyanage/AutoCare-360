@@ -514,14 +514,27 @@
 }
 
 @media (max-width: 640px) {
+  .autocare-perm-container {
+    padding: 0 16px;
+  }
+
   .autocare-perm-header-row {
     flex-direction: column;
     align-items: flex-start;
+    gap: 16px;
   }
 
   .autocare-perm-header-actions {
     width: 100%;
-    justify-content: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .autocare-perm-btn-primary,
+  .autocare-perm-btn-secondary {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
   }
 
   .autocare-perm-summary-row {
@@ -529,3 +542,14 @@
     gap: 4px;
   }
 }
+
+@media (max-width: 360px) {
+  .autocare-perm-container {
+    padding: 0 10px;
+  }
+
+  .autocare-perm-title {
+    font-size: 22px;
+  }
+}
+

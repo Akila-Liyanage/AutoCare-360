@@ -713,6 +713,13 @@
   }
 }
 
+/* Form 2-Column Grid */
+.autocare-docs-grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
 /* --------------------------------------------------------------------------
    Responsive Breakpoints
    -------------------------------------------------------------------------- */
@@ -727,6 +734,10 @@
 }
 
 @media (max-width: 640px) {
+  .autocare-expenses-container {
+    padding: 0 16px;
+  }
+
   .autocare-expenses-metrics-grid {
     grid-template-columns: 1fr;
   }
@@ -734,24 +745,61 @@
   .autocare-expenses-header-row {
     flex-direction: column;
     align-items: stretch;
+    gap: 16px;
   }
 
   .autocare-expenses-actions {
-    justify-content: flex-start;
+    flex-direction: column;
+    width: 100%;
+    gap: 10px;
   }
 
   .autocare-btn-export-csv,
   .autocare-btn-add-expense {
-    flex: 1;
+    width: 100%;
     justify-content: center;
+    min-height: 44px;
+  }
+
+  .autocare-ledger-title-group {
+    min-width: 0;
   }
 
   .autocare-ledger-filters-bar {
     flex-direction: column;
     align-items: stretch;
+    gap: 10px;
+  }
+
+  .autocare-ledger-search-box {
+    min-width: 0;
+    width: 100%;
   }
 
   .autocare-ledger-select {
     width: 100%;
   }
+
+  .autocare-docs-grid-2col {
+    grid-template-columns: 1fr;
+  }
+
+  .autocare-ledger-table {
+    min-width: 600px;
+  }
 }
+
+@media (max-width: 360px) {
+  .autocare-expenses-container {
+    padding: 0 10px;
+  }
+
+  .autocare-expenses-title {
+    font-size: 24px;
+  }
+
+  .autocare-expense-metric-value {
+    font-size: 22px;
+  }
+}
+

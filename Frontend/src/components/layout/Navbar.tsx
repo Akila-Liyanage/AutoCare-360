@@ -8,7 +8,9 @@ import {
   Menu,
   X,
   ShieldCheck,
-  FileText
+  FileText,
+  Clock,
+  AlertCircle
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import logoImg from '../../assets/auth/download (27) (1) 2.png';
@@ -44,6 +46,39 @@ export const Navbar: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Close menus on Escape key
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setDropdownOpen(false);
+        setMobileMenuOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Close menus on route change
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDropdownOpen(false);
+      setMobileMenuOpen(false);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [location.pathname]);
+
+  // Prevent background scroll when mobile drawer is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileMenuOpen]);
+
   const handleLogout = () => {
     setDropdownOpen(false);
     setMobileMenuOpen(false);
@@ -61,12 +96,34 @@ export const Navbar: React.FC = () => {
     return name.slice(0, 2).toUpperCase();
   };
 
-  const navLinks = [
-    { label: 'Home', path: '/' },
-    { label: 'Vehicle Passport', path: '/vehicles' },
-    { label: 'Buyer QR View', path: '/buyer-qr' },
-    { label: 'Add Vehicle', path: '/vehicles/add' },
-  ];
+  const navLinks =
+    user?.role === 'admin'
+      ? [
+          { label: 'Home', path: '/' },
+          { label: 'Garage Verification', path: '/admin/garages' },
+        ]
+      : user?.role === 'garage'
+        ? user.status === 'pending'
+          ? [
+              { label: 'Home', path: '/' },
+              { label: 'Verification Status', path: '/garage/verification-pending' },
+            ]
+          : user.status === 'suspended'
+            ? [
+                { label: 'Home', path: '/' },
+              ]
+            : [
+                { label: 'Home', path: '/' },
+                { label: 'Dashboard', path: '/garage/dashboard' },
+                { label: 'Customer Vehicles', path: '/garage/vehicles' },
+                { label: 'Service Records', path: '/garage/service-records' },
+              ]
+        : [
+            { label: 'Home', path: '/' },
+            { label: 'Vehicle Passport', path: '/vehicles' },
+            { label: 'Buyer QR View', path: '/buyer-qr' },
+            { label: 'Add Vehicle', path: '/vehicles/add' },
+          ];
 
   const isActive = (path: string) => {
     if (path === '/') {
@@ -151,7 +208,11 @@ export const Navbar: React.FC = () => {
                     </span>
                     <span className="autocare-nav-user-role">
                       {user.role === 'garage'
-                        ? 'Verified Garage'
+                        ? user.status === 'pending'
+                          ? 'Verification Pending'
+                          : user.status === 'suspended'
+                            ? 'Garage Suspended'
+                            : 'Verified Garage'
                         : user.role === 'admin'
                           ? 'System Admin'
                           : 'Vehicle Owner'}
@@ -187,8 +248,22 @@ export const Navbar: React.FC = () => {
                         </div>
                       </div>
                       <span className="autocare-profile-role-tag">
-                        <ShieldCheck size={12} />
-                        {user.role.toUpperCase()}
+                        {user.role === 'garage' && user.status === 'pending' ? (
+                          <>
+                            <Clock size={12} />
+                            PENDING REVIEW
+                          </>
+                        ) : user.role === 'garage' && user.status === 'suspended' ? (
+                          <>
+                            <AlertCircle size={12} />
+                            SUSPENDED
+                          </>
+                        ) : (
+                          <>
+                            <ShieldCheck size={12} />
+                            {user.role.toUpperCase()}
+                          </>
+                        )}
                       </span>
                     </div>
 
@@ -201,20 +276,40 @@ export const Navbar: React.FC = () => {
                     >
                       <User size={16} /> My Profile
                     </Link>
-                    <Link
-                      to="/vehicles"
-                      className="autocare-profile-menu-item"
-                      onClick={() => setDropdownOpen(false)}
-                    >
-                      <FileText size={16} /> My Vehicles
-                    </Link>
-                    {user?.role === 'garage' && (
+                    {user?.role === 'owner' && (
+                      <Link
+                        to="/vehicles"
+                        className="autocare-profile-menu-item"
+                        onClick={() => setDropdownOpen(false)}
+                      >
+                        <FileText size={16} /> My Vehicles
+                      </Link>
+                    )}
+                    {user?.role === 'garage' && user.status === 'active' && (
                       <Link
                         to="/garage/dashboard"
                         className="autocare-profile-menu-item"
                         onClick={() => setDropdownOpen(false)}
                       >
                         <ShieldCheck size={16} /> Garage Dashboard
+                      </Link>
+                    )}
+                    {user?.role === 'garage' && user.status === 'pending' && (
+                      <Link
+                        to="/garage/verification-pending"
+                        className="autocare-profile-menu-item"
+                        onClick={() => setDropdownOpen(false)}
+                      >
+                        <Clock size={16} /> Verification Status
+                      </Link>
+                    )}
+                    {user?.role === 'admin' && (
+                      <Link
+                        to="/admin/garages"
+                        className="autocare-profile-menu-item"
+                        onClick={() => setDropdownOpen(false)}
+                      >
+                        <ShieldCheck size={16} /> Admin Console
                       </Link>
                     )}
 
@@ -247,16 +342,33 @@ export const Navbar: React.FC = () => {
             type="button"
             className="autocare-nav-mobile-toggle"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Toggle navigation menu"
+            aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            aria-expanded={mobileMenuOpen}
+            aria-controls="autocare-mobile-drawer"
           >
             {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
       </div>
 
+      {/* Backdrop overlay for mobile drawer */}
+      {mobileMenuOpen && (
+        <div
+          className="autocare-mobile-backdrop"
+          onClick={() => setMobileMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="autocare-mobile-drawer">
+        <div
+          id="autocare-mobile-drawer"
+          className="autocare-mobile-drawer"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Mobile Navigation"
+        >
           <nav className="autocare-mobile-nav">
             {navLinks.map((link) => (
               <Link
@@ -295,13 +407,31 @@ export const Navbar: React.FC = () => {
                 >
                   My Profile
                 </Link>
-                {user?.role === 'garage' && (
+                {user?.role === 'garage' && user.status === 'active' && (
                   <Link
                     to="/garage/dashboard"
                     className="autocare-mobile-link"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Garage Dashboard
+                  </Link>
+                )}
+                {user?.role === 'garage' && user.status === 'pending' && (
+                  <Link
+                    to="/garage/verification-pending"
+                    className="autocare-mobile-link"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Verification Status
+                  </Link>
+                )}
+                {user?.role === 'admin' && (
+                  <Link
+                    to="/admin/garages"
+                    className="autocare-mobile-link"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Admin Console
                   </Link>
                 )}
                 <button

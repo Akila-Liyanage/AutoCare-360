@@ -79,19 +79,24 @@ export const GarageAuditTrailPage: React.FC = () => {
     <GarageLayout activeItem="Audit trail" breadcrumbCurrent="Audit Trail">
       <div className="autocare-garage-title-row">
         <div>
-          <h1 className="autocare-garage-main-title">Cryptographic Audit Trail</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+            <h1 className="autocare-garage-main-title" style={{ margin: 0 }}>Garage Activity &amp; Audit Trail</h1>
+            <span className="autocare-badge-verified" style={{ background: '#f1f5f9', color: '#475569', fontSize: '11px' }}>
+              Preview / Sample
+            </span>
+          </div>
           <p className="autocare-garage-main-subtitle">
-            Blockchain-anchored ledger proof verifying every garage entry, signature, and scan.
+            Activity and record log tracking garage service entries, verifications, and scans.
           </p>
         </div>
 
         <button
           type="button"
           className="autocare-garage-btn-primary"
-          onClick={() => showToast('Audit trail ledger integrity verified: 0 disparities across 8,420 entries.')}
+          onClick={() => showToast('Audit trail verified: 0 disparities across logged entries.')}
         >
           <ShieldCheck size={16} />
-          <span>Verify Station Proofs</span>
+          <span>Verify Activity Logs</span>
         </button>
       </div>
 

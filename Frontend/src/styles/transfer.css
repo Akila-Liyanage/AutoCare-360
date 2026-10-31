@@ -958,17 +958,25 @@
 }
 
 @media (max-width: 640px) {
+  .autocare-transfer-container {
+    padding: 0 16px;
+  }
+
   .autocare-transfer-header-row {
     flex-direction: column;
     align-items: flex-start;
+    gap: 16px;
   }
 
   .autocare-transfer-toolbar {
     width: 100%;
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .autocare-transfer-search-box {
     width: 100%;
+    min-width: 0;
   }
 
   .autocare-transfer-hero-card {
@@ -978,7 +986,14 @@
 
   .autocare-transfer-hero-actions {
     width: 100%;
-    justify-content: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .autocare-btn-initiate-transfer {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
   }
 
   .autocare-transfer-form-row-2 {
@@ -990,4 +1005,60 @@
     align-items: flex-start;
     gap: 10px;
   }
+
+  .autocare-transfer-incoming-card,
+  .autocare-transfer-sent-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    padding: 18px 16px;
+  }
+
+  .autocare-transfer-incoming-actions {
+    flex-direction: column;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .autocare-transfer-btn-accept,
+  .autocare-transfer-btn-reject {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  .autocare-transfer-email-text,
+  .autocare-transfer-reg-text {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
 }
+
+@media (max-width: 430px) {
+  .autocare-transfer-modal {
+    width: calc(100vw - 24px) !important;
+    max-width: none !important;
+  }
+
+  .autocare-transfer-modal-footer {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+
+  .autocare-transfer-modal-footer button {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 360px) {
+  .autocare-transfer-container {
+    padding: 0 10px;
+  }
+
+  .autocare-transfer-title {
+    font-size: 22px;
+  }
+}
+

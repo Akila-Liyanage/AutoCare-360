@@ -47,8 +47,8 @@ const AccessPermissionManagementPage: React.FC = () => {
 
   const handleGrantAccess = () => {
     showToast(
-      `Access granted under "${selectedMode}" to N. Fernando (Ceylinco Insurance) until ${expiration}. Event logged in BR-08 Audit Trail.`,
-      'success'
+      `Access configuration preview updated for "${selectedMode}". Live token sharing is enabled via Secure Link Sharing.`,
+      'info'
     );
   };
 
@@ -96,6 +96,54 @@ const AccessPermissionManagementPage: React.FC = () => {
               <ArrowLeft size={16} />
               <span>Back to sharing options</span>
             </button>
+          </div>
+
+          {/* Demo / Preview Mode Banner */}
+          <div
+            className="autocare-demo-banner"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              backgroundColor: '#fffbeb',
+              border: '1px solid #fde68a',
+              borderRadius: '12px',
+              padding: '14px 18px',
+              marginBottom: '20px',
+              flexWrap: 'wrap',
+              gap: '12px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <AlertCircle size={20} style={{ color: '#d97706', flexShrink: 0 }} />
+              <div>
+                <strong style={{ fontSize: '14px', color: '#92400e', display: 'block' }}>
+                  Demo / Preview Mode
+                </strong>
+                <span style={{ fontSize: '13px', color: '#b45309' }}>
+                  Granular field-level permissions are a preview UI. Active token-secured sharing is available through Secure Link Sharing.
+                </span>
+              </div>
+            </div>
+            <Link
+              to="/sharing/secure-link"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 16px',
+                backgroundColor: '#0056a2',
+                color: '#ffffff',
+                fontSize: '13px',
+                fontWeight: 600,
+                borderRadius: '8px',
+                textDecoration: 'none',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <span>Go to Secure Link Sharing</span>
+              <ArrowLeft size={14} style={{ transform: 'rotate(180deg)' }} />
+            </Link>
           </div>
 
           {/* Top Header Row matching Figma target */}

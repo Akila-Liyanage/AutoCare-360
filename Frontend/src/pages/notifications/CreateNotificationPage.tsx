@@ -125,6 +125,12 @@ export const CreateNotificationPage: React.FC = () => {
     if (formData.date) {
       try {
         const parsed = new Date(formData.date);
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+        if (parsed < startOfToday) {
+          showToast('Reminder date cannot be in the past.');
+          return;
+        }
         if (!isNaN(parsed.getTime())) {
           reminderDateVal = parsed.toISOString();
         }
