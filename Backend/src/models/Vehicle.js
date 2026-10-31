@@ -101,6 +101,28 @@ const vehicleSchema = new mongoose.Schema(
       trim: true,
       default: 'Western Province, Sri Lanka',
     },
+    insuranceExpiryDate: {
+      type: Date,
+      default: null,
+    },
+    insuranceCompany: {
+      type: String,
+      trim: true,
+      default: 'Ceylinco General Insurance',
+    },
+    revenueLicenseExpiryDate: {
+      type: Date,
+      default: null,
+    },
+    emissionTestExpiryDate: {
+      type: Date,
+      default: null,
+    },
+    emissionTestCompany: {
+      type: String,
+      trim: true,
+      default: 'DriveGreen (CleanCo)',
+    },
     lastServiceDate: {
       type: Date,
       default: null,

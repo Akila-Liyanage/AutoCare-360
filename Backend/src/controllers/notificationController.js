@@ -116,11 +116,151 @@ const createNotification = async (req, res, next) => {
   }
 };
 
+// Helper to automatically check and generate regulatory expiry notifications (Insurance, Revenue License, Emission Test)
+const checkAndGenerateExpiryNotifications = async (userId) => {
+  try {
+    const vehicles = await Vehicle.find({ ownerId: userId, status: { $ne: 'Archived' } });
+    const now = new Date();
+
+    for (const vehicle of vehicles) {
+      // 1. Insurance Expiry Check
+      if (vehicle.insuranceExpiryDate) {
+        const expiry = new Date(vehicle.insuranceExpiryDate);
+        const diffMs = expiry - now;
+        const daysLeft = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+        if (daysLeft <= 30) {
+          const priority = daysLeft <= 7 ? 'high' : 'medium';
+          const urgency =
+            daysLeft < 0
+              ? 'has expired'
+              : daysLeft === 0
+              ? 'expires today'
+              : `expires in ${daysLeft} day${daysLeft === 1 ? '' : 's'}`;
+          const formattedDate = expiry.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+          const title = `Insurance Renewal: ${vehicle.registrationNumber} ${urgency}`;
+          const message = `Comprehensive policy (${vehicle.insuranceCompany || 'Ceylinco General Insurance'}) for ${vehicle.manufacturer} ${vehicle.model} (${vehicle.registrationNumber}) ${urgency} on ${formattedDate}. Renew with your insurer to ensure continuous road coverage.`;
+
+          const existing = await Notification.findOne({
+            userId,
+            vehicleId: vehicle._id,
+            type: 'insurance_expiry',
+            createdAt: { $gte: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) },
+          });
+
+          if (!existing) {
+            await Notification.create({
+              userId,
+              vehicleId: vehicle._id,
+              title,
+              message,
+              type: 'insurance_expiry',
+              priority,
+              status: 'unread',
+              source: 'system',
+              dueDate: expiry,
+            });
+          }
+        }
+      }
+
+      // 2. Revenue License Expiry Check
+      if (vehicle.revenueLicenseExpiryDate) {
+        const expiry = new Date(vehicle.revenueLicenseExpiryDate);
+        const diffMs = expiry - now;
+        const daysLeft = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+        if (daysLeft <= 30) {
+          const priority = daysLeft <= 7 ? 'high' : 'medium';
+          const urgency =
+            daysLeft < 0
+              ? 'has expired'
+              : daysLeft === 0
+              ? 'expires today'
+              : `expires in ${daysLeft} day${daysLeft === 1 ? '' : 's'}`;
+          const formattedDate = expiry.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+          const title = `Revenue License: ${vehicle.registrationNumber} ${urgency}`;
+          const message = `Annual Motor Revenue License for ${vehicle.manufacturer} ${vehicle.model} (${vehicle.registrationNumber}) ${urgency} on ${formattedDate}. Please verify valid emission test and insurance certificates are ready for Divisional Secretariat or e-Revenue renewal.`;
+
+          const existing = await Notification.findOne({
+            userId,
+            vehicleId: vehicle._id,
+            type: 'revenue_license_expiry',
+            createdAt: { $gte: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) },
+          });
+
+          if (!existing) {
+            await Notification.create({
+              userId,
+              vehicleId: vehicle._id,
+              title,
+              message,
+              type: 'revenue_license_expiry',
+              priority,
+              status: 'unread',
+              source: 'system',
+              dueDate: expiry,
+            });
+          }
+        }
+      }
+
+      // 3. Emission Test Expiry Check
+      if (vehicle.emissionTestExpiryDate) {
+        const expiry = new Date(vehicle.emissionTestExpiryDate);
+        const diffMs = expiry - now;
+        const daysLeft = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+        if (daysLeft <= 30) {
+          const priority = daysLeft <= 7 ? 'high' : 'medium';
+          const urgency =
+            daysLeft < 0
+              ? 'has expired'
+              : daysLeft === 0
+              ? 'expires today'
+              : `expires in ${daysLeft} day${daysLeft === 1 ? '' : 's'}`;
+          const formattedDate = expiry.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+          const title = `Emission Test (VET): ${vehicle.registrationNumber} ${urgency}`;
+          const message = `Vehicle Emission Test certificate (${vehicle.emissionTestCompany || 'DriveGreen / Laugfs Eco'}) for ${vehicle.registrationNumber} ${urgency} on ${formattedDate}. Valid VET test certificate is required before revenue license renewal.`;
+
+          const existing = await Notification.findOne({
+            userId,
+            vehicleId: vehicle._id,
+            type: 'emission_test_expiry',
+            createdAt: { $gte: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) },
+          });
+
+          if (!existing) {
+            await Notification.create({
+              userId,
+              vehicleId: vehicle._id,
+              title,
+              message,
+              type: 'emission_test_expiry',
+              priority,
+              status: 'unread',
+              source: 'system',
+              dueDate: expiry,
+            });
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Error auto-generating vehicle expiry notifications:', err.message);
+  }
+};
+
 // @desc    Get all notifications for current user with optional filtering
 // @route   GET /api/notifications
 // @access  Private (Owner/User tenant protected)
 const getNotifications = async (req, res, next) => {
   try {
+    // Automatically evaluate vehicle expiry dates and generate timely notifications
+    if (req.user && req.user._id) {
+      await checkAndGenerateExpiryNotifications(req.user._id);
+    }
+
     const { status, priority, type, vehicleId, includeDismissed } = req.query;
 
     // Scope query strictly to authenticated user

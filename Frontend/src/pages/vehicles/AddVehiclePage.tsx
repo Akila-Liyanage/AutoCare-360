@@ -65,6 +65,11 @@ export const AddVehiclePage: React.FC = () => {
     lastServiceDate: '',
     nextServiceMileage: '' as string | number,
     contactPhone: user?.phone || '',
+    insuranceExpiryDate: '',
+    insuranceCompany: 'Ceylinco General Insurance',
+    revenueLicenseExpiryDate: '',
+    emissionTestExpiryDate: '',
+    emissionTestCompany: 'DriveGreen (CleanCo)',
   }));
 
   // Local Image Upload Preview State (Object URL for memory safety and zero network bloat)
@@ -186,6 +191,11 @@ export const AddVehiclePage: React.FC = () => {
       lastServiceDate: '2026-05-15',
       nextServiceMileage: 29500,
       contactPhone: user?.phone || '077-0603956',
+      insuranceExpiryDate: '2026-11-15',
+      insuranceCompany: 'Ceylinco General Insurance',
+      revenueLicenseExpiryDate: '2026-11-20',
+      emissionTestExpiryDate: '2026-11-10',
+      emissionTestCompany: 'DriveGreen (CleanCo)',
     });
     setVinError(null);
     setSubmitError(null);
@@ -257,6 +267,11 @@ export const AddVehiclePage: React.FC = () => {
         nextServiceMileage: formData.nextServiceMileage ? Number(formData.nextServiceMileage) : null,
         imageUrl: uploadedImageUrl || '',
         status: 'Active',
+        insuranceExpiryDate: formData.insuranceExpiryDate || undefined,
+        insuranceCompany: formData.insuranceCompany.trim() || undefined,
+        revenueLicenseExpiryDate: formData.revenueLicenseExpiryDate || undefined,
+        emissionTestExpiryDate: formData.emissionTestExpiryDate || undefined,
+        emissionTestCompany: formData.emissionTestCompany.trim() || undefined,
       };
 
       await createVehicle(payload);
@@ -915,6 +930,105 @@ export const AddVehiclePage: React.FC = () => {
                       className="autocare-field-input is-readonly"
                       value={user?.email || 'david.silva@autocare.io'}
                       readOnly
+                    />
+                  </div>
+                </div>
+              </div>
+
+
+              {/* ----------------------------------------------------
+                  SECTION 6: Compliance & Regulatory Expiry Monitoring
+                  ---------------------------------------------------- */}
+              <div className="autocare-form-section">
+                <div className="autocare-section-title-row">
+                  <div className="autocare-section-num-circle">6</div>
+                  <div>
+                    <h2 className="autocare-section-heading">Compliance &amp; Expiry Monitoring (Optional)</h2>
+                    <p className="autocare-section-subtext">
+                      Track annual renewal dates. AutoCare 360 will notify you 30, 14, and 7 days prior to expiry.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="autocare-form-grid is-2-cols">
+                  {/* Insurance Expiry Date */}
+                  <div className="autocare-form-field">
+                    <label className="autocare-field-label">Insurance Expiry Date</label>
+                    <div className="autocare-input-with-icon">
+                      <input
+                        type="date"
+                        className="autocare-field-input"
+                        value={formData.insuranceExpiryDate}
+                        onChange={(e) => setFormData({ ...formData, insuranceExpiryDate: e.target.value })}
+                      />
+                      <Calendar size={18} className="autocare-input-inside-icon" />
+                    </div>
+                  </div>
+
+                  {/* Insurance Company */}
+                  <div className="autocare-form-field">
+                    <label className="autocare-field-label">Insurance Company / Provider</label>
+                    <input
+                      type="text"
+                      className="autocare-field-input"
+                      placeholder="e.g. Ceylinco, SLIC, Allianz"
+                      value={formData.insuranceCompany}
+                      onChange={(e) => setFormData({ ...formData, insuranceCompany: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="autocare-form-grid is-2-cols" style={{ marginTop: '16px' }}>
+                  {/* Motor Revenue License Expiry Date */}
+                  <div className="autocare-form-field">
+                    <label className="autocare-field-label">Motor Revenue License Expiry Date</label>
+                    <div className="autocare-input-with-icon">
+                      <input
+                        type="date"
+                        className="autocare-field-input"
+                        value={formData.revenueLicenseExpiryDate}
+                        onChange={(e) => setFormData({ ...formData, revenueLicenseExpiryDate: e.target.value })}
+                      />
+                      <Calendar size={18} className="autocare-input-inside-icon" />
+                    </div>
+                  </div>
+
+                  {/* Issuing Authority */}
+                  <div className="autocare-form-field">
+                    <label className="autocare-field-label">Licensing Authority</label>
+                    <input
+                      type="text"
+                      className="autocare-field-input is-readonly"
+                      value="Department of Motor Traffic (DMT)"
+                      readOnly
+                    />
+                  </div>
+                </div>
+
+                <div className="autocare-form-grid is-2-cols" style={{ marginTop: '16px' }}>
+                  {/* Emission Test Expiry Date */}
+                  <div className="autocare-form-field">
+                    <label className="autocare-field-label">Emission Test (VET) Expiry Date</label>
+                    <div className="autocare-input-with-icon">
+                      <input
+                        type="date"
+                        className="autocare-field-input"
+                        value={formData.emissionTestExpiryDate}
+                        onChange={(e) => setFormData({ ...formData, emissionTestExpiryDate: e.target.value })}
+                      />
+                      <Calendar size={18} className="autocare-input-inside-icon" />
+                    </div>
+                  </div>
+
+                  {/* Emission Testing Center */}
+                  <div className="autocare-form-field">
+                    <label className="autocare-field-label">Emission Testing Center</label>
+                    <input
+                      type="text"
+                      className="autocare-field-input"
+                      placeholder="DriveGreen (CleanCo) / Laugfs Eco"
+                      value={formData.emissionTestCompany}
+                      onChange={(e) => setFormData({ ...formData, emissionTestCompany: e.target.value })}
                     />
                   </div>
                 </div>
