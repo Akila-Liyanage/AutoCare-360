@@ -14,7 +14,8 @@ import {
   Building2,
   MapPin,
   AlertCircle,
-  Loader2
+  Loader2,
+  Users
 } from 'lucide-react';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
@@ -215,6 +216,25 @@ export const AdminGarageVerificationPage: React.FC = () => {
             <p className="autocare-admin-subtitle">
               Review, verify, and govern automotive workshop partners in accordance with AutoCare 360 certification standards (BRD BRULE-01, FR-05).
             </p>
+
+            {/* Admin Console Sub-navigation Tabs */}
+            <div className="autocare-admin-nav-tabs">
+              <Link to="/admin/users" className="autocare-admin-nav-tab is-link">
+                <Users size={16} />
+                <span>User Directory &amp; Analytics</span>
+              </Link>
+
+              <button
+                type="button"
+                className="autocare-admin-nav-tab is-active"
+              >
+                <Building2 size={16} />
+                <span>Garage Verification</span>
+                {pendingCount > 0 && (
+                  <span className="autocare-admin-pill-badge is-amber">{pendingCount} Pending</span>
+                )}
+              </button>
+            </div>
           </header>
 
           {/* Controls Bar */}

@@ -185,11 +185,198 @@ export const rejectGarage = async (id: string, reason: string): Promise<GarageAc
   }
 };
 
+export type UserRole = 'owner' | 'garage' | 'admin';
+export type UserStatus = 'active' | 'pending' | 'suspended';
+
+export interface AdminUser {
+  _id: string;
+  id?: string;
+  fullName: string;
+  displayName?: string;
+  email: string;
+  phone: string;
+  role: UserRole;
+  status: UserStatus;
+  city?: string;
+  country?: string;
+  profileImage?: string;
+  createdAt: string;
+  updatedAt?: string;
+  vehicleCount?: number;
+  lastActive?: string;
+  workshopName?: string;
+  businessRegNumber?: string;
+}
+
+export interface UserAnalyticsOverview {
+  totalUsers: number;
+  totalOwners: number;
+  totalGarages: number;
+  totalAdmins: number;
+  activeUsers: number;
+  pendingUsers: number;
+  suspendedUsers: number;
+  totalVehicles: number;
+  avgVehiclesPerOwner: string | number;
+  activityRate: string;
+  growthRate: string;
+}
+
+export interface CityStat {
+  city: string;
+  count: number;
+}
+
+export interface GrowthDataPoint {
+  month: string;
+  owners: number;
+  garages: number;
+  total: number;
+}
+
+export interface UserAnalyticsData {
+  overview: UserAnalyticsOverview;
+  cityStats: CityStat[];
+  growthTrends?: GrowthDataPoint[];
+}
+
+export interface GetUsersParams {
+  role?: 'owner' | 'garage' | 'admin' | 'all';
+  status?: 'active' | 'pending' | 'suspended' | 'all';
+  search?: string;
+  sort?: 'newest' | 'oldest' | 'name_asc' | 'name_desc' | 'vehicles_desc';
+  page?: number;
+  limit?: number;
+}
+
+export interface CreateUserPayload {
+  fullName: string;
+  email: string;
+  phone: string;
+  password: string;
+  role: UserRole;
+  status?: UserStatus;
+  city?: string;
+  country?: string;
+  displayName?: string;
+}
+
+/**
+ * Fetch all platform users with filtering, searching, and sorting.
+ * Backend: GET /api/admin/users
+ */
+export const getUsers = async (
+  params?: GetUsersParams
+): Promise<{ users: AdminUser[]; total: number }> => {
+  const queryParams: Record<string, string | number> = {};
+  if (params?.role && params.role !== 'all') queryParams.role = params.role;
+  if (params?.status && params.status !== 'all') queryParams.status = params.status;
+  if (params?.search && params.search.trim()) queryParams.search = params.search.trim();
+  if (params?.sort) queryParams.sort = params.sort;
+  if (params?.page) queryParams.page = params.page;
+  if (params?.limit) queryParams.limit = params.limit;
+
+  const response = await api.get<{
+    success: boolean;
+    total: number;
+    data: { users: AdminUser[] };
+  }>('/admin/users', { params: queryParams });
+
+  return {
+    users: response.data?.data?.users || [],
+    total: response.data?.total || response.data?.data?.users?.length || 0,
+  };
+};
+
+/**
+ * Create a new user from administrative console.
+ * Backend: POST /api/admin/users
+ */
+export const createUser = async (payload: CreateUserPayload): Promise<AdminUser> => {
+  const response = await api.post<{
+    success: boolean;
+    message: string;
+    data: { user: AdminUser };
+  }>('/admin/users', payload);
+  return response.data.data.user;
+};
+
+/**
+ * Update user status (active, pending, suspended).
+ * Backend: PATCH /api/admin/users/:id/status
+ */
+export const updateUserStatus = async (
+  id: string,
+  status: UserStatus,
+  reason?: string
+): Promise<AdminUser> => {
+  const response = await api.patch<{
+    success: boolean;
+    message: string;
+    data: { user: AdminUser };
+  }>(`/admin/users/${id}/status`, { status, reason });
+  return response.data.data.user;
+};
+
+/**
+ * Update user role (owner, garage, admin).
+ * Backend: PATCH /api/admin/users/:id/role
+ */
+export const updateUserRole = async (id: string, role: UserRole): Promise<AdminUser> => {
+  const response = await api.patch<{
+    success: boolean;
+    message: string;
+    data: { user: AdminUser };
+  }>(`/admin/users/${id}/role`, { role });
+  return response.data.data.user;
+};
+
+/**
+ * Permanently delete a user account.
+ * Backend: DELETE /api/admin/users/:id
+ */
+export const deleteUser = async (id: string): Promise<boolean> => {
+  const response = await api.delete<{ success: boolean; message: string }>(`/admin/users/${id}`);
+  return response.data.success;
+};
+
+/**
+ * Fetch system user analytics and statistics.
+ * Backend: GET /api/admin/user-analytics
+ */
+export const getUserAnalytics = async (): Promise<UserAnalyticsData> => {
+  const response = await api.get<{
+    success: boolean;
+    data: UserAnalyticsData;
+  }>('/admin/user-analytics');
+  return response.data.data;
+};
+
+/**
+ * Seed dummy users on backend.
+ * Backend: POST /api/admin/seed-dummy-users
+ */
+export const seedDummyUsers = async (): Promise<{ message: string; count: number }> => {
+  const response = await api.post<{
+    success: boolean;
+    message: string;
+    count: number;
+  }>('/admin/seed-dummy-users');
+  return { message: response.data.message, count: response.data.count };
+};
+
 const adminService = {
   getGarages,
   getGarageById,
   approveGarage,
   rejectGarage,
+  getUsers,
+  createUser,
+  updateUserStatus,
+  updateUserRole,
+  deleteUser,
+  getUserAnalytics,
+  seedDummyUsers,
 };
 
 export default adminService;
