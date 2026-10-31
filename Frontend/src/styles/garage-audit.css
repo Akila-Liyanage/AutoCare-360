@@ -1,0 +1,552 @@
+/* AutoCare 360 - garage-audit.css
+   Dedicated Stylesheet for BR-08 Audit Trail Management & BR-05/06 Sharing Activity
+   Aligned strictly with the official design specification.
+*/
+
+@import './variables.css';
+
+/* Category Badge / Breadcrumb */
+.autocare-audit-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  color: #0056A2;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  margin-bottom: 6px;
+}
+
+/* 4 KPI Summary Cards Row */
+.autocare-audit-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 960px) {
+  .autocare-audit-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 520px) {
+  .autocare-audit-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.autocare-audit-kpi-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 18px 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.autocare-audit-kpi-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.autocare-audit-kpi-lbl {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.autocare-audit-kpi-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eff6ff;
+  color: #0056A2;
+}
+
+.autocare-audit-kpi-icon.is-green {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.autocare-audit-kpi-icon.is-amber {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+.autocare-audit-kpi-icon.is-red {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.autocare-audit-kpi-val {
+  font-size: 28px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1;
+}
+
+/* Search & Filter Toolbar */
+.autocare-audit-toolbar {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 22px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.autocare-audit-search-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 260px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.autocare-audit-search-box input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 13.5px;
+  color: #0f172a;
+  width: 100%;
+}
+
+.autocare-audit-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.autocare-audit-tab {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+  background: #f1f5f9;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.autocare-audit-tab:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.autocare-audit-tab.is-active {
+  background: #0056A2;
+  color: #ffffff;
+}
+
+/* Main Table Panel */
+.autocare-audit-table-panel {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.autocare-audit-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.autocare-audit-table th {
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 12px 18px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.autocare-audit-table td {
+  padding: 16px 18px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 13px;
+  color: #334155;
+  vertical-align: middle;
+}
+
+.autocare-audit-table tr:hover td {
+  background: #f8fafc;
+  cursor: pointer;
+}
+
+/* Badges */
+.autocare-audit-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.autocare-audit-pill.is-verified {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+.autocare-audit-pill.is-revoked {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.autocare-audit-pill.is-flagged {
+  background: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fef3c7;
+}
+
+/* ==========================================================================
+   EVENT DETAIL VIEW (Screen 2)
+   ========================================================================== */
+.autocare-event-detail-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 24px;
+}
+
+@media (max-width: 992px) {
+  .autocare-event-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.autocare-event-main-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.autocare-event-actor-banner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 20px;
+}
+
+.autocare-event-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  background: #eff6ff;
+  color: #0056A2;
+  font-size: 20px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.autocare-event-actor-name {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 4px 0;
+}
+
+.autocare-event-actor-role {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+}
+
+/* Context Grid */
+.autocare-event-context-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 600px) {
+  .autocare-event-context-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.autocare-event-context-cell {
+  display: flex;
+  flex-direction: column;
+}
+
+.autocare-event-context-lbl {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.autocare-event-context-val {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+/* Section Records Viewed */
+.autocare-event-section-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 14px 0;
+}
+
+.autocare-event-viewed-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.autocare-event-viewed-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
+  border-radius: 8px;
+}
+
+.autocare-event-viewed-item-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 2px 0;
+}
+
+.autocare-event-viewed-item-sub {
+  font-size: 11.5px;
+  color: #64748b;
+  margin: 0;
+}
+
+/* Timeline */
+.autocare-event-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-left: 8px;
+}
+
+.autocare-event-timeline-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  position: relative;
+}
+
+.autocare-event-timeline-time {
+  font-size: 12px;
+  font-weight: 700;
+  color: #0056A2;
+  min-width: 55px;
+  white-space: nowrap;
+}
+
+.autocare-event-timeline-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #0056A2;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.autocare-event-timeline-content h5 {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 2px 0;
+}
+
+.autocare-event-timeline-content p {
+  font-size: 12px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Right Side Cards */
+.autocare-event-side-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.autocare-event-side-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 12.5px;
+}
+
+.autocare-event-side-row:last-child {
+  border-bottom: none;
+}
+
+.autocare-event-side-label {
+  color: #64748b;
+}
+
+.autocare-event-side-val {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+/* Dark Navy Ledger Verification Card */
+.autocare-event-ledger-card {
+  background: #0b1a2d;
+  color: #ffffff;
+  border-radius: 14px;
+  padding: 22px;
+  box-shadow: 0 10px 25px -5px rgba(11, 26, 45, 0.25);
+}
+
+.autocare-event-ledger-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0 0 6px 0;
+}
+
+.autocare-event-ledger-desc {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0 0 16px 0;
+  line-height: 1.4;
+}
+
+.autocare-event-ledger-hash {
+  font-family: monospace;
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 8px 12px;
+  border-radius: 6px;
+  color: #38bdf8;
+  margin-bottom: 16px;
+  word-break: break-all;
+}
+
+.autocare-event-ledger-btn {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  background: #0056A2;
+  border: 1px solid #0056A2;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.autocare-event-ledger-btn:hover {
+  background: #004380;
+}
+
+/* ==========================================================================
+   SHARING & ACCESS ACTIVITY (Screen 3)
+   ========================================================================== */
+.autocare-sharing-split-grid {
+  display: grid;
+  grid-template-columns: 1.7fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 992px) {
+  .autocare-sharing-split-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.autocare-sharing-recipient-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 22px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.autocare-sharing-recipient-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.autocare-sharing-recipient-info h4 {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 2px 0;
+}
+
+.autocare-sharing-recipient-info p {
+  font-size: 12.5px;
+  color: #64748b;
+  margin: 0;
+}
+
+.autocare-sharing-perm-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+  padding: 8px 0;
+}
+
+.autocare-sharing-perm-item.is-allowed {
+  color: #059669;
+  font-weight: 600;
+}
+
+.autocare-sharing-perm-item.is-denied {
+  color: #94a3b8;
+}
+

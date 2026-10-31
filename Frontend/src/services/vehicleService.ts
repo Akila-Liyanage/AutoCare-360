@@ -15,6 +15,11 @@ export interface Vehicle {
   transmission?: string;
   color?: string;
   registrationJurisdiction?: string;
+  insuranceExpiryDate?: string | null;
+  insuranceCompany?: string;
+  revenueLicenseExpiryDate?: string | null;
+  emissionTestExpiryDate?: string | null;
+  emissionTestCompany?: string;
   lastServiceDate?: string | null;
   nextServiceMileage?: number | null;
   imageUrl?: string;
@@ -44,6 +49,11 @@ export interface CreateVehiclePayload {
   transmission?: string;
   color?: string;
   registrationJurisdiction?: string;
+  insuranceExpiryDate?: string | null;
+  insuranceCompany?: string;
+  revenueLicenseExpiryDate?: string | null;
+  emissionTestExpiryDate?: string | null;
+  emissionTestCompany?: string;
   lastServiceDate?: string | null;
   nextServiceMileage?: number | null;
   imageUrl?: string;
@@ -63,6 +73,46 @@ export interface GetVehicleResponse {
   data: {
     vehicle: Vehicle;
   };
+}
+
+export interface HealthScoreData {
+  vehicleId: string;
+  registrationNumber: string;
+  model: string;
+  passportConfidence: number;
+  passportConfidenceStatus: string;
+  confidenceBreakdown: {
+    identityScore: number;
+    odometerScore: number;
+    maintenanceScore: number;
+    complianceScore: number;
+    maxScorePerCategory: number;
+  };
+  trustScore: number;
+  maxScore: number;
+  ratingCategory: string;
+  metrics: {
+    totalServiceRecords: number;
+    verifiedRecordsCount: number;
+    selfReportedCount: number;
+    currentMileage: number;
+    mileageAnomalyDetected: boolean;
+    serviceConsistency: string;
+    serviceOverdue: boolean;
+  };
+  aiPrediction: {
+    nextServiceRecommendedMileage: number;
+    kmRemainingToService: number;
+    recommendedWork: string;
+    confidenceLevel: string;
+  };
+  auditChecks: Array<{
+    name: string;
+    passed: boolean;
+    status: string;
+    message: string;
+  }>;
+  generatedAt: string;
 }
 
 /**
@@ -170,6 +220,19 @@ export const updateVehicleImage = async (id: string, file: File): Promise<string
   return response.data?.data?.imageUrl || '';
 };
 
+/**
+ * Get AI Vehicle Health Assessment & Trust Score (BR-09, FR-10)
+ * GET /api/vehicles/:id/health-score
+ */
+export const getVehicleHealthScore = async (id: string): Promise<HealthScoreData> => {
+  const response = await api.get<{
+    success: boolean;
+    message: string;
+    data: HealthScoreData;
+  }>(`/vehicles/${id}/health-score`);
+  return response.data?.data;
+};
+
 export default {
   getMyVehicles,
   getVehicleById,
@@ -177,5 +240,6 @@ export default {
   updateVehicle,
   uploadVehicleImage,
   updateVehicleImage,
+  getVehicleHealthScore,
 };
 

@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Vehicle = require('../models/Vehicle');
 const ServiceRecord = require('../models/ServiceRecord');
+const VehicleDocument = require('../models/VehicleDocument');
 
 // @desc    Calculate and generate AI Vehicle Health Assessment & Trust Score (BR-09, FR-10)
 // @route   GET /api/vehicles/:id/health-score
@@ -32,8 +33,11 @@ const getVehicleHealthScore = async (req, res, next) => {
       });
     }
 
-    // Fetch all service records sorted by service date
-    const records = await ServiceRecord.find({ vehicleId: vehicle._id }).sort({ serviceDate: 1 });
+    // Fetch all service records and active documents
+    const [records, documents] = await Promise.all([
+      ServiceRecord.find({ vehicleId: vehicle._id }).sort({ serviceDate: 1 }),
+      VehicleDocument.find({ vehicleId: vehicle._id, status: 'active' }),
+    ]);
 
     const totalRecords = records.length;
     let trustScore = 100;
@@ -157,7 +161,63 @@ const getVehicleHealthScore = async (req, res, next) => {
     else if (trustScore < 80) ratingCategory = 'Fair';
     else if (trustScore < 90) ratingCategory = 'Good';
 
-    // 4. AI Predictive Maintenance Recommendation (FR-10)
+    // 4. PASSPORT CONFIDENCE CALCULATION (0 - 100%)
+    // Multi-factor mathematical index evaluating profile completeness, authenticity, and compliance
+    // Component A: Identity & Technical Specifications Completeness (Max 25 pts)
+    let identityScore = 0;
+    if (vehicle.vin && vehicle.vin.trim().length === 17) identityScore += 10;
+    else if (vehicle.vin) identityScore += 5;
+    if (vehicle.engineNumber && vehicle.engineNumber.trim()) identityScore += 5;
+    if (vehicle.color && vehicle.fuelType && vehicle.transmission) identityScore += 5;
+    if (vehicle.imageUrl && vehicle.imageUrl.trim()) identityScore += 5;
+
+    // Component B: Odometer Telemetry & Anti-Rollback Integrity (Max 25 pts)
+    let odometerScore = 25;
+    if (mileageAnomalyDetected) {
+      odometerScore = 0; // Immediate disqualification for odometer rollbacks
+    }
+
+    // Component C: Maintenance Chronology & Authorized Workshops (Max 25 pts)
+    let maintenanceScore = 0;
+    if (records.length > 0) {
+      maintenanceScore += 10; // Baseline for recorded maintenance
+      const verifiedBonus = Math.min(10, verifiedCount * 3);
+      maintenanceScore += verifiedBonus;
+      if (!serviceOverdue) maintenanceScore += 5;
+    } else {
+      maintenanceScore = 5; // Minimal onboarding baseline
+    }
+
+    // Component D: Regulatory Compliance & Verified Documents (Max 25 pts)
+    let complianceScore = 0;
+    const docPoints = Math.min(10, documents.length * 5);
+    complianceScore += docPoints;
+
+    const today = new Date();
+    if (vehicle.insuranceExpiryDate && new Date(vehicle.insuranceExpiryDate) > today) {
+      complianceScore += 5;
+    }
+    if (vehicle.revenueLicenseExpiryDate && new Date(vehicle.revenueLicenseExpiryDate) > today) {
+      complianceScore += 5;
+    }
+    if (vehicle.emissionTestExpiryDate && new Date(vehicle.emissionTestExpiryDate) > today) {
+      complianceScore += 5;
+    }
+
+    const passportConfidence = Math.max(20, Math.min(100, Math.round(
+      identityScore + odometerScore + maintenanceScore + complianceScore
+    )));
+
+    let passportConfidenceStatus = 'Profile Complete & High Trust';
+    if (mileageAnomalyDetected) {
+      passportConfidenceStatus = 'Discrepancy Flagged';
+    } else if (passportConfidence < 60) {
+      passportConfidenceStatus = 'Incomplete Baseline';
+    } else if (passportConfidence < 85) {
+      passportConfidenceStatus = 'Moderately Verified';
+    }
+
+    // 5. AI Predictive Maintenance Recommendation (FR-10)
     const nextRecommendedMileage = (Math.floor(vehicle.currentMileage / 5000) + 1) * 5000;
     const kmRemaining = nextRecommendedMileage - vehicle.currentMileage;
 
@@ -168,6 +228,15 @@ const getVehicleHealthScore = async (req, res, next) => {
         vehicleId: vehicle._id,
         registrationNumber: vehicle.registrationNumber,
         model: `${vehicle.manufacturer} ${vehicle.model} (${vehicle.manufacturingYear})`,
+        passportConfidence,
+        passportConfidenceStatus,
+        confidenceBreakdown: {
+          identityScore,
+          odometerScore,
+          maintenanceScore,
+          complianceScore,
+          maxScorePerCategory: 25,
+        },
         trustScore,
         maxScore: 100,
         ratingCategory,

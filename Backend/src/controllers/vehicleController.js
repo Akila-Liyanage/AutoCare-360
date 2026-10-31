@@ -137,6 +137,11 @@ const createVehicle = async (req, res, next) => {
       registrationJurisdiction: registrationJurisdiction
         ? String(registrationJurisdiction).trim()
         : 'Western Province, Sri Lanka',
+      insuranceExpiryDate: req.body.insuranceExpiryDate ? new Date(req.body.insuranceExpiryDate) : null,
+      insuranceCompany: req.body.insuranceCompany ? String(req.body.insuranceCompany).trim() : 'Ceylinco General Insurance',
+      revenueLicenseExpiryDate: req.body.revenueLicenseExpiryDate ? new Date(req.body.revenueLicenseExpiryDate) : null,
+      emissionTestExpiryDate: req.body.emissionTestExpiryDate ? new Date(req.body.emissionTestExpiryDate) : null,
+      emissionTestCompany: req.body.emissionTestCompany ? String(req.body.emissionTestCompany).trim() : 'DriveGreen (CleanCo)',
       status: status || 'Active',
       imageUrl: finalImageUrl,
     });
@@ -327,6 +332,21 @@ const updateVehicle = async (req, res, next) => {
     }
     if (req.body.registrationJurisdiction !== undefined) {
       vehicle.registrationJurisdiction = String(req.body.registrationJurisdiction).trim();
+    }
+    if (req.body.insuranceExpiryDate !== undefined) {
+      vehicle.insuranceExpiryDate = req.body.insuranceExpiryDate ? new Date(req.body.insuranceExpiryDate) : null;
+    }
+    if (req.body.insuranceCompany !== undefined) {
+      vehicle.insuranceCompany = String(req.body.insuranceCompany).trim();
+    }
+    if (req.body.revenueLicenseExpiryDate !== undefined) {
+      vehicle.revenueLicenseExpiryDate = req.body.revenueLicenseExpiryDate ? new Date(req.body.revenueLicenseExpiryDate) : null;
+    }
+    if (req.body.emissionTestExpiryDate !== undefined) {
+      vehicle.emissionTestExpiryDate = req.body.emissionTestExpiryDate ? new Date(req.body.emissionTestExpiryDate) : null;
+    }
+    if (req.body.emissionTestCompany !== undefined) {
+      vehicle.emissionTestCompany = String(req.body.emissionTestCompany).trim();
     }
     if (req.body.status) {
       vehicle.status = req.body.status;

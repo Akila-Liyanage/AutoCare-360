@@ -784,11 +784,22 @@
   background: #ffffff;
   border-radius: 16px;
   width: 100%;
-  max-width: 520px;
+  max-width: 540px;
+  max-height: min(92vh, 850px);
+  display: flex;
+  flex-direction: column;
   box-shadow: 0 20px 40px -10px rgba(0, 86, 162, 0.2);
   border: 1px solid #e2e8f0;
   overflow: hidden;
   animation: autocareScaleIn 0.2s ease;
+}
+
+.autocare-modal-container form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 @keyframes autocareScaleIn {
@@ -803,11 +814,12 @@
 }
 
 .autocare-modal-header {
-  padding: 20px 24px;
+  padding: 18px 24px;
   border-bottom: 1px solid #f1f5f9;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-shrink: 0;
 }
 
 .autocare-modal-title {
@@ -839,6 +851,20 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.autocare-modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.autocare-modal-body::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 4px;
 }
 
 .autocare-modal-field {
@@ -878,6 +904,7 @@
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .autocare-btn-cancel {
