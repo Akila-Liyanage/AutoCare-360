@@ -7,6 +7,7 @@ import {
   ShieldCheck,
   CheckCircle2,
   Menu,
+  LogOut,
 } from 'lucide-react';
 import Footer from './Footer';
 import logoImg from '../../assets/auth/download (27) (1) 2.png';
@@ -31,7 +32,13 @@ export const GarageLayout: React.FC<GarageLayoutProps> = ({
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+
+  const handleSignOut = () => {
+    setShowProfileModal(false);
+    logout();
+    navigate('/login');
+  };
 
   // Mobile menu drawer toggle
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
@@ -354,6 +361,15 @@ export const GarageLayout: React.FC<GarageLayoutProps> = ({
             </div>
 
             <div className="autocare-garage-modal-footer">
+              <button
+                type="button"
+                className="autocare-garage-btn-signout"
+                onClick={handleSignOut}
+                title="Sign out of garage portal"
+              >
+                <LogOut size={16} />
+                <span>Sign Out</span>
+              </button>
               <button
                 type="button"
                 className="autocare-garage-btn-primary"
