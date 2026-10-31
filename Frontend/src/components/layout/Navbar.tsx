@@ -100,6 +100,7 @@ export const Navbar: React.FC = () => {
     user?.role === 'admin'
       ? [
           { label: 'Home', path: '/' },
+          { label: 'User Management', path: '/admin/users' },
           { label: 'Garage Verification', path: '/admin/garages' },
         ]
       : user?.role === 'garage'
@@ -304,13 +305,22 @@ export const Navbar: React.FC = () => {
                       </Link>
                     )}
                     {user?.role === 'admin' && (
-                      <Link
-                        to="/admin/garages"
-                        className="autocare-profile-menu-item"
-                        onClick={() => setDropdownOpen(false)}
-                      >
-                        <ShieldCheck size={16} /> Admin Console
-                      </Link>
+                      <>
+                        <Link
+                          to="/admin/users"
+                          className="autocare-profile-menu-item"
+                          onClick={() => setDropdownOpen(false)}
+                        >
+                          <User size={16} /> User Management
+                        </Link>
+                        <Link
+                          to="/admin/garages"
+                          className="autocare-profile-menu-item"
+                          onClick={() => setDropdownOpen(false)}
+                        >
+                          <ShieldCheck size={16} /> Garage Verification
+                        </Link>
+                      </>
                     )}
 
                     <div className="autocare-profile-menu-divider" />
@@ -426,13 +436,22 @@ export const Navbar: React.FC = () => {
                   </Link>
                 )}
                 {user?.role === 'admin' && (
-                  <Link
-                    to="/admin/garages"
-                    className="autocare-mobile-link"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Admin Console
-                  </Link>
+                  <>
+                    <Link
+                      to="/admin/users"
+                      className="autocare-mobile-link"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      User Management
+                    </Link>
+                    <Link
+                      to="/admin/garages"
+                      className="autocare-mobile-link"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Garage Verification
+                    </Link>
+                  </>
                 )}
                 <button
                   type="button"

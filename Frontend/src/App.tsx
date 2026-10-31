@@ -35,6 +35,7 @@ import GarageAuditTrailPage from './pages/garage/GarageAuditTrailPage';
 import AddMaintenanceRecordPage from './pages/garage/AddMaintenanceRecordPage';
 import GarageVerificationPendingPage from './pages/garage/GarageVerificationPendingPage';
 import AdminProtectedRoute from './components/auth/AdminProtectedRoute';
+import AdminUserManagementPage from './pages/admin/AdminUserManagementPage';
 import AdminGarageVerificationPage from './pages/admin/AdminGarageVerificationPage';
 import AdminGarageDetailsPage from './pages/admin/AdminGarageDetailsPage';
 import './App.css';
@@ -118,9 +119,10 @@ export const App: React.FC = () => {
 
           {/* System Administrator Console (AdminProtectedRoute Guarded) */}
           <Route element={<AdminProtectedRoute />}>
+            <Route path="/admin/users" element={<AdminUserManagementPage />} />
             <Route path="/admin/garages" element={<AdminGarageVerificationPage />} />
             <Route path="/admin/garages/:id" element={<AdminGarageDetailsPage />} />
-            <Route path="/admin" element={<Navigate to="/admin/garages" replace />} />
+            <Route path="/admin" element={<Navigate to="/admin/users" replace />} />
           </Route>
 
           {/* Fallback */}
