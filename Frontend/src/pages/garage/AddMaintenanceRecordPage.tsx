@@ -271,11 +271,14 @@ export const AddMaintenanceRecordPage: React.FC = () => {
       let invoiceUrl: string = '';
 
       // Upload service photos and documents if attached
-      if (uploadedDocs.length > 0) {
+      if (uploadedDocs.length > 0 || ocrInvoiceFile) {
         const formData = new FormData();
         uploadedDocs.forEach((doc) => {
           formData.append('files', doc.file);
         });
+        if (ocrInvoiceFile) {
+          formData.append('invoice', ocrInvoiceFile);
+        }
 
         try {
           const uploadRes = await api.post('/services/upload', formData, {
@@ -1202,20 +1205,49 @@ export const AddMaintenanceRecordPage: React.FC = () => {
               boxShadow: '0 1px 4px rgba(0,0,0,0.02)',
             }}
           >
-            <h3
-              style={{
-                fontFamily: "'Inter', sans-serif",
-                fontWeight: 700,
-                fontSize: '15.5px',
-                color: '#0A1128',
-                margin: 0,
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3
+                style={{
+                  fontFamily: "'Inter', sans-serif",
+                  fontWeight: 700,
+                  fontSize: '15.5px',
+                  color: '#0A1128',
+                  margin: 0,
+                }}
+              >
+                AI Invoice Scanner (OCR)
+              </h3>
+              <span
+                style={{
+                  background: '#ECFDF5',
+                  color: '#059669',
+                  borderRadius: '12px',
+                  padding: '2px 8px',
+                  fontSize: '10.5px',
+                  fontWeight: 700,
+                }}
+              >
+                {ocrConfidence}% CONFIDENCE
+              </span>
+            </div>
+
+            {/* Hidden file input for OCR Invoice */}
+            <input
+              type="file"
+              ref={ocrInputRef}
+              accept="application/pdf,image/*"
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                if (e.target.files && e.target.files[0]) {
+                  handleOcrFileSelect(e.target.files[0]);
+                  e.target.value = '';
+                }
               }}
-            >
-              AI Invoice Scanner (OCR)
-            </h3>
+            />
 
             {/* Upload trigger box */}
             <div
+              onClick={() => ocrInputRef.current?.click()}
               style={{
                 border: '1.2px dashed #0056A2',
                 borderRadius: '10px',
@@ -1225,15 +1257,21 @@ export const AddMaintenanceRecordPage: React.FC = () => {
                 flexDirection: 'column',
                 alignItems: 'center',
                 gap: '6px',
-                background: '#F8FAFC',
+                background: ocrScanning ? '#EFF6FF' : '#F8FAFC',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
               }}
+              title="Click to upload or scan a different invoice"
             >
               <Upload size={24} style={{ color: '#0056A2' }} />
-              <span style={{ fontWeight: 700, fontSize: '13px', color: '#0056A2' }}>
-                INVOICE_COPY_045812.PDF
+              <span style={{ fontWeight: 700, fontSize: '13px', color: '#0056A2', wordBreak: 'break-all' }}>
+                {ocrInvoiceFileName}
               </span>
-              <span style={{ fontSize: '12px', color: '#64748B' }}>
-                Scanner status: File uploaded
+              <span style={{ fontSize: '12px', color: ocrScanning ? '#0056A2' : '#64748B', fontWeight: ocrScanning ? 600 : 400 }}>
+                {ocrScanning ? 'Scanning document with AI OCR...' : `Scanner status: ${ocrStatus}`}
+              </span>
+              <span style={{ fontSize: '11px', color: '#0056A2', fontWeight: 600, textDecoration: 'underline', marginTop: '2px' }}>
+                Click to upload another invoice
               </span>
             </div>
 
@@ -1246,7 +1284,7 @@ export const AddMaintenanceRecordPage: React.FC = () => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ color: '#64748B', fontSize: '12.5px' }}>Extracted Odo</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <strong style={{ fontSize: '13.5px', color: '#0A1128' }}>85,240 km</strong>
+                  <strong style={{ fontSize: '13.5px', color: '#0A1128' }}>{ocrExtractedOdo}</strong>
                   <Check size={16} style={{ color: '#50B748' }} />
                 </div>
               </div>
@@ -1254,7 +1292,7 @@ export const AddMaintenanceRecordPage: React.FC = () => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ color: '#64748B', fontSize: '12.5px' }}>Extracted Cost</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <strong style={{ fontSize: '13.5px', color: '#0A1128' }}>LKR 18,500</strong>
+                  <strong style={{ fontSize: '13.5px', color: '#0A1128' }}>{ocrExtractedCost}</strong>
                   <Check size={16} style={{ color: '#50B748' }} />
                 </div>
               </div>
