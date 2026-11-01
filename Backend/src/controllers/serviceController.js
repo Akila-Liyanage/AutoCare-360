@@ -11,12 +11,26 @@ const GarageInvoice = require('../models/GarageInvoice');
 // @access  Private (Owner or Garage)
 const createServiceRecord = async (req, res, next) => {
   try {
-    const targetVehicleId = req.params.vehicleId || req.body.vehicleId;
+    let targetVehicleId = req.params.vehicleId || req.body.vehicleId;
+
+    if (!targetVehicleId && (req.body.registrationNumber || req.body.regNumber)) {
+      const reg = String(req.body.registrationNumber || req.body.regNumber).trim();
+      const cleanReg = reg.replace(/\s+/g, '').toUpperCase();
+      const foundVeh = await Vehicle.findOne({
+        $or: [
+          { registrationNumber: new RegExp(reg, 'i') },
+          { registrationNumber: cleanReg },
+        ],
+      });
+      if (foundVeh) {
+        targetVehicleId = foundVeh._id;
+      }
+    }
 
     if (!targetVehicleId) {
       return res.status(400).json({
         success: false,
-        message: 'Vehicle ID is required.',
+        message: 'Vehicle ID or registered Registration Number is required.',
       });
     }
 

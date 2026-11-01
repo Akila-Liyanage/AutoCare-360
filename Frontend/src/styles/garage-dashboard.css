@@ -7,7 +7,7 @@
 .autocare-garage-layout {
   display: flex;
   min-height: 100vh;
-  background-color: #f4f7fb;
+  background-color: #F3F3F3;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   color: #0f172a;
 }
@@ -18,7 +18,7 @@
 .autocare-garage-sidebar {
   width: 270px;
   min-width: 270px;
-  background: #003874; /* AutoCare Deep Brand Navy Blue */
+  background: #01427C;
   color: #ffffff;
   display: flex;
   flex-direction: column;
@@ -31,8 +31,8 @@
 /* Sidebar Logo Capsule */
 .autocare-garage-logo-card {
   background: #ffffff;
-  border-radius: 12px;
-  padding: 10px 14px;
+  border-radius: 18px;
+  padding: 12px 18px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -81,40 +81,40 @@
 }
 
 .autocare-garage-menu-item.is-active {
-  background: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.21);
   color: #ffffff;
   font-weight: 700;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 .autocare-garage-menu-dot {
-  width: 8px;
-  height: 8px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
-  background: #00B4EB; /* Cyan dot */
+  background: #BEDBFF; /* Cyan dot */
   display: inline-block;
   flex-shrink: 0;
   transition: transform 0.18s ease;
 }
 
 .autocare-garage-menu-item.is-active .autocare-garage-menu-dot {
-  background: #38bdf8;
+  background: #00B4EB;
   box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
   transform: scale(1.15);
 }
 
 /* Verified Garage Card at bottom of sidebar */
 .autocare-garage-badge-card {
-  background: #00254e;
+  background: rgba(10, 17, 40, 0.59);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
+  border-radius: 18.13px;
   padding: 16px;
   margin-top: 24px;
 }
 
 .autocare-garage-verified-pill {
   display: inline-block;
-  background: #22c55e;
+  background: #46A84F;
   color: #ffffff;
   font-size: 10.5px;
   font-weight: 800;
@@ -272,8 +272,8 @@
 
 /* Business Verification Hero Card */
 .autocare-garage-hero-card {
-  background: #002d62; /* Rich dark navy card */
-  border-radius: 14px;
+  background: #01427C;
+  border-radius: 11.6px;
   padding: 24px 30px;
   color: #ffffff;
   display: flex;
@@ -292,7 +292,7 @@
 
 .autocare-garage-hero-verified-badge {
   display: inline-block;
-  background: #22c55e;
+  background: #46A84F;
   color: #ffffff;
   font-size: 10.5px;
   font-weight: 800;
@@ -360,7 +360,7 @@
 }
 
 .autocare-garage-btn-primary {
-  background: #0056a2;
+  background: #0056A2;
   color: #ffffff;
   font-size: 14px;
   font-weight: 700;
@@ -396,7 +396,8 @@
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
-  padding: 18px 20px;
+  padding: 16px 18px;
+  border: 1px solid #E2E8F0;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   transition: transform 0.18s ease, box-shadow 0.18s ease;
 }

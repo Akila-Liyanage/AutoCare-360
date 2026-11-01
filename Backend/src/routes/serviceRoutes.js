@@ -100,6 +100,8 @@ router.post('/upload', (req, res) => {
   });
 });
 
+router.post('/vehicle/manual-entry', createServiceRecord);
+
 router
   .route('/')
   .post(createServiceRecord)
