@@ -238,33 +238,66 @@ const createQuotation = async (req, res, next) => {
       });
     }
 
-    const { vehicleId, items, estimatedLabour = 0, estimatedParts = 0, totalAmount, validUntil, notes } = req.body;
+    const {
+      vehicleId,
+      registrationNumber,
+      vehicleReg,
+      items,
+      lineItems,
+      estimatedLabour = 0,
+      estimatedParts = 0,
+      totalAmount,
+      validUntil,
+      notes,
+      status: reqStatus,
+    } = req.body;
 
-    if (!vehicleId || !mongoose.Types.ObjectId.isValid(vehicleId)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Valid vehicle ID is required.',
+    let vehicle = null;
+    if (vehicleId && mongoose.Types.ObjectId.isValid(vehicleId)) {
+      vehicle = await Vehicle.findById(vehicleId);
+    }
+    const targetReg = (registrationNumber || vehicleReg || '').toString().trim();
+    if (!vehicle && targetReg) {
+      vehicle = await Vehicle.findOne({
+        registrationNumber: { $regex: new RegExp(`^${targetReg}$`, 'i') }
       });
+      // Fallback: search without spaces or dashes
+      if (!vehicle) {
+        const cleanReg = targetReg.replace(/[\s-]/g, '');
+        const allVehicles = await Vehicle.find();
+        vehicle = allVehicles.find(v => v.registrationNumber.replace(/[\s-]/g, '').toLowerCase() === cleanReg.toLowerCase());
+      }
     }
 
-    const vehicle = await Vehicle.findById(vehicleId);
     if (!vehicle) {
       return res.status(404).json({
         success: false,
-        message: 'Vehicle not found.',
+        message: targetReg
+          ? `Vehicle with registration '${targetReg}' was not found. Please register or verify the vehicle first.`
+          : 'Valid vehicle ID or registration number is required.',
       });
     }
 
-    if (!validUntil) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validity expiration date (validUntil) is required.',
-      });
-    }
+    const validityDate = validUntil ? new Date(validUntil) : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+
+    // Normalize items
+    let resolvedItems = [];
+    const sourceItems = Array.isArray(items) && items.length > 0 ? items : (Array.isArray(lineItems) ? lineItems : []);
+    resolvedItems = sourceItems.map((it) => {
+      const q = Number(it.quantity || it.qty || 1);
+      const p = Number(it.unitPrice || 0);
+      return {
+        description: it.description || 'Service / Part item',
+        quantity: q > 0 ? q : 1,
+        unitPrice: p >= 0 ? p : 0,
+        total: Number(it.total || (q * p)),
+      };
+    });
 
     const parsedLabour = Number(estimatedLabour) || 0;
     const parsedParts = Number(estimatedParts) || 0;
-    let finalTotal = totalAmount !== undefined ? Number(totalAmount) : (parsedLabour + parsedParts);
+    const itemsTotal = resolvedItems.reduce((acc, curr) => acc + curr.total, 0);
+    let finalTotal = totalAmount !== undefined ? Number(totalAmount) : (itemsTotal || (parsedLabour + parsedParts));
 
     if (isNaN(finalTotal) || finalTotal < 0) {
       return res.status(400).json({
@@ -279,12 +312,12 @@ const createQuotation = async (req, res, next) => {
       garageId: req.user._id,
       vehicleId: vehicle._id,
       quotationNumber,
-      items: Array.isArray(items) ? items : [],
+      items: resolvedItems,
       estimatedLabour: parsedLabour,
       estimatedParts: parsedParts,
       totalAmount: finalTotal,
-      validUntil: new Date(validUntil),
-      status: 'sent',
+      validUntil: validityDate,
+      status: reqStatus === 'draft' ? 'draft' : 'sent',
       notes: notes ? String(notes).trim() : '',
     });
 
@@ -340,7 +373,11 @@ const createQuotation = async (req, res, next) => {
 const getQuotations = async (req, res, next) => {
   try {
     const quotations = await Quotation.find({ garageId: req.user._id })
-      .populate('vehicleId', 'registrationNumber manufacturer model currentMileage vin')
+      .populate({
+        path: 'vehicleId',
+        select: 'registrationNumber manufacturer model currentMileage vin ownerId',
+        populate: { path: 'ownerId', select: 'fullName email phone' },
+      })
       .sort({ createdAt: -1 });
 
     return res.status(200).json({
