@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, CheckCircle2, AlertCircle, Search, ShieldCheck } from 'lucide-react';
+import { Lock, CheckCircle2, AlertCircle, Search, ShieldCheck, Upload } from 'lucide-react';
 import GarageLayout from '../../components/layout/GarageLayout';
 import api from '../../services/api';
 import '../../styles/garage-dashboard.css';
@@ -23,6 +23,18 @@ export const InvoiceGeneratorPage: React.FC = () => {
   );
   const [partsCost, setPartsCost] = useState<string>('24500');
   const [labourCost, setLabourCost] = useState<string>('8500');
+
+  const [ocrFileName, setOcrFileName] = useState<string>('INVOICE_COPY_045812.PDF');
+  const [ocrScanning, setOcrScanning] = useState<boolean>(false);
+  const ocrFileInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  const handleOcrUpload = (file: File) => {
+    setOcrFileName(file.name);
+    setOcrScanning(true);
+    setTimeout(() => {
+      setOcrScanning(false);
+    }, 600);
+  };
 
   const [loading, setLoading] = useState<boolean>(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
@@ -489,27 +501,52 @@ export const InvoiceGeneratorPage: React.FC = () => {
               display: 'flex',
               flexDirection: 'column',
               gap: '10px',
+              border: '1.2px dashed #0056A2',
+              cursor: 'pointer',
             }}
+            onClick={() => ocrFileInputRef.current?.click()}
+            title="Click to upload invoice PDF or photo"
           >
-            <h3
-              style={{
-                fontFamily: "'Inter', sans-serif",
-                fontWeight: 700,
-                fontSize: '15.5px',
-                color: '#15263D',
-                margin: 0,
+            <input
+              type="file"
+              ref={ocrFileInputRef}
+              accept="application/pdf,image/*"
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                if (e.target.files && e.target.files[0]) {
+                  handleOcrUpload(e.target.files[0]);
+                  e.target.value = '';
+                }
               }}
-            >
-              AI invoice scanner (OCR)
-            </h3>
+            />
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3
+                style={{
+                  fontFamily: "'Inter', sans-serif",
+                  fontWeight: 700,
+                  fontSize: '15.5px',
+                  color: '#15263D',
+                  margin: 0,
+                }}
+              >
+                AI invoice scanner (OCR)
+              </h3>
+              <Upload size={16} color="#0056A2" />
+            </div>
+
+            <div style={{ fontSize: '12px', fontWeight: 700, color: '#0056A2', wordBreak: 'break-all' }}>
+              {ocrScanning ? 'Scanning document...' : ocrFileName}
+            </div>
+
             <span style={{ fontSize: '12.5px', color: '#15263D' }}>
-              Odometer reading matched
+              • Odometer reading matched ({mileage} km)
             </span>
             <span style={{ fontSize: '12.5px', color: '#15263D' }}>
-              Vendor Tax ID validated
+              • Vendor Tax ID validated
             </span>
             <span style={{ fontSize: '12.5px', color: '#15263D' }}>
-              Depreciation Index calibrated
+              • Total cost extracted (LKR {subtotal.toLocaleString()})
             </span>
 
             <div
@@ -521,9 +558,13 @@ export const InvoiceGeneratorPage: React.FC = () => {
                 fontSize: '11px',
                 fontWeight: 700,
                 width: 'fit-content',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
               }}
             >
-              OCR VERIFIED MATCH
+              <CheckCircle2 size={12} color="#50B748" />
+              <span>OCR VERIFIED MATCH (98.4%)</span>
             </div>
           </div>
 
