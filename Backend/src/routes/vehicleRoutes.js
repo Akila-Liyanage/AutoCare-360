@@ -10,6 +10,8 @@ const {
   updateVehicle,
   lookupVehicle,
   getVehicleAuditLogs,
+  getVehicleQuotations,
+  updateQuotationStatus,
   uploadVehiclePhoto,
   updateVehiclePhoto,
 } = require('../controllers/vehicleController');
@@ -49,6 +51,13 @@ router.get('/:id/health-score', authorize('owner', 'garage', 'admin'), getVehicl
 
 // Vehicle Audit Trail logs (BR-08)
 router.get('/:id/audit-logs', authorize('owner', 'admin'), getVehicleAuditLogs);
+
+// Vehicle Quotations issued by verified garages (BR-03, BR-04)
+router.get('/:id/quotations', authorize('owner', 'garage', 'admin'), getVehicleQuotations);
+
+// Quotation Status Management (Accept / Decline by Owner or Garage)
+router.patch('/quotations/:id/status', authorize('owner', 'garage', 'admin'), updateQuotationStatus);
+router.put('/quotations/:id/status', authorize('owner', 'garage', 'admin'), updateQuotationStatus);
 
 // Owner vehicle digital passport management
 router.route('/')

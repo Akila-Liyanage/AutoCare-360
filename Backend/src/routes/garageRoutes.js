@@ -14,6 +14,7 @@ const {
   getGarageProfile,
   updateGarageProfile,
 } = require('../controllers/garageController');
+const { updateQuotationStatus } = require('../controllers/vehicleController');
 const { protect, authorize } = require('../middlewares/authMiddleware');
 
 // All garage endpoints require an authenticated verified garage or admin session
@@ -26,6 +27,7 @@ router.get('/customer-vehicles', getGarageCustomerVehicles);
 
 // Quotations per BR-03
 router.route('/quotations').post(createQuotation).get(getQuotations);
+router.route('/quotations/:id/status').patch(updateQuotationStatus).put(updateQuotationStatus);
 
 // Invoices per BR-03
 router.route('/invoices').post(createInvoice).get(getInvoices);

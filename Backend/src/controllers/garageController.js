@@ -6,6 +6,7 @@ const Quotation = require('../models/Quotation');
 const GarageInvoice = require('../models/GarageInvoice');
 const AuditLog = require('../models/AuditLog');
 const Expense = require('../models/Expense');
+const Notification = require('../models/Notification');
 
 // @desc    Get dashboard KPIs and operational summary for verified garage
 // @route   GET /api/garage/dashboard-stats
@@ -13,15 +14,19 @@ const Expense = require('../models/Expense');
 const getGarageDashboardStats = async (req, res, next) => {
   try {
     const garageId = req.user._id;
+    const userGarageName = (req.user.displayName || req.user.fullName || '').trim();
 
-    // Get all records associated with this garage (or certified records in workshop system)
-    const records = await ServiceRecord.find({
-      $or: [
-        { garageId },
-        { garageName: new RegExp(req.user.fullName?.split(' ')[0] || 'Perera', 'i') },
-        { recordSource: 'verified_garage' },
-      ],
-    })
+    // Query records strictly belonging to this specific garage
+    const orConditions = [{ garageId }];
+    if (userGarageName) {
+      orConditions.push({ garageName: new RegExp(`^${userGarageName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') });
+    }
+    // Allow seed garage (garage@gmail.com) to access legacy seeded records tagged with "Perera Auto Works"
+    if (req.user.email === 'garage@gmail.com') {
+      orConditions.push({ garageName: /Perera Auto Works/i });
+    }
+
+    const records = await ServiceRecord.find({ $or: orConditions })
       .populate({
         path: 'vehicleId',
         select: 'registrationNumber manufacturer model currentMileage vin ownerId fuelType transmission manufacturingYear color',
@@ -53,10 +58,8 @@ const getGarageDashboardStats = async (req, res, next) => {
       }
     });
 
-    // Also count all registered vehicles in workshop system
-    const allVehiclesCount = await Vehicle.countDocuments();
-    const uniqueVehiclesCount = Math.max(vehicleIdSet.size, allVehiclesCount);
-    const uniqueOwnersCount = Math.max(ownerIdSet.size, 1);
+    const uniqueVehiclesCount = vehicleIdSet.size;
+    const uniqueOwnersCount = ownerIdSet.size;
 
     // Recent 5 entries formatted for dashboard display
     const recentEntries = records.slice(0, 5).map((r) => {
@@ -74,7 +77,7 @@ const getGarageDashboardStats = async (req, res, next) => {
         workPerformed: r.workPerformed || 'Periodic service and safety inspection completed.',
         partsReplaced: r.partsReplaced || [],
         technicianName: r.technicianName || 'Certified Technician',
-        garageName: r.garageName || 'Perera Auto Works',
+        garageName: r.garageName || userGarageName || 'Verified Workshop Partner',
         serviceDate: r.serviceDate,
         totalCost: r.totalCost || 0,
         labourCost: r.labourCost || 0,
@@ -82,7 +85,9 @@ const getGarageDashboardStats = async (req, res, next) => {
         status: r.verificationStatus === 'verified' ? 'COMMITTED' : 'PENDING APPROVAL',
         verificationStatus: r.verificationStatus,
         vehicleId: v?._id,
-        customerName: owner ? (owner.fullName || owner.displayName || owner.email) : 'Chathura Perera',
+        customerName: owner ? (owner.fullName || owner.displayName || owner.email) : 'Vehicle Owner',
+        serviceImages: r.serviceImages || [],
+        invoiceUrl: r.invoiceUrl || '',
       };
     });
 
@@ -107,7 +112,7 @@ const getGarageDashboardStats = async (req, res, next) => {
         manufacturingYear: v?.manufacturingYear,
         customerName: owner
           ? owner.fullName || owner.displayName || owner.email
-          : 'Chathura Perera',
+          : 'Vehicle Owner',
         customerPhone: owner?.phone,
         customerEmail: owner?.email,
         date: dateFormatted,
@@ -122,8 +127,10 @@ const getGarageDashboardStats = async (req, res, next) => {
         workPerformed: r.workPerformed || 'Certified periodic maintenance and inspection completed.',
         partsReplaced: r.partsReplaced || [],
         technicianName: r.technicianName || 'Certified Technician',
-        garageName: r.garageName || 'Perera Auto Works',
+        garageName: r.garageName || userGarageName || 'Verified Workshop Partner',
         vehicleId: v?._id,
+        serviceImages: r.serviceImages || [],
+        invoiceUrl: r.invoiceUrl || '',
       };
     });
 
@@ -165,11 +172,11 @@ const getGarageDashboardStats = async (req, res, next) => {
         tableRecords,
         garageProfile: {
           id: req.user._id,
-          name: req.user.displayName || req.user.fullName || 'Perera Auto Works',
+          name: userGarageName || 'Verified Workshop Partner',
           email: req.user.email,
           status: req.user.status,
           city: req.user.city || 'Colombo 05',
-          accreditationNumber: 'BR-03',
+          accreditationNumber: req.user.accreditationNumber || 'BR-03',
           validUntil: '31 Dec 2026',
         },
       },
@@ -185,14 +192,17 @@ const getGarageDashboardStats = async (req, res, next) => {
 const getGarageRecords = async (req, res, next) => {
   try {
     const garageId = req.user._id;
+    const userGarageName = (req.user.displayName || req.user.fullName || '').trim();
 
-    const records = await ServiceRecord.find({
-      $or: [
-        { garageId },
-        { garageName: new RegExp(req.user.fullName?.split(' ')[0] || 'Perera', 'i') },
-        { recordSource: 'verified_garage' },
-      ],
-    })
+    const orConditions = [{ garageId }];
+    if (userGarageName) {
+      orConditions.push({ garageName: new RegExp(`^${userGarageName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') });
+    }
+    if (req.user.email === 'garage@gmail.com') {
+      orConditions.push({ garageName: /Perera Auto Works/i });
+    }
+
+    const records = await ServiceRecord.find({ $or: orConditions })
       .populate({
         path: 'vehicleId',
         select: 'registrationNumber manufacturer model currentMileage vin ownerId fuelType transmission manufacturingYear color',
@@ -291,6 +301,26 @@ const createQuotation = async (req, res, next) => {
         totalAmount: quotation.totalAmount,
       },
     });
+
+    // Auto-notify vehicle owner of the newly issued service quotation (BR-03, BR-04, FR-06)
+    if (vehicle.ownerId) {
+      try {
+        const garageName = req.user.displayName || req.user.fullName || 'Perera Auto Works';
+        await Notification.create({
+          userId: vehicle.ownerId,
+          vehicleId: vehicle._id,
+          title: 'New Service Quotation Received',
+          message: `${garageName} has issued service quotation (${quotation.quotationNumber}) for your ${vehicle.manufacturer} ${vehicle.model} (${vehicle.registrationNumber}). Quoted Amount: LKR ${finalTotal.toLocaleString()}. Valid until ${new Date(quotation.validUntil).toLocaleDateString('en-GB')}.`,
+          type: 'service',
+          priority: 'high',
+          status: 'unread',
+          source: 'service',
+          dueDate: quotation.validUntil,
+        });
+      } catch (notifErr) {
+        console.warn('[Quotation Owner Notification]:', notifErr.message);
+      }
+    }
 
     return res.status(201).json({
       success: true,
@@ -410,6 +440,26 @@ const createInvoice = async (req, res, next) => {
       },
     });
 
+    // Auto-notify vehicle owner of the newly issued service invoice (BR-03, BR-04, FR-06)
+    if (vehicle.ownerId) {
+      try {
+        const garageName = req.user.displayName || req.user.fullName || 'Perera Auto Works';
+        await Notification.create({
+          userId: vehicle.ownerId,
+          vehicleId: vehicle._id,
+          title: 'Service Invoice Issued',
+          message: `${garageName} has issued service invoice (${invoice.invoiceNumber}) for your ${vehicle.manufacturer} ${vehicle.model} (${vehicle.registrationNumber}). Total Amount: LKR ${finalTotal.toLocaleString()}.`,
+          type: 'service',
+          priority: 'high',
+          status: 'unread',
+          source: 'service',
+          dueDate: invoice.dueDate,
+        });
+      } catch (notifErr) {
+        console.warn('[Invoice Owner Notification]:', notifErr.message);
+      }
+    }
+
     return res.status(201).json({
       success: true,
       message: 'Service invoice created successfully.',
@@ -449,6 +499,8 @@ const getInvoices = async (req, res, next) => {
 // @access  Private (Verified Garage & Admin)
 const getGarageCustomerVehicles = async (req, res, next) => {
   try {
+    // All garages can view and search all registered vehicles on the platform
+    // because any customer can bring their vehicle to any service center across Sri Lanka
     const vehicles = await Vehicle.find()
       .populate('ownerId', 'fullName email phone displayName')
       .sort({ updatedAt: -1 });
@@ -482,6 +534,7 @@ const getGarageCustomerVehicles = async (req, res, next) => {
                 totalCost: latestService.totalCost,
                 verificationStatus: latestService.verificationStatus,
                 mileage: latestService.mileage,
+                garageName: latestService.garageName,
               }
             : null,
         };
@@ -673,17 +726,17 @@ const getGarageProfile = async (req, res, next) => {
       data: {
         profile: {
           id: user._id,
-          fullName: user.fullName || user.displayName || 'Kaveesha P.',
-          displayName: user.displayName || user.fullName || 'Perera Auto Works',
-          workshopName: 'Perera Auto Works',
+          fullName: user.fullName || user.displayName || 'Workshop Manager',
+          displayName: user.displayName || user.fullName || 'Verified Workshop Partner',
+          workshopName: user.displayName || user.fullName || 'Verified Workshop Partner',
           email: user.email,
           phone: user.phone || '+94 77 000 1234',
           role: 'Garage administrator',
           status: user.status || 'active',
-          garageIdentifier: 'BR-03',
+          garageIdentifier: user.accreditationNumber || 'BR-03',
           validThrough: '31 Dec 2026',
           registrationType: 'Verified Garage Partner',
-          businessRegistrationNumber: 'PV-PAW-2024-0318',
+          businessRegistrationNumber: user.businessRegistrationNumber || 'PV-PAW-2024-0318',
           city: user.city || 'Colombo 05, Western Province',
         },
       },

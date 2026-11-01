@@ -3,7 +3,6 @@ import { useParams, Link } from 'react-router-dom';
 import {
   Share2,
   Plus,
-  Printer,
   Pencil,
   ArrowRightLeft,
   ShieldCheck,
@@ -21,13 +20,13 @@ import {
   Trash2,
   FileText,
   Download,
-  Sparkles,
   Bell,
   Calendar
 } from 'lucide-react';
 import Navbar from '../../components/layout/Navbar';
 import Footer from '../../components/layout/Footer';
 import { useAuth } from '../../hooks/useAuth';
+import api from '../../services/api';
 import {
   getVehicleById,
   updateVehicle,
@@ -97,6 +96,38 @@ export const ViewVehiclePage: React.FC = () => {
   // AI Vehicle Health Assessment & Trust Score (BR-09, FR-10)
   const [healthScoreData, setHealthScoreData] = useState<HealthScoreData | null>(null);
 
+  // Official Garage Quotations (BR-03, BR-04)
+  const [quotations, setQuotations] = useState<any[]>([]);
+  const [selectedQuotation, setSelectedQuotation] = useState<any | null>(null);
+  const [isQuotationActionLoading, setIsQuotationActionLoading] = useState<boolean>(false);
+
+  const handleAcceptQuotation = async (quotationId: string) => {
+    setIsQuotationActionLoading(true);
+    try {
+      await api.patch(`/vehicles/quotations/${quotationId}/status`, { status: 'accepted' });
+      setSelectedQuotation((prev: any) => prev ? { ...prev, status: 'accepted' } : null);
+      setQuotations((prev) => prev.map((q) => q._id === quotationId ? { ...q, status: 'accepted' } : q));
+    } catch {
+      alert('Failed to accept quotation. Please try again.');
+    } finally {
+      setIsQuotationActionLoading(false);
+    }
+  };
+
+  const handleDeclineQuotation = async (quotationId: string) => {
+    if (!window.confirm('Are you sure you want to decline this quotation?')) return;
+    setIsQuotationActionLoading(true);
+    try {
+      await api.patch(`/vehicles/quotations/${quotationId}/status`, { status: 'declined' });
+      setSelectedQuotation((prev: any) => prev ? { ...prev, status: 'declined' } : null);
+      setQuotations((prev) => prev.map((q) => q._id === quotationId ? { ...q, status: 'declined' } : q));
+    } catch {
+      alert('Failed to decline quotation.');
+    } finally {
+      setIsQuotationActionLoading(false);
+    }
+  };
+
   useEffect(() => {
     let isMounted = true;
 
@@ -158,6 +189,14 @@ export const ViewVehiclePage: React.FC = () => {
           setDocsLoading(false);
         }
       });
+
+    api.get(`/vehicles/${id}/quotations`)
+      .then((res) => {
+        if (isMounted && res.data?.data?.quotations) {
+          setQuotations(res.data.data.quotations);
+        }
+      })
+      .catch(() => {});
 
     return () => {
       isMounted = false;
@@ -365,12 +404,6 @@ export const ViewVehiclePage: React.FC = () => {
       },
       anomaly: healthScoreData?.metrics?.mileageAnomalyDetected ?? anomaly,
     };
-  };
-
-  // Official Vehicle Passport Print / PDF Save Handler (BR-01, FR-01)
-  const handlePrintPassport = () => {
-    if (!vehicle) return;
-    window.print();
   };
 
   // Official Vehicle Digital Passport File Download Handler (BR-01, FR-01)
@@ -947,53 +980,6 @@ export const ViewVehiclePage: React.FC = () => {
                       <Download size={15} />
                       <span>Download Passport</span>
                     </button>
-
-                    <button
-                      type="button"
-                      className="autocare-btn-print-passport"
-                      onClick={handlePrintPassport}
-                      title="Print or save vehicle passport as PDF"
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        padding: '9px 15px',
-                        background: '#ffffff',
-                        border: '1px solid #cbd5e1',
-                        borderRadius: '8px',
-                        color: '#334155',
-                        fontSize: '13.5px',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease',
-                      }}
-                    >
-                      <Printer size={15} />
-                      <span>Print</span>
-                    </button>
-
-                    <Link
-                      to={`/vehicles/${vehicle?._id || id || 'default'}/health`}
-                      className="autocare-btn-ai-health"
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        padding: '9px 15px',
-                        background: '#ecfdf5',
-                        border: '1px solid #a7f3d0',
-                        borderRadius: '8px',
-                        color: '#047857',
-                        fontSize: '13.5px',
-                        fontWeight: 700,
-                        textDecoration: 'none',
-                        transition: 'all 0.15s ease',
-                      }}
-                      title="View AI Vehicle Health Assessment & Maintenance Intelligence (BR-09)"
-                    >
-                      <Sparkles size={15} />
-                      <span>AI Health (92)</span>
-                    </Link>
 
                     <Link
                       to={`/expenses?vehicleId=${vehicle?._id || id || ''}`}
@@ -1671,6 +1657,98 @@ export const ViewVehiclePage: React.FC = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Official Service Quotations (BR-03, BR-04) */}
+              {quotations.length > 0 && (
+                <div className="autocare-view-card" style={{ marginTop: '20px', width: '100%' }}>
+                  <div className="autocare-view-card-header">
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <h3 className="autocare-view-card-title">Official Service Quotations</h3>
+                        <span
+                          style={{
+                            background: '#DBEAFE',
+                            color: '#1D4ED8',
+                            padding: '2px 8px',
+                            borderRadius: '10px',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                          }}
+                        >
+                          {quotations.length} Active
+                        </span>
+                      </div>
+                      <p className="autocare-view-card-subtitle">
+                        Estimates and repair proposals issued by verified partner garages.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '14px', marginTop: '12px' }}>
+                    {quotations.map((q: any) => (
+                      <div
+                        key={q._id}
+                        style={{
+                          border: '1px solid #CBD5E1',
+                          borderRadius: '10px',
+                          padding: '16px',
+                          background: '#F8FAFC',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                          <div>
+                            <strong style={{ fontSize: '13.5px', color: '#0A1128' }}>
+                              {q.quotationNumber}
+                            </strong>
+                            <div style={{ fontSize: '12px', color: '#64748B' }}>
+                              Garage: <strong>{q.garageId?.displayName || q.garageId?.fullName || 'Perera Auto Works'}</strong>
+                            </div>
+                          </div>
+                          <span
+                            style={{
+                              background: '#DCFCE7',
+                              color: '#15803D',
+                              padding: '2px 8px',
+                              borderRadius: '10px',
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              textTransform: 'uppercase',
+                            }}
+                          >
+                            ● {q.status || 'SENT'}
+                          </span>
+                        </div>
+
+                        <div style={{ fontSize: '18px', fontWeight: 800, color: '#0056A2', margin: '8px 0 4px 0' }}>
+                          LKR {(q.totalAmount || 0).toLocaleString()}
+                        </div>
+
+                        <p style={{ margin: '0 0 10px 0', fontSize: '12px', color: '#475569' }}>
+                          Valid until {new Date(q.validUntil).toLocaleDateString('en-GB')} · Includes {q.items?.length || 0} line items.
+                        </p>
+
+                        <button
+                          type="button"
+                          onClick={() => setSelectedQuotation(q)}
+                          style={{
+                            background: '#FFFFFF',
+                            border: '1px solid #CBD5E1',
+                            borderRadius: '6px',
+                            padding: '6px 12px',
+                            fontSize: '12px',
+                            fontWeight: 700,
+                            color: '#0056A2',
+                            cursor: 'pointer',
+                            width: '100%',
+                          }}
+                        >
+                          View Quotation Breakdown
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </>
           );
         })()}
@@ -1998,6 +2076,213 @@ export const ViewVehiclePage: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Official Quotation Breakdown Modal (BR-03, BR-04) */}
+      {selectedQuotation && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(10, 17, 40, 0.65)',
+            backdropFilter: 'blur(3px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999,
+            padding: '20px',
+          }}
+          onClick={() => setSelectedQuotation(null)}
+        >
+          <div
+            style={{
+              background: '#FFFFFF',
+              borderRadius: '16px',
+              width: '100%',
+              maxWidth: '600px',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.25)',
+              display: 'flex',
+              flexDirection: 'column',
+              border: '1px solid #DCE5EF',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                padding: '16px 20px',
+                borderBottom: '1px solid #E2E8F0',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                background: '#F8FAFC',
+                borderTopLeftRadius: '16px',
+                borderTopRightRadius: '16px',
+              }}
+            >
+              <div>
+                <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0, color: '#0A1128' }}>
+                  Quotation Details: {selectedQuotation.quotationNumber}
+                </h3>
+                <span style={{ fontSize: '12px', color: '#64748B' }}>
+                  Issued by {selectedQuotation.garageId?.displayName || selectedQuotation.garageId?.fullName || 'Perera Auto Works'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedQuotation(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div style={{ background: '#F8FAFC', padding: '10px 14px', borderRadius: '8px' }}>
+                  <span style={{ fontSize: '11px', color: '#64748B', textTransform: 'uppercase' }}>Valid Until</span>
+                  <div style={{ fontWeight: 700, fontSize: '13.5px', color: '#0A1128' }}>
+                    {new Date(selectedQuotation.validUntil).toLocaleDateString('en-GB')}
+                  </div>
+                </div>
+                <div style={{ background: '#F8FAFC', padding: '10px 14px', borderRadius: '8px' }}>
+                  <span style={{ fontSize: '11px', color: '#64748B', textTransform: 'uppercase' }}>Total Quoted</span>
+                  <div style={{ fontWeight: 800, fontSize: '16px', color: '#0056A2' }}>
+                    LKR {(selectedQuotation.totalAmount || 0).toLocaleString()}
+                  </div>
+                </div>
+              </div>
+
+              {/* Items Table */}
+              <div>
+                <h4 style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 8px 0', color: '#0A1128' }}>
+                  Items & Services Breakdown
+                </h4>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px' }}>
+                  <thead>
+                    <tr style={{ background: '#F1F5F9', borderBottom: '1px solid #CBD5E1' }}>
+                      <th style={{ padding: '8px 10px', textAlign: 'left' }}>Item</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'center' }}>Qty</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'right' }}>Total (LKR)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedQuotation.items?.map((it: any, i: number) => (
+                      <tr key={i} style={{ borderBottom: '1px solid #E2E8F0' }}>
+                        <td style={{ padding: '8px 10px' }}>{it.description}</td>
+                        <td style={{ padding: '8px 10px', textAlign: 'center' }}>{it.quantity}</td>
+                        <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 600 }}>
+                          {(it.total || it.unitPrice * it.quantity || 0).toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {selectedQuotation.notes && (
+                <div style={{ background: '#EFF6FF', padding: '10px 14px', borderRadius: '8px', fontSize: '12px', color: '#1E40AF' }}>
+                  <strong>Notes:</strong> {selectedQuotation.notes}
+                </div>
+              )}
+
+              {/* Status Banner */}
+              {selectedQuotation.status === 'accepted' ? (
+                <div style={{ background: '#ECFDF5', border: '1px solid #A7F3D0', padding: '12px 16px', borderRadius: '8px', color: '#065F46', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 600 }}>
+                  <CheckCircle2 size={16} color="#059669" />
+                  <span>Quotation Accepted by You — The workshop is authorized to proceed with this service.</span>
+                </div>
+              ) : selectedQuotation.status === 'declined' ? (
+                <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', padding: '12px 16px', borderRadius: '8px', color: '#991B1B', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 600 }}>
+                  <AlertCircle size={16} color="#DC2626" />
+                  <span>You have declined this quotation.</span>
+                </div>
+              ) : null}
+            </div>
+
+            <div
+              style={{
+                padding: '14px 20px',
+                borderTop: '1px solid #E2E8F0',
+                background: '#F8FAFC',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                borderBottomLeftRadius: '16px',
+                borderBottomRightRadius: '16px',
+                gap: '12px',
+                flexWrap: 'wrap',
+              }}
+            >
+              <div style={{ fontSize: '12px', color: '#64748B' }}>
+                Status: <strong style={{ color: selectedQuotation.status === 'accepted' ? '#059669' : selectedQuotation.status === 'declined' ? '#DC2626' : '#0056A2', textTransform: 'uppercase' }}>{selectedQuotation.status || 'Sent'}</strong>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px' }}>
+                {selectedQuotation.status !== 'accepted' && selectedQuotation.status !== 'declined' && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => handleDeclineQuotation(selectedQuotation._id)}
+                      disabled={isQuotationActionLoading}
+                      style={{
+                        background: '#FEF2F2',
+                        color: '#DC2626',
+                        border: '1px solid #FCA5A5',
+                        borderRadius: '6px',
+                        padding: '8px 16px',
+                        fontSize: '13px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Decline
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleAcceptQuotation(selectedQuotation._id)}
+                      disabled={isQuotationActionLoading}
+                      style={{
+                        background: '#059669',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '8px 20px',
+                        fontSize: '13px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        boxShadow: '0 2px 6px rgba(5, 150, 105, 0.25)',
+                      }}
+                    >
+                      <CheckCircle2 size={15} />
+                      <span>{isQuotationActionLoading ? 'Processing...' : 'Accept Quotation'}</span>
+                    </button>
+                  </>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setSelectedQuotation(null)}
+                  style={{
+                    background: '#0056A2',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '8px 20px',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

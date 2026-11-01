@@ -36,6 +36,8 @@ export interface ServiceRecordDetailData {
   technicianName?: string;
   garageName?: string;
   vehicleId?: string;
+  serviceImages?: string[];
+  invoiceUrl?: string;
 }
 
 interface ServiceRecordDetailsModalProps {
@@ -299,7 +301,7 @@ export const ServiceRecordDetailsModal: React.FC<ServiceRecordDetailsModalProps>
             {/* Technician */}
             <div style={{ fontSize: '12px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <User size={14} style={{ color: '#0056A2' }} />
-              <span>Certified Technician: <strong>{record.technicianName || 'Kaveesha Perera (Master Tech)'}</strong></span>
+              <span>Certified Technician: <strong>{record.technicianName || 'Certified Workshop Technician'}</strong></span>
             </div>
           </div>
 
@@ -330,6 +332,67 @@ export const ServiceRecordDetailsModal: React.FC<ServiceRecordDetailsModalProps>
                     {part}
                   </span>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* Attached Documents & Service Photos */}
+          {((record.serviceImages && record.serviceImages.length > 0) || record.invoiceUrl) && (
+            <div style={{ border: '1px solid #E2E8F0', borderRadius: '10px', padding: '16px' }}>
+              <h3 style={{ fontSize: '13px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', margin: '0 0 10px 0' }}>
+                Service Photos & Verification Documents
+              </h3>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
+                {record.serviceImages?.map((img, idx) => (
+                  <a
+                    key={idx}
+                    href={img.startsWith('http') ? img : `http://localhost:5000${img}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      width: '80px',
+                      height: '80px',
+                      borderRadius: '8px',
+                      border: '1px solid #CBD5E1',
+                      overflow: 'hidden',
+                      display: 'block',
+                      background: '#F1F5F9',
+                    }}
+                    title="Click to view full photo"
+                  >
+                    <img
+                      src={img.startsWith('http') ? img : `http://localhost:5000${img}`}
+                      alt={`Service photo ${idx + 1}`}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://placehold.co/100x100?text=Photo';
+                      }}
+                    />
+                  </a>
+                ))}
+
+                {record.invoiceUrl && (
+                  <a
+                    href={record.invoiceUrl.startsWith('http') ? record.invoiceUrl : `http://localhost:5000${record.invoiceUrl}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '8px 14px',
+                      borderRadius: '8px',
+                      border: '1px solid #0056A2',
+                      background: '#EFF6FF',
+                      color: '#0056A2',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      textDecoration: 'none',
+                    }}
+                  >
+                    View Official Invoice / Document
+                  </a>
+                )}
               </div>
             </div>
           )}
