@@ -13,7 +13,7 @@ export const InvoiceGeneratorPage: React.FC = () => {
   const [completionDate, setCompletionDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   );
-  const [technician, setTechnician] = useState<string>('Kaveesha Perera (Master Tech)');
+  const [technician, setTechnician] = useState<string>('Certified Master Technician');
   const [mileage, setMileage] = useState<string>('112450');
   const [workSummary, setWorkSummary] = useState<string>(
     'Dual Clutch Fluid replacement with OEM spec Honda Ultra DW-1, multi-point transmission diagnostic calibration.'

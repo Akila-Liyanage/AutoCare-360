@@ -16,14 +16,14 @@ export const GarageProfilePage: React.FC = () => {
   const { user } = useAuth();
 
   const [profile, setProfile] = useState({
-    fullName: user?.fullName || user?.displayName || 'Kaveesha P.',
-    displayName: user?.displayName || user?.fullName || 'Perera Auto Works',
-    workshopName: 'Perera Auto Works',
-    email: user?.email || 'kaveesha.p@example.com',
+    fullName: user?.fullName || user?.displayName || 'Workshop Manager',
+    displayName: user?.displayName || user?.fullName || 'Verified Workshop Partner',
+    workshopName: user?.displayName || user?.fullName || 'Verified Workshop Partner',
+    email: user?.email || 'workshop@autocare360.lk',
     phone: user?.phone || '+94 77 000 1234',
     role: 'Garage administrator',
-    status: 'active',
-    garageIdentifier: 'BR-03',
+    status: user?.status || 'active',
+    garageIdentifier: (user as any)?.accreditationNumber || 'BR-03',
     validThrough: '31 Dec 2026',
     registrationType: 'Verified Garage Partner',
     businessRegistrationNumber: 'PV-PAW-2024-0318',

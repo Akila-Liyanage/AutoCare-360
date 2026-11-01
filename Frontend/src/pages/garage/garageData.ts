@@ -54,59 +54,34 @@ export const FIGMA_GARAGE_KPIS: GarageKPI[] = [
   {
     id: 'kpi-customers',
     label: 'TOTAL CUSTOMERS',
-    value: '125',
-    subtext: '↑ 12% New this month',
+    value: '0',
+    subtext: '0 Lifetime Customers',
     subtextType: 'positive',
   },
   {
     id: 'kpi-serviced',
     label: 'VEHICLES SERVICED',
-    value: '240',
-    subtext: 'LKR 4.2M Ledger Value',
+    value: '0',
+    subtext: 'LKR 0 Ledger Value',
     subtextType: 'info',
   },
   {
     id: 'kpi-entries',
     label: 'PENDING ENTRIES',
-    value: '18',
-    subtext: 'Awaiting Owner Signature OTP',
-    subtextType: 'warning',
+    value: '0',
+    subtext: 'All entries certified',
+    subtextType: 'positive',
   },
   {
     id: 'kpi-revenue',
     label: 'MONTHLY REVENUE',
-    value: 'Rs. 850,000',
-    subtext: 'On track for targets',
+    value: 'Rs. 0',
+    subtext: 'Certified Maintenance Ledger',
     subtextType: 'positive',
   },
 ];
 
-export const FIGMA_RECENT_ENTRIES: RecentVerifiedEntry[] = [
-  {
-    id: 'entry-1',
-    vehicleTitle: 'Toyota Aqua',
-    regNumber: 'WP ABC-1234',
-    mileage: '85,240 km',
-    serviceDescription: 'Engine Oil & Filter Swap',
-    status: 'COMMITTED',
-  },
-  {
-    id: 'entry-2',
-    vehicleTitle: 'Honda Vezel',
-    regNumber: 'WP CAS-9988',
-    mileage: '112,450 km',
-    serviceDescription: 'Dual Clutch Fluid Replacement',
-    status: 'COMMITTED',
-  },
-  {
-    id: 'entry-3',
-    vehicleTitle: 'Suzuki Wagon R',
-    regNumber: 'WP CAD-1212',
-    mileage: '42,100 km',
-    serviceDescription: 'Spark Plug Configuration',
-    status: 'PENDING SMS CODE',
-  },
-];
+export const FIGMA_RECENT_ENTRIES: RecentVerifiedEntry[] = [];
 
 export const FIGMA_OCR_QUEUE: OCRQueueItem = {
   id: 'ocr-0492',
@@ -124,32 +99,4 @@ export const FIGMA_OCR_WARNING: OCRWarningItem = {
   message: 'Manual check required for odometer match.',
 };
 
-export const FIGMA_GARAGE_RECORDS: GarageRecordItem[] = [
-  {
-    id: 'rec-1',
-    vehicleId: 'veh-aqua-1234',
-    vehicleRef: 'Toyota Aqua (WP ABC-1234)',
-    customerName: 'K. S. Wickramasinghe',
-    date: '31 Oct 2026',
-    status: 'Verified',
-    statusColor: 'green',
-  },
-  {
-    id: 'rec-2',
-    vehicleId: 'veh-vezel-9988',
-    vehicleRef: 'Honda Vezel e:HEV (WP CAS-9988)',
-    customerName: 'Damith Ranasinghe',
-    date: '28 Oct 2026',
-    status: 'Verified',
-    statusColor: 'green',
-  },
-  {
-    id: 'rec-3',
-    vehicleId: 'veh-wagonr-1212',
-    vehicleRef: 'Suzuki Wagon R (WP CAD-1212)',
-    customerName: 'Chathura Perera',
-    date: '25 Oct 2026',
-    status: 'Pending link',
-    statusColor: 'amber',
-  },
-];
+export const FIGMA_GARAGE_RECORDS: GarageRecordItem[] = [];

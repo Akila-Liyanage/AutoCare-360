@@ -597,6 +597,100 @@ const updateVehiclePhoto = async (req, res, next) => {
   }
 };
 
+// @desc    Get quotations for a specific vehicle passport (BR-03, Owner & Garage)
+// @route   GET /api/vehicles/:id/quotations
+// @access  Private (Owner, Garage, Admin)
+const getVehicleQuotations = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const Quotation = require('../models/Quotation');
+    const quotations = await Quotation.find({ vehicleId: id })
+      .populate('garageId', 'fullName displayName email phone city')
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      count: quotations.length,
+      data: {
+        quotations,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Update quotation status (accept/decline by vehicle owner or garage)
+// @route   PATCH /api/vehicles/quotations/:id/status
+// @access  Private (Owner & Garage)
+const updateQuotationStatus = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const Quotation = require('../models/Quotation');
+    const Notification = require('../models/Notification');
+    const AuditLog = require('../models/AuditLog');
+
+    if (!['accepted', 'declined', 'sent', 'expired'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid quotation status. Must be accepted, declined, sent, or expired.',
+      });
+    }
+
+    const quotation = await Quotation.findById(id).populate('garageId vehicleId');
+    if (!quotation) {
+      return res.status(404).json({
+        success: false,
+        message: 'Quotation not found.',
+      });
+    }
+
+    quotation.status = status;
+    await quotation.save();
+
+    // If accepted by owner, notify garage immediately
+    if (status === 'accepted' && quotation.garageId?._id) {
+      try {
+        const vehicleInfo = quotation.vehicleId
+          ? `${quotation.vehicleId.manufacturer || ''} ${quotation.vehicleId.model || ''} (${quotation.vehicleId.registrationNumber || ''})`
+          : 'Vehicle';
+
+        await Notification.create({
+          userId: quotation.garageId._id,
+          title: 'Quotation Accepted by Customer',
+          message: `Customer ${req.user.fullName || req.user.displayName || 'Vehicle Owner'} accepted quotation ${quotation.quotationNumber} (LKR ${(quotation.totalAmount || 0).toLocaleString()}) for ${vehicleInfo}. Service authorized.`,
+          type: 'service',
+          priority: 'high',
+          status: 'unread',
+          source: 'service',
+        });
+
+        await AuditLog.create({
+          action: 'QUOTATION_ACCEPTED_BY_OWNER',
+          vehicleId: quotation.vehicleId?._id,
+          actorId: req.user._id,
+          actorRole: req.user.role,
+          actorName: req.user.fullName || req.user.displayName,
+          notes: `Quotation ${quotation.quotationNumber} approved with amount LKR ${quotation.totalAmount}`,
+        });
+      } catch (err) {
+        console.warn('[Quotation Status Notification]:', err.message);
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Quotation marked as ${status} successfully.`,
+      data: {
+        quotation,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createVehicle,
   getMyVehicles,
@@ -604,6 +698,8 @@ module.exports = {
   updateVehicle,
   lookupVehicle,
   getVehicleAuditLogs,
+  getVehicleQuotations,
+  updateQuotationStatus,
   uploadVehiclePhoto,
   updateVehiclePhoto,
   uploadVehicleImage: updateVehiclePhoto,
