@@ -1,228 +1,350 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  AlertTriangle,
-  Plus,
-  CheckCircle2,
-  X,
-  FileText,
-  Sparkles,
-} from 'lucide-react';
+import { Plus, AlertTriangle } from 'lucide-react';
 import GarageLayout from '../../components/layout/GarageLayout';
+import ServiceRecordDetailsModal, { type ServiceRecordDetailData } from '../../components/modals/ServiceRecordDetailsModal';
 import api from '../../services/api';
 import {
-  MOCK_GARAGE_KPIS,
-  MOCK_RECENT_ENTRIES,
-  MOCK_OCR_QUEUE,
-  MOCK_OCR_WARNING,
-  MOCK_GARAGE_RECORDS,
+  FIGMA_GARAGE_KPIS,
+  FIGMA_RECENT_ENTRIES,
+  FIGMA_OCR_QUEUE,
+  FIGMA_OCR_WARNING,
+  FIGMA_GARAGE_RECORDS,
   type GarageKPI,
   type RecentVerifiedEntry,
   type GarageRecordItem,
 } from './garageData';
+import { useAuth } from '../../hooks/useAuth';
 import '../../styles/garage-dashboard.css';
-
-interface ToastState {
-  show: boolean;
-  message: string;
-}
-
-interface ApiRecordPayload {
-  _id: string;
-  vehicleId?: {
-    _id?: string;
-    manufacturer?: string;
-    model?: string;
-    registrationNumber?: string;
-    ownerId?: {
-      fullName?: string;
-      displayName?: string;
-    };
-  };
-  serviceDate: string;
-  serviceType?: string;
-  notes?: string;
-  totalCost?: number;
-  partsCost?: number;
-  labourCost?: number;
-  mileage?: number;
-  status?: string;
-  verificationStatus?: string;
-}
 
 export const GarageDashboardPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
-  // Toast feedback state
-  const [toast, setToast] = useState<ToastState>({ show: false, message: '' });
-
-  // OCR details modal state
-  const [showOcrModal, setShowOcrModal] = useState<boolean>(false);
-
-  // Live KPI and recent entries state (backed by real API data with fallback)
-  const [kpis, setKpis] = useState<GarageKPI[]>(MOCK_GARAGE_KPIS);
-  const [recentEntries, setRecentEntries] = useState<RecentVerifiedEntry[]>(MOCK_RECENT_ENTRIES);
-  const [garageRecords, setGarageRecords] = useState<GarageRecordItem[]>(MOCK_GARAGE_RECORDS);
+  const [kpis, setKpis] = useState<GarageKPI[]>(FIGMA_GARAGE_KPIS);
+  const [recentEntries, setRecentEntries] = useState<RecentVerifiedEntry[]>(FIGMA_RECENT_ENTRIES);
+  const [records, setRecords] = useState<GarageRecordItem[]>(FIGMA_GARAGE_RECORDS);
+  const [selectedRecord, setSelectedRecord] = useState<ServiceRecordDetailData | null>(null);
 
   useEffect(() => {
     let isMounted = true;
-    const fetchGarageStats = async () => {
+    const fetchLiveStats = async () => {
       try {
-        const response = await api.get('/garage/dashboard-stats');
-        if (isMounted && response.data?.data) {
-          if (Array.isArray(response.data.data.kpis) && response.data.data.kpis.length > 0) {
-            setKpis(response.data.data.kpis);
+        const res = await api.get('/garage/dashboard-stats');
+        if (isMounted && res.data?.data) {
+          if (Array.isArray(res.data.data.kpis) && res.data.data.kpis.length > 0) {
+            setKpis(res.data.data.kpis);
           }
-          if (Array.isArray(response.data.data.recentEntries) && response.data.data.recentEntries.length > 0) {
-            setRecentEntries(response.data.data.recentEntries);
+          if (Array.isArray(res.data.data.recentEntries) && res.data.data.recentEntries.length > 0) {
+            setRecentEntries(res.data.data.recentEntries);
+          }
+          const loadedRecords = res.data.data.records || res.data.data.tableRecords;
+          if (Array.isArray(loadedRecords) && loadedRecords.length > 0) {
+            setRecords(loadedRecords);
           }
         }
       } catch {
-        // Fallback gracefully to mock data
-      }
-
-      try {
-        const recordsRes = await api.get('/garage/my-records');
-        if (
-          isMounted &&
-          recordsRes.data?.data?.records &&
-          Array.isArray(recordsRes.data.data.records) &&
-          recordsRes.data.data.records.length > 0
-        ) {
-          const mapped: GarageRecordItem[] = recordsRes.data.data.records.map((r: ApiRecordPayload) => ({
-            id: r._id,
-            vehicleId: r.vehicleId?._id || '6ad8a02b9ba9651cdcf01886',
-            vehicleRef: r.vehicleId
-              ? `${r.vehicleId.manufacturer} ${r.vehicleId.model} (${r.vehicleId.registrationNumber})`
-              : 'Vehicle Record',
-            customerName: r.vehicleId?.ownerId?.fullName || r.vehicleId?.ownerId?.displayName || 'Chathura Perera',
-            date: new Date(r.serviceDate).toLocaleDateString('en-GB', {
-              day: '2-digit',
-              month: 'short',
-              year: 'numeric',
-            }),
-            status: r.verificationStatus === 'verified' ? 'Verified' : 'Pending link',
-            statusColor: r.verificationStatus === 'verified' ? 'green' : 'amber',
-          }));
-          setGarageRecords(mapped);
-        }
-      } catch {
-        // Fallback gracefully
+        // Fallback to exact Figma specification
       }
     };
-    fetchGarageStats();
+    fetchLiveStats();
     return () => {
       isMounted = false;
     };
   }, []);
 
-  const showToast = (message: string) => {
-    setToast({ show: true, message });
-    setTimeout(() => {
-      setToast((prev) => ({ ...prev, show: false }));
-    }, 4500);
-  };
-
-  const handleViewPassport = (record: GarageRecordItem) => {
-    navigate(`/garage/vehicles/${record.vehicleId}`);
-  };
+  const displayName = user?.fullName || user?.displayName || 'Perera Auto Works';
 
   return (
     <GarageLayout activeItem="Overview" breadcrumbCurrent="Overview">
-      {/* Business Verification Hero Card */}
-      <section className="autocare-garage-hero-card" aria-label="Garage Verification Status">
+      {/* ====================================================================
+          BUSINESS VERIFICATION CARD
+          ==================================================================== */}
+      <section
+        className="autocare-garage-hero-card"
+        style={{
+          background: '#01427C',
+          borderRadius: '10px',
+          padding: '16px 20px',
+          color: '#FFFFFF',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '20px',
+          boxShadow: '0 2px 8px rgba(1, 66, 124, 0.12)',
+        }}
+        aria-label="Garage Verification Status"
+      >
         <div>
-          <p className="autocare-garage-hero-sub">Business verification</p>
-          <span className="autocare-garage-hero-verified-badge">VERIFIED BUSINESS</span>
-          <h2 className="autocare-garage-hero-title">Perera Auto Works</h2>
-          <p className="autocare-garage-hero-desc">
+          <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: 'rgba(255, 255, 255, 0.85)', fontWeight: 600 }}>
+            Business verification
+          </p>
+          <div
+            style={{
+              display: 'inline-block',
+              background: '#50B748',
+              color: '#FFFFFF',
+              borderRadius: '20px',
+              padding: '2px 9px',
+              fontSize: '10.5px',
+              fontWeight: 700,
+              letterSpacing: '0.4px',
+              marginBottom: '6px',
+            }}
+          >
+            VERIFIED BUSINESS
+          </div>
+          <h2 style={{ fontSize: '19px', fontWeight: 800, margin: '0 0 3px 0', color: '#FFFFFF' }}>
+            {displayName}
+          </h2>
+          <p style={{ fontSize: '12.5px', color: '#B9CAE0', margin: 0 }}>
             BR-03 · Verified through 31 Dec 2026 · Colombo 05
           </p>
         </div>
 
         <button
           type="button"
-          className="autocare-garage-hero-btn"
-          onClick={() => {
-            showToast('Perera Auto Works accreditation valid on SLT Mobitel Trust Network.');
+          onClick={() => navigate('/garage/profile')}
+          style={{
+            background: '#FFFFFF',
+            border: '1px solid #DCE5EF',
+            borderRadius: '6px',
+            padding: '8px 14px',
+            color: '#15263D',
+            fontWeight: 700,
+            fontSize: '13px',
+            cursor: 'pointer',
           }}
         >
           Accreditation details
         </button>
       </section>
 
-      {/* Main Dashboard Title Row */}
-      <div className="autocare-garage-title-row">
+      {/* ====================================================================
+          MAIN TITLE ROW
+          ==================================================================== */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '20px',
+          gap: '16px',
+          flexWrap: 'wrap',
+        }}
+      >
         <div>
-          <h1 className="autocare-garage-main-title">Garage Service Management</h1>
-          <p className="autocare-garage-main-subtitle">
+          <h1
+            style={{
+              fontFamily: "'Inter', sans-serif",
+              fontWeight: 800,
+              fontSize: '22px',
+              lineHeight: '28px',
+              color: '#0A1128',
+              margin: '0 0 4px 0',
+            }}
+          >
+            Garage Service Management
+          </h1>
+          <p
+            style={{
+              fontFamily: "'Inter', sans-serif",
+              fontWeight: 400,
+              fontSize: '13.5px',
+              lineHeight: '18px',
+              color: '#64748B',
+              margin: 0,
+            }}
+          >
             Tamper-proof ledger publisher portal and diagnostic scanning metrics.
           </p>
         </div>
 
         <button
           type="button"
-          className="autocare-garage-btn-primary"
           onClick={() => navigate('/garage/maintenance/new')}
+          style={{
+            background: '#0056A2',
+            borderRadius: '7px',
+            padding: '9px 16px',
+            color: '#FFFFFF',
+            fontWeight: 700,
+            fontSize: '13.5px',
+            border: 'none',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            cursor: 'pointer',
+            boxShadow: '0 2px 8px rgba(0, 86, 162, 0.22)',
+          }}
         >
           <Plus size={16} />
           <span>Add Service Entry</span>
         </button>
       </div>
 
-      {/* KPI Cards Grid */}
-      <section className="autocare-garage-kpis-grid" aria-label="Garage Key Metrics">
+      {/* ====================================================================
+          METRIC CARDS (4 Cards Grid)
+          ==================================================================== */}
+      <section
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+          gap: '16px',
+          marginBottom: '22px',
+        }}
+        aria-label="Key Performance Indicators"
+      >
         {kpis.map((kpi) => (
-          <div key={kpi.id} className="autocare-garage-kpi-card">
-            <div className="autocare-garage-kpi-label">{kpi.label}</div>
+          <div
+            key={kpi.id}
+            style={{
+              background: '#FFFFFF',
+              border: '1px solid #E2E8F0',
+              borderRadius: '12px',
+              padding: '16px 18px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px',
+              boxShadow: '0 1px 4px rgba(0, 0, 0, 0.02)',
+            }}
+          >
+            <span
+              style={{
+                fontFamily: "'Inter', sans-serif",
+                fontWeight: 600,
+                fontSize: '11.5px',
+                color: '#64748B',
+                textTransform: 'uppercase',
+                letterSpacing: '0.4px',
+              }}
+            >
+              {kpi.label}
+            </span>
             <div
-              className={`autocare-garage-kpi-val ${
-                kpi.value.startsWith('Rs') ? 'is-currency' : ''
-              }`}
+              style={{
+                fontFamily: "'Inter', sans-serif",
+                fontWeight: 800,
+                fontSize: '24px',
+                lineHeight: '30px',
+                color: '#0A1128',
+              }}
             >
               {kpi.value}
             </div>
-            <p className={`autocare-garage-kpi-subtext is-${kpi.subtextType}`}>
+            <p
+              style={{
+                fontFamily: "'Inter', sans-serif",
+                fontWeight: 400,
+                fontSize: '12px',
+                margin: 0,
+                color:
+                  kpi.subtextType === 'positive'
+                    ? '#50B748'
+                    : kpi.subtextType === 'info'
+                    ? '#0056A2'
+                    : '#B45309',
+              }}
+            >
               {kpi.subtext}
             </p>
           </div>
         ))}
       </section>
 
-      {/* Middle Two-Column Grid: Recent Entries + AI OCR Queue */}
-      <div className="autocare-garage-middle-grid">
+      {/* ====================================================================
+          SPLITS ROW (Recent Entries + Active AI OCR Queue)
+          ==================================================================== */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+          gap: '20px',
+          marginBottom: '22px',
+        }}
+      >
         {/* Left Column: Recent Verified Entries */}
-        <section className="autocare-garage-panel" aria-label="Recent Verified Entries">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
-            <h2 className="autocare-garage-panel-title" style={{ margin: 0 }}>
-              Recent Verified Entries
-            </h2>
-            <button
-              type="button"
-              className="autocare-garage-action-link"
-              onClick={() => navigate('/garage/service-records')}
-              style={{ fontSize: '12.5px' }}
-            >
-              View all
-            </button>
-          </div>
+        <section
+          style={{
+            background: '#FFFFFF',
+            border: '1px solid #E2E8F0',
+            borderRadius: '14px',
+            padding: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '14px',
+            boxShadow: '0 1px 4px rgba(0, 0, 0, 0.02)',
+          }}
+          aria-label="Recent Verified Entries"
+        >
+          <h2
+            style={{
+              fontFamily: "'Inter', sans-serif",
+              fontWeight: 700,
+              fontSize: '16px',
+              lineHeight: '20px',
+              color: '#0A1128',
+              margin: 0,
+            }}
+          >
+            Recent Verified Entries
+          </h2>
 
-          <div className="autocare-garage-entries-list">
-            {recentEntries.map((entry) => (
-              <div key={entry._id || entry.id} className="autocare-garage-entry-item">
-                <div className="autocare-garage-entry-left">
-                  <span className="autocare-garage-entry-vehicle">
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {recentEntries.map((entry, idx) => (
+              <div
+                key={entry.id || idx}
+                onClick={() => setSelectedRecord(entry as any)}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '12px 8px',
+                  borderRadius: '6px',
+                  borderBottom: idx < recentEntries.length - 1 ? '1px solid #E2E8F0' : 'none',
+                  cursor: 'pointer',
+                  transition: 'background 0.15s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#F8FAFC')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                title="Click to view verified record details"
+              >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                  <h4
+                    style={{
+                      fontFamily: "'Inter', sans-serif",
+                      fontWeight: 700,
+                      fontSize: '13.5px',
+                      color: '#0A1128',
+                      margin: 0,
+                    }}
+                  >
                     {entry.vehicleTitle} ({entry.regNumber})
-                  </span>
-                  <span className="autocare-garage-entry-details">
+                  </h4>
+                  <p
+                    style={{
+                      fontFamily: "'Inter', sans-serif",
+                      fontWeight: 400,
+                      fontSize: '12px',
+                      color: '#64748B',
+                      margin: 0,
+                    }}
+                  >
                     {entry.mileage} • {entry.serviceDescription}
-                  </span>
+                  </p>
                 </div>
 
                 <span
-                  className={`autocare-garage-status-badge ${
-                    entry.status === 'COMMITTED' ? 'is-committed' : 'is-pending'
-                  }`}
+                  style={{
+                    background: entry.status === 'COMMITTED' ? '#DCFCE7' : '#FEF3C7',
+                    color: entry.status === 'COMMITTED' ? '#15803D' : '#B45309',
+                    borderRadius: '4px',
+                    padding: '3px 8px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    letterSpacing: '0.4px',
+                    whiteSpace: 'nowrap',
+                  }}
                 >
                   {entry.status}
                 </span>
@@ -231,257 +353,258 @@ export const GarageDashboardPage: React.FC = () => {
           </div>
         </section>
 
-        {/* Right Column: Active OCR Queue (Demo / Sample Data) */}
-        <section className="autocare-garage-panel" aria-label="Sample OCR Queue">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
-            <h2 className="autocare-garage-panel-title" style={{ margin: 0 }}>
-              Sample OCR Queue (Demo)
-            </h2>
-            <span
-              style={{
-                fontSize: '11px',
-                fontWeight: 700,
-                color: '#0056a2',
-                background: '#f0f9ff',
-                padding: '3px 8px',
-                borderRadius: '6px',
-              }}
-            >
-              AI PROCESSING
-            </span>
-          </div>
-
-          <div className="autocare-garage-ocr-card">
-            <div className="autocare-garage-ocr-header">
-              <span className="autocare-garage-ocr-scan-num">{MOCK_OCR_QUEUE.scanNumber}</span>
-              <span className="autocare-garage-ocr-status">{MOCK_OCR_QUEUE.status}</span>
-            </div>
-
-            <div className="autocare-garage-ocr-vehicle">
-              {MOCK_OCR_QUEUE.vehicleTitle} ({MOCK_OCR_QUEUE.regNumber})
-            </div>
-
-            {/* Simulated progress bar */}
-            <div className="autocare-garage-ocr-progress-bar">
-              <div
-                className="autocare-garage-ocr-progress-fill"
-                style={{ width: `${MOCK_OCR_QUEUE.progressPercent}%` }}
-              />
-            </div>
-
-            <div className="autocare-garage-ocr-footer">
-              <span className="autocare-garage-ocr-time">
-                Time remaining: ~{MOCK_OCR_QUEUE.estimatedTimeRemaining}
-              </span>
-              <button
-                type="button"
-                className="autocare-garage-action-link"
-                onClick={() => setShowOcrModal(true)}
-              >
-                Inspect scan details
-              </button>
-            </div>
-          </div>
-
-          {/* Warning Notice Box */}
-          <div
-            className="autocare-garage-warning-box"
-            onClick={() => {
-              showToast(
-                'Telemetry Disparity: Physical odometer shows 98,700 km, digital ECU scan shows 98,712 km (within 0.1% tolerance).'
-              );
-            }}
-            role="button"
-            tabIndex={0}
-            title="Click for validation error logs"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                showToast('Telemetry Disparity: Physical odometer inspection log opened.');
-              }
+        {/* Right Column: Active AI OCR Queue */}
+        <section
+          style={{
+            background: '#FFFFFF',
+            border: '1px solid #E2E8F0',
+            borderRadius: '14px',
+            padding: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '14px',
+            boxShadow: '0 1px 4px rgba(0, 0, 0, 0.02)',
+          }}
+          aria-label="Active AI OCR Queue"
+        >
+          <h2
+            style={{
+              fontFamily: "'Inter', sans-serif",
+              fontWeight: 700,
+              fontSize: '16px',
+              lineHeight: '20px',
+              color: '#0A1128',
+              margin: 0,
             }}
           >
-            <AlertTriangle size={18} className="autocare-garage-warning-icon" />
-            <div>
-              <div className="autocare-garage-warning-title">{MOCK_OCR_WARNING.title}</div>
-              <div className="autocare-garage-warning-desc">{MOCK_OCR_WARNING.message}</div>
+            Active AI OCR Queue
+          </h2>
+
+          {/* Queue Indicator Box */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              padding: '10px 12px',
+              gap: '12px',
+              background: '#F4F6FA',
+              borderRadius: '7px',
+            }}
+          >
+            <div
+              style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                background: '#0056A2',
+                flexShrink: 0,
+              }}
+            />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <span
+                style={{
+                  fontFamily: "'Inter', sans-serif",
+                  fontWeight: 700,
+                  fontSize: '13px',
+                  color: '#0A1128',
+                }}
+              >
+                Invoice Scan {FIGMA_OCR_QUEUE.scanNumber}
+              </span>
+              <span
+                style={{
+                  fontFamily: "'Inter', sans-serif",
+                  fontWeight: 400,
+                  fontSize: '12px',
+                  color: '#64748B',
+                }}
+              >
+                {FIGMA_OCR_QUEUE.vehicleTitle} ({FIGMA_OCR_QUEUE.regNumber}) - Processing {FIGMA_OCR_QUEUE.progressPercent}%
+              </span>
+            </div>
+          </div>
+
+          {/* Queue Warning Box */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              padding: '10px 12px',
+              gap: '12px',
+              background: '#FEF3C7',
+              borderRadius: '7px',
+              color: '#B45309',
+            }}
+          >
+            <AlertTriangle size={18} style={{ flexShrink: 0, color: '#B45309' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <span
+                style={{
+                  fontFamily: "'Inter', sans-serif",
+                  fontWeight: 700,
+                  fontSize: '12.5px',
+                  color: '#B45309',
+                }}
+              >
+                {FIGMA_OCR_WARNING.title}
+              </span>
+              <span
+                style={{
+                  fontFamily: "'Inter', sans-serif",
+                  fontWeight: 400,
+                  fontSize: '11.5px',
+                  color: '#B45309',
+                }}
+              >
+                {FIGMA_OCR_WARNING.message}
+              </span>
             </div>
           </div>
         </section>
       </div>
 
-      {/* Bottom Section: Records Table Panel */}
-      <section className="autocare-garage-records-panel" aria-label="Service Records Ledger">
-        <div
+      {/* ====================================================================
+          RECORDS TABLE
+          ==================================================================== */}
+      <section
+        style={{
+          background: '#FFFFFF',
+          border: '1px solid #DCE5EF',
+          borderRadius: '12px',
+          boxShadow: '0px 2px 8px rgba(18, 52, 90, 0.04)',
+          padding: '20px',
+        }}
+        aria-label="Registered Vehicle Records"
+      >
+        <h3
           style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '18px',
+            fontFamily: "'Inter', sans-serif",
+            fontWeight: 700,
+            fontSize: '16px',
+            color: '#15263D',
+            margin: '0 0 14px 0',
           }}
         >
-          <h2 className="autocare-garage-records-title" style={{ margin: 0 }}>
-            Recent Service Records
-          </h2>
-          <button
-            type="button"
-            className="autocare-garage-action-link"
-            onClick={() => navigate('/garage/vehicles')}
-          >
-            Browse all vehicles →
-          </button>
-        </div>
+          Records
+        </h3>
 
-        <table className="autocare-garage-records-table">
-          <thead>
-            <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-              <th style={{ padding: '10px 10px', textAlign: 'left', fontSize: '12px', color: '#64748b' }}>
-                VEHICLE
-              </th>
-              <th style={{ padding: '10px 10px', textAlign: 'left', fontSize: '12px', color: '#64748b' }}>
-                CUSTOMER
-              </th>
-              <th style={{ padding: '10px 10px', textAlign: 'left', fontSize: '12px', color: '#64748b' }}>
-                DATE
-              </th>
-              <th style={{ padding: '10px 10px', textAlign: 'left', fontSize: '12px', color: '#64748b' }}>
-                STATUS
-              </th>
-              <th style={{ padding: '10px 10px', textAlign: 'right', fontSize: '12px', color: '#64748b' }}>
-                ACTIONS
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {garageRecords.map((rec) => (
-              <tr key={rec.id}>
-                <td className="autocare-garage-td-ref">{rec.vehicleRef}</td>
-                <td className="autocare-garage-td-customer">{rec.customerName}</td>
-                <td className="autocare-garage-td-date">{rec.date}</td>
-                <td className={`autocare-garage-td-status is-${rec.statusColor}`}>
-                  {rec.status}
-                </td>
-                <td className="autocare-garage-td-actions">
-                  <button
-                    type="button"
-                    className="autocare-garage-action-link"
-                    onClick={() => handleViewPassport(rec)}
-                    title={`View Digital Passport for ${rec.vehicleRef}`}
-                  >
-                    View Passport
-                  </button>
-                  <span className="autocare-garage-action-separator">·</span>
-                  <button
-                    type="button"
-                    className="autocare-garage-action-link"
-                    onClick={() => navigate(`/garage/maintenance/new?vehicleId=${rec.vehicleId}`)}
-                    title={`Add Record for ${rec.vehicleRef}`}
-                  >
-                    Add Record
-                  </button>
-                </td>
+        <div style={{ width: '100%', overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid #DCE5EF' }}>
+                <th style={{ padding: '10px 14px', color: '#617187', fontSize: '12.5px', fontWeight: 600 }}>
+                  Vehicle Reference
+                </th>
+                <th style={{ padding: '10px 14px', color: '#617187', fontSize: '12.5px', fontWeight: 600 }}>
+                  Customer Name
+                </th>
+                <th style={{ padding: '10px 14px', color: '#617187', fontSize: '12.5px', fontWeight: 600 }}>
+                  Service Date
+                </th>
+                <th style={{ padding: '10px 14px', color: '#617187', fontSize: '12.5px', fontWeight: 600 }}>
+                  Passport Status
+                </th>
+                <th style={{ padding: '10px 14px', color: '#617187', fontSize: '12.5px', fontWeight: 600, textAlign: 'right' }}>
+                  Action
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {records.length === 0 ? (
+                <tr>
+                  <td colSpan={5} style={{ padding: '28px 14px', textAlign: 'center', color: '#64748B', fontSize: '13.5px' }}>
+                    No service records found. Click <strong>Add Service Entry</strong> to log verified maintenance.
+                  </td>
+                </tr>
+              ) : (
+                records.map((rec, idx) => (
+                  <tr
+                    key={rec.id || (rec as any)._id || idx}
+                    style={{ borderBottom: '1px solid #DCE5EF', cursor: 'pointer', transition: 'background 0.15s ease' }}
+                    onClick={() => setSelectedRecord(rec as any)}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#F8FAFC')}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                  >
+                    <td style={{ padding: '12px 14px', color: '#15263D', fontSize: '13px', fontWeight: 600 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ color: '#0056A2', fontWeight: 700 }}>
+                          {rec.vehicleRef}
+                        </span>
+                      </div>
+                    </td>
+                    <td style={{ padding: '12px 14px', color: '#15263D', fontSize: '13px' }}>
+                      {rec.customerName}
+                    </td>
+                    <td style={{ padding: '12px 14px', color: '#15263D', fontSize: '13px' }}>
+                      {rec.date}
+                    </td>
+                    <td style={{ padding: '12px 14px' }}>
+                      <span
+                        style={{
+                          background: rec.status === 'Verified' ? '#DCFCE7' : '#FEF3C7',
+                          color: rec.status === 'Verified' ? '#15803D' : '#B45309',
+                          padding: '3px 8px',
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                          fontWeight: 700,
+                        }}
+                      >
+                        {rec.status}
+                      </span>
+                    </td>
+                    <td style={{ padding: '12px 14px', textAlign: 'right' }}>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedRecord(rec as any);
+                        }}
+                        style={{
+                          background: '#F1F5F9',
+                          border: '1px solid #DCE5EF',
+                          borderRadius: '5px',
+                          color: '#0056A2',
+                          fontWeight: 700,
+                          fontSize: '12px',
+                          padding: '4px 10px',
+                          cursor: 'pointer',
+                          marginRight: '8px',
+                        }}
+                        title="View Record Details"
+                      >
+                        View Details
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(rec.vehicleId ? `/garage/vehicles/${rec.vehicleId}` : `/garage/maintenance/new`);
+                        }}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#64748B',
+                          fontWeight: 600,
+                          fontSize: '12px',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {rec.vehicleId ? 'Passport →' : 'Add'}
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </section>
 
-      {/* ====================================================================
-          MODALS & TOASTS
-          ==================================================================== */}
-      {/* OCR Scan Inspection Modal */}
-      {showOcrModal && (
-        <div
-          className="autocare-garage-modal-backdrop"
-          onClick={() => setShowOcrModal(false)}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="autocare-garage-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="autocare-garage-modal-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Sparkles size={20} />
-                <h3>AI Invoice Scanner {MOCK_OCR_QUEUE.scanNumber}</h3>
-              </div>
-              <button
-                type="button"
-                className="autocare-garage-modal-close-btn"
-                onClick={() => setShowOcrModal(false)}
-                aria-label="Close modal"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="autocare-garage-modal-body">
-              <div
-                style={{
-                  background: '#f8fafc',
-                  padding: '16px',
-                  borderRadius: '10px',
-                  border: '1px solid #e2e8f0',
-                  marginBottom: '16px',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                  <FileText size={18} style={{ color: '#0056a2' }} />
-                  <strong style={{ fontSize: '14px', color: '#0f172a' }}>
-                    {MOCK_OCR_QUEUE.vehicleTitle} ({MOCK_OCR_QUEUE.regNumber})
-                  </strong>
-                </div>
-                <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>
-                  Optical Recognition Confidence: <strong>{MOCK_OCR_QUEUE.progressPercent}%</strong>
-                </p>
-              </div>
-
-              <div className="autocare-garage-profile-spec-row">
-                <span className="autocare-garage-profile-spec-label">Detected Invoice No.</span>
-                <span className="autocare-garage-profile-spec-val">INV-8492-PAW</span>
-              </div>
-              <div className="autocare-garage-profile-spec-row">
-                <span className="autocare-garage-profile-spec-label">Extracted Subtotal</span>
-                <span className="autocare-garage-profile-spec-val">LKR 46,500.00</span>
-              </div>
-              <div className="autocare-garage-profile-spec-row">
-                <span className="autocare-garage-profile-spec-label">Odometer Reading</span>
-                <span className="autocare-garage-profile-spec-val">98,712 km</span>
-              </div>
-              <div className="autocare-garage-profile-spec-row">
-                <span className="autocare-garage-profile-spec-label">Matched Parts</span>
-                <span className="autocare-garage-profile-spec-val">Inverter Coolant (5L), Water Pump</span>
-              </div>
-            </div>
-
-            <div className="autocare-garage-modal-footer">
-              <button
-                type="button"
-                className="autocare-garage-btn-primary"
-                onClick={() => {
-                  setShowOcrModal(false);
-                  showToast('Sample OCR data extracted for preview.');
-                }}
-              >
-                Accept Sample Extracted Data (Demo)
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Floating Action Toast Notification */}
-      {toast.show && (
-        <div className="autocare-garage-toast" role="alert">
-          <CheckCircle2 size={18} style={{ color: '#00B4EB', flexShrink: 0 }} />
-          <span>{toast.message}</span>
-          <button
-            type="button"
-            className="autocare-garage-toast-close"
-            onClick={() => setToast((prev) => ({ ...prev, show: false }))}
-            aria-label="Dismiss toast"
-          >
-            <X size={16} />
-          </button>
-        </div>
-      )}
+      {/* Service Record Details Modal */}
+      <ServiceRecordDetailsModal
+        record={selectedRecord}
+        onClose={() => setSelectedRecord(null)}
+      />
     </GarageLayout>
   );
 };

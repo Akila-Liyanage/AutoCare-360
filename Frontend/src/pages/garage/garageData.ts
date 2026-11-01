@@ -42,64 +42,15 @@ export interface GarageRecordItem {
   statusColor: 'green' | 'amber' | 'red';
 }
 
-export interface GarageVehicleServiceHistoryItem {
+export interface QuotationLineItem {
   id: string;
-  serviceDate: string;
-  serviceType: string;
-  mileage: number;
-  workPerformed: string;
-  partsReplaced: string[];
-  labourCost?: number;
-  partsCost?: number;
-  totalCost: number;
-  garageName?: string;
-  technician: string;
-  status: 'Verified' | 'Pending Signature' | 'Draft';
-  invoiceNo: string;
+  description: string;
+  qty: number;
+  unitPrice: number;
+  amount: number;
 }
 
-export interface GarageVehicleDocumentItem {
-  id: string;
-  name: string;
-  type: 'Revenue License' | 'Insurance Certificate' | 'Emission Test' | 'Inspection Report';
-  issueDate: string;
-  expiryDate: string;
-  status: 'Valid' | 'Expiring Soon' | 'Expired';
-  fileSize: string;
-}
-
-export interface GarageCustomerInfo {
-  id: string;
-  name: string;
-  phone: string;
-  email: string;
-  address: string;
-  memberSince: string;
-  loyaltyTier: 'Gold' | 'Platinum' | 'Standard';
-}
-
-export interface GarageVehicle {
-  id: string;
-  registration: string;
-  vin: string;
-  make: string;
-  model: string;
-  year: number;
-  color: string;
-  fuelType: string;
-  transmission: string;
-  engineCapacity: string;
-  mileage: number;
-  lastService: string;
-  lastServiceType: string;
-  status: 'Active' | 'In Service' | 'Service Due' | 'Quotation Sent';
-  statusColor: 'green' | 'blue' | 'red' | 'amber';
-  customer: GarageCustomerInfo;
-  serviceHistory: GarageVehicleServiceHistoryItem[];
-  documents: GarageVehicleDocumentItem[];
-}
-
-export const MOCK_GARAGE_KPIS: GarageKPI[] = [
+export const FIGMA_GARAGE_KPIS: GarageKPI[] = [
   {
     id: 'kpi-customers',
     label: 'TOTAL CUSTOMERS',
@@ -116,9 +67,9 @@ export const MOCK_GARAGE_KPIS: GarageKPI[] = [
   },
   {
     id: 'kpi-entries',
-    label: 'SERVICE ENTRIES',
-    value: '318',
-    subtext: '18 Pending Verification',
+    label: 'PENDING ENTRIES',
+    value: '18',
+    subtext: 'Awaiting Owner Signature OTP',
     subtextType: 'warning',
   },
   {
@@ -130,7 +81,7 @@ export const MOCK_GARAGE_KPIS: GarageKPI[] = [
   },
 ];
 
-export const MOCK_RECENT_ENTRIES: RecentVerifiedEntry[] = [
+export const FIGMA_RECENT_ENTRIES: RecentVerifiedEntry[] = [
   {
     id: 'entry-1',
     vehicleTitle: 'Toyota Aqua',
@@ -157,7 +108,7 @@ export const MOCK_RECENT_ENTRIES: RecentVerifiedEntry[] = [
   },
 ];
 
-export const MOCK_OCR_QUEUE: OCRQueueItem = {
+export const FIGMA_OCR_QUEUE: OCRQueueItem = {
   id: 'ocr-0492',
   scanNumber: '#0492',
   vehicleTitle: 'Toyota Prius',
@@ -167,515 +118,38 @@ export const MOCK_OCR_QUEUE: OCRQueueItem = {
   estimatedTimeRemaining: '12 seconds',
 };
 
-export const MOCK_OCR_WARNING: OCRWarningItem = {
+export const FIGMA_OCR_WARNING: OCRWarningItem = {
   id: 'warn-1',
   title: 'OCR Validation Warning',
   message: 'Manual check required for odometer match.',
 };
 
-export const MOCK_GARAGE_RECORDS: GarageRecordItem[] = [
+export const FIGMA_GARAGE_RECORDS: GarageRecordItem[] = [
   {
-    id: 'rec-owner-1',
-    vehicleId: '6ad8a02b9ba9651cdcf01886',
-    vehicleRef: 'WP CAR-1010 · Toyota Corolla Cross',
+    id: 'rec-1',
+    vehicleId: 'veh-aqua-1234',
+    vehicleRef: 'Toyota Aqua (WP ABC-1234)',
+    customerName: 'K. S. Wickramasinghe',
+    date: '31 Oct 2026',
+    status: 'Verified',
+    statusColor: 'green',
+  },
+  {
+    id: 'rec-2',
+    vehicleId: 'veh-vezel-9988',
+    vehicleRef: 'Honda Vezel e:HEV (WP CAS-9988)',
+    customerName: 'Damith Ranasinghe',
+    date: '28 Oct 2026',
+    status: 'Verified',
+    statusColor: 'green',
+  },
+  {
+    id: 'rec-3',
+    vehicleId: 'veh-wagonr-1212',
+    vehicleRef: 'Suzuki Wagon R (WP CAD-1212)',
     customerName: 'Chathura Perera',
-    date: '15 Sep 2026',
-    status: 'Verified',
-    statusColor: 'green',
-  },
-  {
-    id: 'rec-owner-2',
-    vehicleId: '6ad8a02c9ba9651cdcf01887',
-    vehicleRef: 'WP CAS-4521 · Honda Vezel e:HEV',
-    customerName: 'Chathura Perera',
-    date: '10 Aug 2026',
-    status: 'Verified',
-    statusColor: 'green',
-  },
-  {
-    id: 'rec-owner-3',
-    vehicleId: '6ad88947b9a5bdcf08a9c485',
-    vehicleRef: 'CAA-1234 · Toyota Prius Hybrid',
-    customerName: 'Nisitha Kalanka',
-    date: '02 Sep 2026',
-    status: 'Verified',
-    statusColor: 'green',
-  },
-];
-
-export const MOCK_GARAGE_VEHICLES: GarageVehicle[] = [
-  {
-    id: '6ad8a02b9ba9651cdcf01886',
-    registration: 'WP CAR-1010',
-    vin: 'JT2BF28K4W0129481',
-    make: 'Toyota',
-    model: 'Corolla Cross Hybrid',
-    year: 2022,
-    color: 'Pearl White',
-    fuelType: 'Hybrid / Petrol',
-    transmission: 'Automatic (e-CVT)',
-    engineCapacity: '1,798 cc (2ZR-FXE)',
-    mileage: 32500,
-    lastService: '15 Sep 2026',
-    lastServiceType: '30,000 km Comprehensive Service & Brake Calipers',
-    status: 'Active',
-    statusColor: 'green',
-    customer: {
-      id: 'cust-owner',
-      name: 'Chathura Perera',
-      phone: '+94 77 123 4567',
-      email: 'owner@gmail.com',
-      address: 'No 45, Flower Road, Colombo 07',
-      memberSince: 'March 2022',
-      loyaltyTier: 'Platinum',
-    },
-    serviceHistory: [
-      {
-        id: 'srv-paw-30k',
-        serviceDate: '15 Sep 2026',
-        serviceType: '30,000 km Comprehensive Service & Brake Caliper Servicing',
-        mileage: 31800,
-        workPerformed: 'Full synthetic oil renewal, front ceramic brake pad replacement, rotor skimming, ECU diagnostics scan.',
-        partsReplaced: ['Castrol EDGE 0W-20 Full Synthetic (4.2L)', 'Toyota Genuine Oil Filter', 'Front Ceramic Brake Pads OEM', 'DOT4 Brake Fluid (1L)'],
-        labourCost: 8500,
-        partsCost: 23500,
-        totalCost: 32000,
-        garageName: 'Perera Auto Works (Pvt) Ltd',
-        technician: 'Kaveesha Perera (Master Tech)',
-        status: 'Verified',
-        invoiceNo: 'INV-2026-31800',
-      },
-      {
-        id: 'srv-paw-20k',
-        serviceDate: '20 May 2025',
-        serviceType: '20,000 km Major Routine Service & Hybrid Care',
-        mileage: 20450,
-        workPerformed: 'Full synthetic oil & filter change, cabin micro-air filter replacement, cleaned hybrid battery cooling intake fan, suspension inspection.',
-        partsReplaced: ['Mobil 1 0W-20 Full Synthetic (4L)', 'OEM Oil Filter', 'Cabin Air Filter', 'Windshield Wiper Blades'],
-        labourCost: 6500,
-        partsCost: 18500,
-        totalCost: 25000,
-        garageName: 'Perera Auto Works (Pvt) Ltd',
-        technician: 'Kaveesha Perera (Master Tech)',
-        status: 'Verified',
-        invoiceNo: 'INV-2025-20450',
-      },
-      {
-        id: 'srv-paw-10k',
-        serviceDate: '10 Jun 2024',
-        serviceType: 'Periodic 10,000 km Maintenance & Oil Service',
-        mileage: 10200,
-        workPerformed: 'Full synthetic motor oil renewal, OEM oil filter replacement, 40-point safety check, brake lining inspection, tire rotation.',
-        partsReplaced: ['Toyota Genuine 0W-20 Motor Oil (4L)', 'OEM Oil Filter 04152-YZZA6', 'Washer Drain Plug'],
-        labourCost: 4500,
-        partsCost: 14500,
-        totalCost: 19000,
-        garageName: 'Perera Auto Works (Pvt) Ltd',
-        technician: 'Kaveesha Perera (Master Tech)',
-        status: 'Verified',
-        invoiceNo: 'INV-2024-10200',
-      },
-    ],
-    documents: [
-      {
-        id: 'doc-rev-1010',
-        name: 'Western Province Revenue License 2026/2027',
-        type: 'Revenue License',
-        issueDate: '15 Apr 2026',
-        expiryDate: '14 Apr 2027',
-        status: 'Valid',
-        fileSize: '420 KB',
-      },
-      {
-        id: 'doc-ins-1010',
-        name: 'Comprehensive Motor Insurance Policy',
-        type: 'Insurance Certificate',
-        issueDate: '01 Apr 2026',
-        expiryDate: '31 Mar 2027',
-        status: 'Valid',
-        fileSize: '890 KB',
-      },
-      {
-        id: 'doc-emi-1010',
-        name: 'DriveGreen Vehicle Emission Certificate',
-        type: 'Emission Test',
-        issueDate: '05 Apr 2026',
-        expiryDate: '04 Apr 2027',
-        status: 'Valid',
-        fileSize: '310 KB',
-      },
-    ],
-  },
-  {
-    id: '6ad8a02c9ba9651cdcf01887',
-    registration: 'WP CAS-4521',
-    vin: 'JHMRU3850MC204192',
-    make: 'Honda',
-    model: 'Vezel e:HEV Z-Grade',
-    year: 2021,
-    color: 'Crystal Black Pearl',
-    fuelType: 'Hybrid',
-    transmission: 'Dual-Clutch',
-    engineCapacity: '1,496 cc (LEB-H1)',
-    mileage: 48200,
-    lastService: '10 Aug 2026',
-    lastServiceType: 'Dual Clutch Transmission Fluid & Lube Service',
-    status: 'Active',
-    statusColor: 'green',
-    customer: {
-      id: 'cust-owner',
-      name: 'Chathura Perera',
-      phone: '+94 77 123 4567',
-      email: 'owner@gmail.com',
-      address: 'No 45, Flower Road, Colombo 07',
-      memberSince: 'March 2022',
-      loyaltyTier: 'Platinum',
-    },
-    serviceHistory: [
-      {
-        id: 'srv-vezel-40k',
-        serviceDate: '10 Aug 2026',
-        serviceType: 'Periodic Maintenance & Dual Clutch Fluid Replacement',
-        mileage: 48000,
-        workPerformed: 'Honda Ultra ATF DW-1 dual clutch transmission fluid renewal, synthetic engine oil 0W-20, OEM oil filter, battery diagnostic scan.',
-        partsReplaced: ['Honda Genuine 0W-20 (4L)', 'OEM Filter', 'ATF DW-1 Fluid (2.5L)'],
-        labourCost: 6500,
-        partsCost: 21500,
-        totalCost: 28000,
-        garageName: 'Perera Auto Works (Pvt) Ltd',
-        technician: 'Kaveesha Perera (Master Tech)',
-        status: 'Verified',
-        invoiceNo: 'INV-2026-48000',
-      },
-    ],
-    documents: [
-      {
-        id: 'doc-rev-4521',
-        name: 'Western Province Revenue License',
-        type: 'Revenue License',
-        issueDate: '10 May 2026',
-        expiryDate: '09 May 2027',
-        status: 'Valid',
-        fileSize: '380 KB',
-      },
-    ],
-  },
-  {
-    id: 'veh-1',
-    registration: 'WP ABC-1234',
-    vin: 'JT2BF28K4W0129481',
-    make: 'Toyota',
-    model: 'Aqua G-Grade',
-    year: 2018,
-    color: 'Pearl White',
-    fuelType: 'Hybrid / Petrol',
-    transmission: 'Automatic (e-CVT)',
-    engineCapacity: '1,496 cc',
-    mileage: 85240,
-    lastService: '21 Sep 2026',
-    lastServiceType: 'Full Synthetic Lube & Inspection',
-    status: 'Active',
-    statusColor: 'green',
-    customer: {
-      id: 'cust-1',
-      name: 'Kaveesha Perera',
-      phone: '+94 77 123 4567',
-      email: 'kaveesha.p@gmail.com',
-      address: '45/2 Havelock Road, Colombo 05',
-      memberSince: 'January 2024',
-      loyaltyTier: 'Platinum',
-    },
-    serviceHistory: [
-      {
-        id: 'srv-101',
-        serviceDate: '21 Sep 2026',
-        serviceType: 'Routine Maintenance',
-        mileage: 85240,
-        workPerformed: 'Replaced Mobil 1 0W-20 engine oil, OEM oil filter, hybrid cooling fan cleaning.',
-        partsReplaced: ['Engine Oil (4L)', 'Oil Filter OEM', 'Cabin Filter'],
-        totalCost: 28500,
-        technician: 'Kaveesha Perera (Master Tech)',
-        status: 'Verified',
-        invoiceNo: 'INV-2026-0921',
-      },
-      {
-        id: 'srv-102',
-        serviceDate: '15 Mar 2026',
-        serviceType: 'Brake Overhaul & Fluid Flush',
-        mileage: 79800,
-        workPerformed: 'Front ceramic brake pads replaced, rotor skimming, DOT4 brake fluid flush.',
-        partsReplaced: ['Front Brake Pads', 'DOT4 Fluid (1L)'],
-        totalCost: 34200,
-        technician: 'Sunil Weerasinghe',
-        status: 'Verified',
-        invoiceNo: 'INV-2026-0315',
-      },
-      {
-        id: 'srv-103',
-        serviceDate: '10 Oct 2025',
-        serviceType: 'Transmission Service',
-        mileage: 72100,
-        workPerformed: 'Toyota e-CVT fluid exchange with genuine WS transmission fluid.',
-        partsReplaced: ['Toyota ATF WS (4L)', 'Drain Plug Gasket'],
-        totalCost: 24800,
-        technician: 'Kaveesha Perera (Master Tech)',
-        status: 'Verified',
-        invoiceNo: 'INV-2025-1010',
-      },
-      {
-        id: 'srv-104',
-        serviceDate: '19 Oct 2026',
-        serviceType: 'HVAC Air Purification & Filter Replacement',
-        mileage: 85900,
-        workPerformed: 'Cabin air filter replaced, evaporator core sanitized, airflow checked.',
-        partsReplaced: ['Carbon Cabin Air Filter', 'Sanitizer Spray'],
-        labourCost: 4500,
-        partsCost: 6500,
-        totalCost: 11000,
-        garageName: 'Perera Auto Works (BR-03)',
-        technician: 'Kaveesha Perera (Master Tech)',
-        status: 'Draft',
-        invoiceNo: 'DRAFT-2026-1019',
-      },
-    ],
-    documents: [
-      {
-        id: 'doc-1',
-        name: 'Western Province Revenue License 2026/2027',
-        type: 'Revenue License',
-        issueDate: '01 Jan 2026',
-        expiryDate: '31 Dec 2026',
-        status: 'Valid',
-        fileSize: '1.8 MB',
-      },
-      {
-        id: 'doc-2',
-        name: 'Sri Lanka Insurance Motor Comprehensive Policy',
-        type: 'Insurance Certificate',
-        issueDate: '15 Feb 2026',
-        expiryDate: '14 Feb 2027',
-        status: 'Valid',
-        fileSize: '2.4 MB',
-      },
-      {
-        id: 'doc-3',
-        name: 'DriveGreen Annual Vehicle Emission Report',
-        type: 'Emission Test',
-        issueDate: '28 Dec 2025',
-        expiryDate: '27 Dec 2026',
-        status: 'Expiring Soon',
-        fileSize: '890 KB',
-      },
-    ],
-  },
-  {
-    id: 'veh-2',
-    registration: 'WP CAS-9988',
-    vin: 'RU3-1209384819283',
-    make: 'Honda',
-    model: 'Vezel Z-Orange Edition',
-    year: 2019,
-    color: 'Sunset Orange Pearl',
-    fuelType: 'Hybrid / Petrol',
-    transmission: '7-Speed Dual Clutch (DCT)',
-    engineCapacity: '1,496 cc',
-    mileage: 112450,
-    lastService: '18 Jul 2026',
-    lastServiceType: 'Dual Clutch Actuator Fluid & Tune',
-    status: 'In Service',
-    statusColor: 'blue',
-    customer: {
-      id: 'cust-2',
-      name: 'Ruwan Dissanayake',
-      phone: '+94 71 889 2211',
-      email: 'ruwan.d@gmail.com',
-      address: '12 Temple Lane, Nugegoda',
-      memberSince: 'August 2023',
-      loyaltyTier: 'Gold',
-    },
-    serviceHistory: [
-      {
-        id: 'srv-201',
-        serviceDate: '18 Jul 2026',
-        serviceType: 'Dual Clutch & Actuator Service',
-        mileage: 112450,
-        workPerformed: 'Replaced Honda Ultra DW-1 DCT fluid, calibrated clutch engagement points.',
-        partsReplaced: ['Honda DW-1 Fluid (2L)', 'Actuator Seal Kit'],
-        totalCost: 42000,
-        technician: 'Chaminda Rathnayake',
-        status: 'Verified',
-        invoiceNo: 'INV-2026-0718',
-      },
-    ],
-    documents: [
-      {
-        id: 'doc-201',
-        name: 'Western Province Revenue License',
-        type: 'Revenue License',
-        issueDate: '10 Mar 2026',
-        expiryDate: '09 Mar 2027',
-        status: 'Valid',
-        fileSize: '1.4 MB',
-      },
-    ],
-  },
-  {
-    id: 'veh-3',
-    registration: 'WP CAD-1212',
-    vin: 'MH55S-82938102938',
-    make: 'Suzuki',
-    model: 'Wagon R FX Hybrid',
-    year: 2020,
-    color: 'Silky Silver Metallic',
-    fuelType: 'Mild Hybrid / Petrol',
-    transmission: 'CVT Automatic',
-    engineCapacity: '658 cc',
-    mileage: 42100,
-    lastService: '02 Sep 2026',
-    lastServiceType: 'Spark Plugs & Throttle Body Clean',
-    status: 'Active',
-    statusColor: 'green',
-    customer: {
-      id: 'cust-3',
-      name: 'Nadeesha Silva',
-      phone: '+94 75 432 9876',
-      email: 'nadeesha.s@yahoo.com',
-      address: '88 Station Road, Dehiwala',
-      memberSince: 'March 2025',
-      loyaltyTier: 'Standard',
-    },
-    serviceHistory: [
-      {
-        id: 'srv-301',
-        serviceDate: '02 Sep 2026',
-        serviceType: 'Spark Plug & Throttle Service',
-        mileage: 42100,
-        workPerformed: 'Installed 3 NGK Laser Iridium plugs, ultrasonic throttle body cleansing.',
-        partsReplaced: ['NGK Laser Iridium Plugs (x3)', 'Throttle Gasket'],
-        totalCost: 21500,
-        technician: 'Kaveesha Perera (Master Tech)',
-        status: 'Pending Signature',
-        invoiceNo: 'INV-2026-0902',
-      },
-    ],
-    documents: [
-      {
-        id: 'doc-301',
-        name: 'Ceylinco VIP Comprehensive Insurance',
-        type: 'Insurance Certificate',
-        issueDate: '01 Jun 2026',
-        expiryDate: '31 May 2027',
-        status: 'Valid',
-        fileSize: '2.1 MB',
-      },
-    ],
-  },
-  {
-    id: 'veh-4',
-    registration: 'WP CAR-8282',
-    vin: 'ZVW50-29182938192',
-    make: 'Toyota',
-    model: 'Prius 4th Gen S-Touring',
-    year: 2017,
-    color: 'Attitude Black Mica',
-    fuelType: 'Hybrid / Petrol',
-    transmission: 'Automatic (e-CVT)',
-    engineCapacity: '1,797 cc',
-    mileage: 98700,
-    lastService: '12 Aug 2026',
-    lastServiceType: 'Inverter Coolant Flush & Checkup',
-    status: 'Service Due',
-    statusColor: 'red',
-    customer: {
-      id: 'cust-4',
-      name: 'Dhammika Fernando',
-      phone: '+94 77 900 1122',
-      email: 'dhammika.f@gmail.com',
-      address: '15 Gregory Road, Colombo 07',
-      memberSince: 'November 2023',
-      loyaltyTier: 'Gold',
-    },
-    serviceHistory: [
-      {
-        id: 'srv-401',
-        serviceDate: '12 Aug 2026',
-        serviceType: 'Inverter Coolant & Diagnostics',
-        mileage: 98700,
-        workPerformed: 'Flushed inverter cooling system with Toyota Super Long Life Coolant.',
-        partsReplaced: ['Toyota SLLC Coolant (5L)'],
-        totalCost: 19800,
-        technician: 'Sunil Weerasinghe',
-        status: 'Verified',
-        invoiceNo: 'INV-2026-0812',
-      },
-    ],
-    documents: [
-      {
-        id: 'doc-401',
-        name: 'DriveGreen Vehicle Emission Certificate',
-        type: 'Emission Test',
-        issueDate: '15 Aug 2025',
-        expiryDate: '14 Aug 2026',
-        status: 'Expired',
-        fileSize: '950 KB',
-      },
-    ],
-  },
-  {
-    id: 'veh-5',
-    registration: 'CP CAA-5544',
-    vin: 'NZE141-9281928391',
-    make: 'Toyota',
-    model: 'Corolla Axio G',
-    year: 2016,
-    color: 'Silver Metallic',
-    fuelType: 'Petrol',
-    transmission: 'Super CVT-i',
-    engineCapacity: '1,498 cc',
-    mileage: 134200,
-    lastService: '28 Jun 2026',
-    lastServiceType: 'Suspension Bushing & Strut Replacement',
-    status: 'Quotation Sent',
+    date: '25 Oct 2026',
+    status: 'Pending link',
     statusColor: 'amber',
-    customer: {
-      id: 'cust-5',
-      name: 'Saman Kumara',
-      phone: '+94 76 554 4332',
-      email: 'saman.k@outlook.com',
-      address: '22 Peradeniya Road, Kandy',
-      memberSince: 'February 2024',
-      loyaltyTier: 'Standard',
-    },
-    serviceHistory: [
-      {
-        id: 'srv-501',
-        serviceDate: '28 Jun 2026',
-        serviceType: 'Suspension Overhaul',
-        mileage: 134200,
-        workPerformed: 'Replaced front stabilizer links, lower arm bushes, and 4-wheel laser alignment.',
-        partsReplaced: ['Stabilizer Links (Pair)', 'Lower Arm Bushes (x4)'],
-        totalCost: 48500,
-        technician: 'Chaminda Rathnayake',
-        status: 'Verified',
-        invoiceNo: 'INV-2026-0628',
-      },
-    ],
-    documents: [
-      {
-        id: 'doc-501',
-        name: 'Central Province Revenue License',
-        type: 'Revenue License',
-        issueDate: '15 Jul 2026',
-        expiryDate: '14 Jul 2027',
-        status: 'Valid',
-        fileSize: '1.2 MB',
-      },
-    ],
   },
 ];
-
-export const getGarageVehicleById = (id?: string): GarageVehicle => {
-  if (!id) return MOCK_GARAGE_VEHICLES[0];
-  const found = MOCK_GARAGE_VEHICLES.find((v) => v.id === id || v.registration.toLowerCase() === id.toLowerCase());
-  return found || MOCK_GARAGE_VEHICLES[0];
-};

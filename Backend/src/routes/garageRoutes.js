@@ -8,6 +8,11 @@ const {
   createInvoice,
   getInvoices,
   getGarageCustomerVehicles,
+  createGarageExpense,
+  getGarageExpenses,
+  getGarageAuditLogs,
+  getGarageProfile,
+  updateGarageProfile,
 } = require('../controllers/garageController');
 const { protect, authorize } = require('../middlewares/authMiddleware');
 
@@ -24,5 +29,14 @@ router.route('/quotations').post(createQuotation).get(getQuotations);
 
 // Invoices per BR-03
 router.route('/invoices').post(createInvoice).get(getInvoices);
+
+// Expenses per BR-03 (Figma Add Expense)
+router.route('/expenses').post(createGarageExpense).get(getGarageExpenses);
+
+// Audit Trail logs for garage
+router.get('/audit-logs', getGarageAuditLogs);
+
+// Garage Profile details & update
+router.route('/profile').get(getGarageProfile).put(updateGarageProfile);
 
 module.exports = router;

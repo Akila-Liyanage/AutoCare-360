@@ -32,7 +32,12 @@ import GarageServiceRecordsPage from './pages/garage/GarageServiceRecordsPage';
 import GarageDocumentsPage from './pages/garage/GarageDocumentsPage';
 import GarageSharingPage from './pages/garage/GarageSharingPage';
 import GarageAuditTrailPage from './pages/garage/GarageAuditTrailPage';
+import GarageAddExpensePage from './pages/garage/GarageAddExpensePage';
+import GarageProfilePage from './pages/garage/GarageProfilePage';
+import GarageNotificationsPage from './pages/garage/GarageNotificationsPage';
 import AddMaintenanceRecordPage from './pages/garage/AddMaintenanceRecordPage';
+import GenerateQuotationPage from './pages/garage/GenerateQuotationPage';
+import InvoiceGeneratorPage from './pages/garage/InvoiceGeneratorPage';
 import GarageVerificationPendingPage from './pages/garage/GarageVerificationPendingPage';
 import AdminProtectedRoute from './components/auth/AdminProtectedRoute';
 import AdminUserManagementPage from './pages/admin/AdminUserManagementPage';
@@ -111,9 +116,14 @@ export const App: React.FC = () => {
             <Route path="/garage/service-records" element={<GarageServiceRecordsPage />} />
             <Route path="/garage/maintenance/new" element={<AddMaintenanceRecordPage />} />
             <Route path="/garage/services/new" element={<Navigate to="/garage/maintenance/new" replace />} />
+            <Route path="/garage/quotations" element={<GenerateQuotationPage />} />
+            <Route path="/garage/invoices" element={<InvoiceGeneratorPage />} />
             <Route path="/garage/documents" element={<GarageDocumentsPage />} />
             <Route path="/garage/sharing" element={<GarageSharingPage />} />
             <Route path="/garage/audit" element={<GarageAuditTrailPage />} />
+            <Route path="/garage/profile" element={<GarageProfilePage />} />
+            <Route path="/garage/expenses/new" element={<GarageAddExpensePage />} />
+            <Route path="/garage/notifications" element={<GarageNotificationsPage />} />
             <Route path="/garage" element={<Navigate to="/garage/dashboard" replace />} />
           </Route>
 

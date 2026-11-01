@@ -1,63 +1,29 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  Wrench,
-  Car,
-  ShieldCheck,
-  CheckCircle2,
-  X,
-  Upload,
-  Sparkles,
-  FileText,
-  ArrowLeft,
-  Plus,
-  Trash2,
+  Lock,
   Check,
-  Image as ImageIcon,
+  Upload,
+  Plus,
+  AlertCircle,
+  CheckCircle2,
+  Search,
+  ShieldCheck,
 } from 'lucide-react';
 import GarageLayout from '../../components/layout/GarageLayout';
 import api from '../../services/api';
-import {
-  MOCK_GARAGE_VEHICLES,
-  getGarageVehicleById,
-  type GarageVehicle,
-} from './garageData';
+import { useAuth } from '../../hooks/useAuth';
 import '../../styles/garage-dashboard.css';
 
-interface FormErrors {
-  vehicleId?: string;
-  serviceDate?: string;
-  mileage?: string;
-  serviceType?: string;
-  workPerformed?: string;
-  labourCost?: string;
-  partsCost?: string;
-  consent?: string;
-}
-
-interface ToastState {
-  show: boolean;
-  message: string;
-}
-
-interface ApiVehiclePayload {
+interface LookedUpVehicle {
   _id: string;
   registrationNumber: string;
-  vin: string;
   manufacturer: string;
   model: string;
-  manufacturingYear: number;
-  color?: string;
-  fuelType?: string;
-  transmission?: string;
-  engineNumber?: string;
+  manufacturingYear?: number;
   currentMileage?: number;
-  lastServiceDate?: string;
-  status?: string;
   ownerId?: {
-    _id?: string;
     fullName?: string;
-    displayName?: string;
     email?: string;
     phone?: string;
   };
@@ -66,1419 +32,1091 @@ interface ApiVehiclePayload {
 export const AddMaintenanceRecordPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { user } = useAuth();
 
-  // Dynamic customer vehicles list loaded from backend API with mock fallback
-  const [customerVehicles, setCustomerVehicles] = useState<GarageVehicle[]>(MOCK_GARAGE_VEHICLES);
+  const urlReg = searchParams.get('regNumber') || '';
+  const urlVehicleId = searchParams.get('vehicleId') || '';
 
-  // Selected vehicle from query parameter or default
-  const initialVehicleId = searchParams.get('vehicleId') || MOCK_GARAGE_VEHICLES[0].id;
-  const [selectedVehicleId, setSelectedVehicleId] = useState<string>(initialVehicleId);
+  const [regNumber, setRegNumber] = useState<string>(urlReg || 'WP CAB-7890');
+  const [foundVehicle, setFoundVehicle] = useState<LookedUpVehicle | null>(null);
+  const [lookupLoading, setLookupLoading] = useState<boolean>(false);
+  const [lookupNotice, setLookupNotice] = useState<string>('');
+  const [availableVehicles, setAvailableVehicles] = useState<LookedUpVehicle[]>([]);
+  const [suggestions, setSuggestions] = useState<LookedUpVehicle[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
 
+  const [serviceDate, setServiceDate] = useState<string>(
+    new Date().toISOString().split('T')[0]
+  );
+  const [mileage, setMileage] = useState<string>('45600');
+  const [serviceCategory, setServiceCategory] = useState<string>(
+    'Comprehensive Routine Service & Inspection'
+  );
+  const [garageStation, setGarageStation] = useState<string>(
+    user?.fullName || user?.displayName || 'Perera Auto Works (Pvt) Ltd'
+  );
+  const [technician, setTechnician] = useState<string>('Kaveesha Perera (Master Tech)');
+  const [workPerformed, setWorkPerformed] = useState<string>(
+    'Full synthetic engine oil renewal, brake caliper skimming, transmission fluid inspection, 40-point vehicle safety check.'
+  );
+  const [partsReplaced, setPartsReplaced] = useState<string>(
+    'Engine Oil 0W-20 (4.2L), OEM Oil Filter, Front Ceramic Brake Pads.'
+  );
+  const [partsCost, setPartsCost] = useState<string>('12500');
+  const [labourCost, setLabourCost] = useState<string>('6000');
+  const [consentApproved, setConsentApproved] = useState<boolean>(true);
+
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
+  const [success, setSuccess] = useState<string>('');
+
+  const totalCost = (parseFloat(partsCost) || 0) + (parseFloat(labourCost) || 0);
+
+  // Fetch all registered customer vehicles for real-time autocomplete suggestions
   useEffect(() => {
     let isMounted = true;
     const fetchVehicles = async () => {
       try {
         const res = await api.get('/garage/customer-vehicles');
-        if (
-          isMounted &&
-          res.data?.data?.vehicles &&
-          Array.isArray(res.data.data.vehicles) &&
-          res.data.data.vehicles.length > 0
-        ) {
-          const apiVehicles: GarageVehicle[] = res.data.data.vehicles.map((v: ApiVehiclePayload) => ({
-            id: v._id,
-            registration: v.registrationNumber,
-            vin: v.vin,
-            make: v.manufacturer,
-            model: v.model,
-            year: v.manufacturingYear,
-            color: v.color || 'Pearl White',
-            fuelType: v.fuelType || 'Hybrid',
-            transmission: v.transmission || 'Automatic',
-            engineCapacity: v.engineNumber ? `Engine ${v.engineNumber}` : '1,800 cc',
-            mileage: v.currentMileage || 30000,
-            lastService: v.lastServiceDate
-              ? new Date(v.lastServiceDate).toLocaleDateString('en-GB')
-              : 'Recent',
-            lastServiceType: 'Certified Routine Maintenance',
-            status: v.status || 'Active',
-            statusColor: 'green',
-            customer: {
-              id: v.ownerId?._id || 'cust-owner',
-              name: v.ownerId?.fullName || v.ownerId?.displayName || 'Vehicle Owner',
-              phone: v.ownerId?.phone || '+94 77 123 4567',
-              email: v.ownerId?.email || 'owner@gmail.com',
-              address: 'Colombo, Western Province',
-              memberSince: 'March 2022',
-              loyaltyTier: 'Platinum',
-            },
-            serviceHistory: [],
-            documents: [],
-          }));
+        const list =
+          (Array.isArray(res.data?.data) && res.data.data) ||
+          (Array.isArray(res.data?.vehicles) && res.data.vehicles) ||
+          [];
+        if (isMounted) {
+          setAvailableVehicles(list);
+          setSuggestions(list);
 
-          // Merge: Put API vehicles first, avoid duplicates
-          const apiIds = new Set(apiVehicles.map((v) => v.id));
-          const filteredMock = MOCK_GARAGE_VEHICLES.filter((m) => !apiIds.has(m.id));
-          setCustomerVehicles([...apiVehicles, ...filteredMock]);
-          if (!searchParams.get('vehicleId') && apiVehicles.length > 0) {
-            setSelectedVehicleId(apiVehicles[0].id);
+          // Auto-select if vehicle was passed via URL parameters
+          if (urlReg) {
+            const matched = list.find(
+              (v: LookedUpVehicle) =>
+                v.registrationNumber.toUpperCase() === urlReg.toUpperCase()
+            );
+            if (matched) {
+              selectVehicle(matched);
+            } else {
+              handleLookup(urlReg);
+            }
+          } else if (urlVehicleId) {
+            const matched = list.find((v: LookedUpVehicle) => v._id === urlVehicleId);
+            if (matched) {
+              selectVehicle(matched);
+            }
           }
         }
-      } catch {
-        // Fallback gracefully to MOCK_GARAGE_VEHICLES
+      } catch (err) {
+        console.error('Error fetching customer vehicles for autocomplete:', err);
       }
     };
     fetchVehicles();
     return () => {
       isMounted = false;
     };
-  }, [searchParams]);
+  }, [urlReg, urlVehicleId]);
 
-  const selectedVehicle: GarageVehicle = useMemo(() => {
-    const found = customerVehicles.find(
+  const filterSuggestions = (query: string) => {
+    if (!query || !query.trim()) {
+      setSuggestions(availableVehicles);
+      return;
+    }
+    const q = query.toLowerCase().trim();
+    const matches = availableVehicles.filter(
       (v) =>
-        v.id === selectedVehicleId ||
-        v.registration.toLowerCase() === selectedVehicleId.toLowerCase()
+        v.registrationNumber?.toLowerCase().includes(q) ||
+        v.manufacturer?.toLowerCase().includes(q) ||
+        v.model?.toLowerCase().includes(q) ||
+        v.ownerId?.fullName?.toLowerCase().includes(q) ||
+        v.ownerId?.email?.toLowerCase().includes(q)
     );
-    return found || customerVehicles[0] || getGarageVehicleById(selectedVehicleId);
-  }, [customerVehicles, selectedVehicleId]);
+    setSuggestions(matches);
+  };
 
-  // Form Fields State
-  const todayStr = new Date().toISOString().split('T')[0];
-  const [serviceDate, setServiceDate] = useState<string>(todayStr);
-  const [mileage, setMileage] = useState<string>(
-    String(selectedVehicle.mileage ? selectedVehicle.mileage + 200 : 33000)
-  );
-  const [serviceType, setServiceType] = useState<string>('Routine Maintenance');
+  const selectVehicle = (v: LookedUpVehicle) => {
+    setRegNumber(v.registrationNumber);
+    setFoundVehicle(v);
+    if (v.currentMileage) {
+      setMileage(String(v.currentMileage + 500));
+    }
+    setLookupNotice(
+      `✓ Verified: ${v.manufacturer} ${v.model} (${v.manufacturingYear || 'N/A'}) · Owner: ${
+        v.ownerId?.fullName || v.ownerId?.email || 'Registered Customer'
+      }`
+    );
+    setShowSuggestions(false);
+  };
 
-  // Garage & Technician Details
-  const garageName = 'Perera Auto Works (Pvt) Ltd — Colombo 05 [BR-03]';
-  const [technician, setTechnician] = useState<string>('Kaveesha Perera (Master Tech)');
-
-  // Work & Parts State
-  const [workPerformed, setWorkPerformed] = useState<string>('');
-  const [partsList, setPartsList] = useState<string[]>([
-    'Mobil 1 0W-20 Full Synthetic Oil (4L)',
-    'OEM Oil Filter Element',
-  ]);
-  const [newPartInput, setNewPartInput] = useState<string>('');
-  const [labourCost, setLabourCost] = useState<string>('8500');
-  const [partsCost, setPartsCost] = useState<string>('16500');
-
-  // Documents & Service Images State with Real File Upload Support
-  const invoiceInputRef = React.useRef<HTMLInputElement>(null);
-  const photosInputRef = React.useRef<HTMLInputElement>(null);
-  const [isUploadingMedia, setIsUploadingMedia] = useState<boolean>(false);
-  const [uploadedInvoiceUrl, setUploadedInvoiceUrl] = useState<string>('/uploads/invoices/PAW_INV_31800.pdf');
-  const [uploadedPhotoUrls, setUploadedPhotoUrls] = useState<string[]>([]);
-  const [uploadedFiles, setUploadedFiles] = useState<string[]>([
-    'Invoice_Scan_PAW-2026-1021.pdf',
-  ]);
-  const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([
-    'engine_bay_before.jpg',
-    'oil_filter_replaced.jpg',
-  ]);
-
-  // Handle real invoice document file selection
-  const handleInvoiceFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const handleLookup = async (overrideReg?: string) => {
+    const targetReg = overrideReg || regNumber;
+    if (!targetReg.trim()) return;
+    setLookupLoading(true);
+    setLookupNotice('');
     try {
-      setIsUploadingMedia(true);
-      showToast(`Uploading document: ${file.name}...`);
-      const formData = new FormData();
-      formData.append('invoice', file);
-
-      const res = await api.post('/services/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-
-      if (res.data?.data?.invoiceUrl) {
-        setUploadedInvoiceUrl(res.data.data.invoiceUrl);
-        setUploadedFiles([file.name]);
-        showToast(`Document "${file.name}" uploaded successfully!`);
+      const res = await api.get(`/vehicles/lookup?regNumber=${encodeURIComponent(targetReg.trim())}`);
+      if (res.data?.data?.vehicle) {
+        const v: LookedUpVehicle = res.data.data.vehicle;
+        selectVehicle(v);
+      } else {
+        setFoundVehicle(null);
+        setLookupNotice('No registered vehicle found with this registration number.');
       }
-    } catch {
-      setUploadedFiles([file.name]);
-      showToast(`Attached ${file.name}.`);
+    } catch (err: unknown) {
+      setFoundVehicle(null);
+      const msg = err && typeof err === 'object' && 'response' in err && (err as any).response?.data?.message
+        ? (err as any).response.data.message
+        : 'Vehicle not registered on the platform.';
+      setLookupNotice(msg);
     } finally {
-      setIsUploadingMedia(false);
-      if (invoiceInputRef.current) invoiceInputRef.current.value = '';
+      setLookupLoading(false);
     }
   };
 
-  // Handle real component inspection photos selection
-  const handlePhotosFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setError('');
+    setSuccess('');
 
-    try {
-      setIsUploadingMedia(true);
-      showToast(`Uploading ${files.length} photo(s)...`);
-      const formData = new FormData();
-      Array.from(files).forEach((f) => formData.append('photos', f));
-
-      const res = await api.post('/services/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-
-      const newUrls = res.data?.data?.photoUrls || [];
-      const newNames = Array.from(files).map((f) => f.name);
-
-      setUploadedPhotoUrls((prev) => [...prev, ...newUrls]);
-      setUploadedPhotos((prev) => [...prev, ...newNames]);
-      showToast(`Attached and uploaded ${files.length} component photo(s).`);
-    } catch {
-      const newNames = Array.from(files).map((f) => f.name);
-      setUploadedPhotos((prev) => [...prev, ...newNames]);
-      showToast(`Attached ${files.length} component photo(s).`);
-    } finally {
-      setIsUploadingMedia(false);
-      if (photosInputRef.current) photosInputRef.current.value = '';
-    }
-  };
-
-  // Owner consent checkbox
-  const [ownerConsent, setOwnerConsent] = useState<boolean>(true);
-
-  // Validation & UI State
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [toast, setToast] = useState<ToastState>({ show: false, message: '' });
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
-  const [publishedTxHash, setPublishedTxHash] = useState<string>('');
-
-  // Dynamic Total Calculation: total = labour + parts
-  const computedTotal = useMemo(() => {
-    const l = parseFloat(labourCost) || 0;
-    const p = parseFloat(partsCost) || 0;
-    return Math.max(0, l + p);
-  }, [labourCost, partsCost]);
-
-  const showToast = (message: string) => {
-    setToast({ show: true, message });
-    setTimeout(() => {
-      setToast((prev) => ({ ...prev, show: false }));
-    }, 4500);
-  };
-
-  // Add Part handler
-  const handleAddPart = () => {
-    const trimmed = newPartInput.trim();
-    if (!trimmed) return;
-    if (partsList.includes(trimmed)) {
-      showToast('Part already in list.');
+    if (!regNumber.trim()) {
+      setError('Vehicle registration number is required.');
       return;
     }
-    setPartsList([...partsList, trimmed]);
-    setNewPartInput('');
-  };
-
-  // Remove Part handler
-  const handleRemovePart = (partToRemove: string) => {
-    setPartsList(partsList.filter((p) => p !== partToRemove));
-  };
-
-  // AI OCR Demo simulation
-  const handleSimulateOcr = () => {
-    setWorkPerformed(
-      'Full synthetic periodic lube service, replacement of engine oil & filter, brake caliper inspection, hybrid fan cleaning.'
-    );
-    setPartsList([
-      'Mobil 1 0W-20 Advanced Fuel Economy (4L)',
-      'Toyota Genuine Oil Filter 04152-YZZA6',
-      'Cabin Micro-Air Filter',
-    ]);
-    setLabourCost('9500');
-    setPartsCost('18500');
-    if (!uploadedFiles.includes('AI_Extracted_PAW_JobSheet.pdf')) {
-      setUploadedFiles([...uploadedFiles, 'AI_Extracted_PAW_JobSheet.pdf']);
-    }
-    showToast('AI OCR successfully parsed job sheet! Fields auto-populated with 98% confidence.');
-  };
-
-  // Validation function
-  const validate = (): boolean => {
-    const newErrors: FormErrors = {};
-
-    if (!selectedVehicleId) {
-      newErrors.vehicleId = 'Please select a client vehicle.';
-    }
-
-    if (!serviceDate) {
-      newErrors.serviceDate = 'Service date is required.';
-    } else {
-      const selected = new Date(serviceDate);
-      const endOfToday = new Date();
-      endOfToday.setHours(23, 59, 59, 999);
-      if (selected > endOfToday) {
-        newErrors.serviceDate = 'Service date cannot be in the future.';
-      }
-    }
-
-    if (mileage === '' || isNaN(Number(mileage)) || Number(mileage) < 0) {
-      newErrors.mileage = 'Odometer reading must be a non-negative number (>= 0).';
-    }
-
-    if (!serviceType.trim()) {
-      newErrors.serviceType = 'Service type is required.';
-    }
-
-    if (!workPerformed.trim() || workPerformed.trim().length < 5) {
-      newErrors.workPerformed = 'Description of work performed is required (min 5 characters).';
-    }
-
-    if (labourCost !== '' && (isNaN(Number(labourCost)) || Number(labourCost) < 0)) {
-      newErrors.labourCost = 'Labour cost must be non-negative.';
-    }
-
-    if (partsCost !== '' && (isNaN(Number(partsCost)) || Number(partsCost) < 0)) {
-      newErrors.partsCost = 'Parts cost must be non-negative.';
-    }
-
-    if (!ownerConsent) {
-      newErrors.consent = 'Owner consent certification is required to publish verified record.';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  // Save Draft Handler (Frontend simulated)
-  const handleSaveDraft = () => {
-    showToast(
-      `Draft record for ${selectedVehicle.registration} saved locally. You can resume editing anytime.`
-    );
-  };
-
-  // Publish Verified Record Handler
-  const handlePublishRecord = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validate()) {
-      showToast('Please correct validation errors before publishing.');
+    if (!mileage || Number(mileage) <= 0) {
+      setError('A valid odometer mileage reading is required.');
       return;
     }
 
-    setIsSubmitting(true);
     try {
-      // Determine if selectedVehicleId is a valid 24-character Mongo ObjectId
-      let targetVehicleId = selectedVehicleId;
-      const isMongoId = /^[0-9a-fA-F]{24}$/.test(targetVehicleId);
-
-      if (!isMongoId) {
-        // Attempt match by ID or registration in customerVehicles
-        const matched = customerVehicles.find(
-          (v) =>
-            v.id === targetVehicleId ||
-            v.registration.toLowerCase() === selectedVehicle.registration.toLowerCase()
-        );
-        if (matched && /^[0-9a-fA-F]{24}$/.test(matched.id)) {
-          targetVehicleId = matched.id;
-        } else {
-          // Attempt lookup by registration number
-          try {
-            const lookupRes = await api.get(
-              `/vehicles/lookup?regNumber=${encodeURIComponent(selectedVehicle.registration)}`
-            );
-            if (lookupRes.data?.data?.vehicle?._id) {
-              targetVehicleId = lookupRes.data.data.vehicle._id;
-            }
-          } catch {
-            // Default to real seeded vehicle WP CAR-1010
-            targetVehicleId = '6ad8a02b9ba9651cdcf01886';
-          }
-        }
-      }
-
-      const payload = {
-        vehicleId: targetVehicleId,
+      setLoading(true);
+      await api.post(`/services`, {
+        vehicleId: foundVehicle?._id,
+        registrationNumber: regNumber.trim().toUpperCase(),
         serviceDate,
         mileage: Number(mileage),
-        serviceType,
+        serviceType: serviceCategory,
         workPerformed,
-        partsReplaced: partsList,
-        labourCost: parseFloat(labourCost) || 0,
+        partsReplaced: partsReplaced.split(',').map((s) => s.trim()).filter(Boolean),
         partsCost: parseFloat(partsCost) || 0,
-        totalCost: computedTotal,
-        invoiceUrl: uploadedInvoiceUrl || (uploadedFiles[0] ? `/uploads/documents/${uploadedFiles[0]}` : ''),
-        serviceImages: uploadedPhotoUrls.length > 0 ? uploadedPhotoUrls : uploadedPhotos,
+        labourCost: parseFloat(labourCost) || 0,
+        totalCost,
         technicianName: technician,
-        garageName: 'Perera Auto Works (Pvt) Ltd',
-        notes: 'Certified routine maintenance logged via Verified Garage Portal [BR-03].',
-      };
+        garageName: garageStation,
+      });
 
-      const res = await api.post('/services', payload);
-      const savedRecord = res.data?.data?.serviceRecord;
-      const txHash = savedRecord?._id
-        ? `REC-${savedRecord._id.slice(-8).toUpperCase()}`
-        : `0x${Array.from({ length: 40 }, () => Math.floor(Math.random() * 16).toString(16)).join('')}`;
-
-      setPublishedTxHash(txHash);
-      setShowSuccessModal(true);
-      showToast(`Service record submitted successfully! Vehicle history and expenses updated.`);
+      setSuccess('Service record successfully committed to immutable vehicle ledger!');
+      setTimeout(() => navigate('/garage/dashboard'), 1500);
     } catch (err: unknown) {
-      const msg =
-        err &&
-        typeof err === 'object' &&
-        'response' in err &&
-        (err as { response?: { data?: { message?: string } } }).response?.data?.message
-          ? (err as { response?: { data?: { message?: string } } }).response!.data!.message!
-          : 'Failed to publish certified service record to backend. Please check connection and credentials.';
-      showToast(msg);
+      const msg = err && typeof err === 'object' && 'response' in err && (err as any).response?.data?.message
+        ? (err as any).response.data.message
+        : 'Failed to commit service record to ledger.';
+      setError(msg);
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
   return (
-    <GarageLayout activeItem="Service records" breadcrumbCurrent="Add Maintenance Record">
-      {/* Top Header & Back Button */}
+    <GarageLayout activeItem="Maintenance" breadcrumbCurrent="Add Maintenance Records">
+      {/* Page Heading & Actions */}
       <div
         style={{
           display: 'flex',
-          alignItems: 'center',
           justifyContent: 'space-between',
-          marginBottom: '22px',
+          alignItems: 'center',
+          marginBottom: '20px',
+          gap: '16px',
           flexWrap: 'wrap',
-          gap: '12px',
         }}
       >
         <div>
-          <button
-            type="button"
-            onClick={() => navigate('/garage/service-records')}
+          <h1
             style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              background: 'transparent',
-              border: 'none',
-              color: '#0056a2',
-              fontWeight: 700,
-              fontSize: '13.5px',
-              cursor: 'pointer',
-              padding: 0,
-              marginBottom: '6px',
+              fontFamily: "'Inter', sans-serif",
+              fontWeight: 800,
+              fontSize: '22px',
+              lineHeight: '28px',
+              color: '#15263D',
+              margin: '0 0 4px 0',
             }}
           >
-            <ArrowLeft size={16} />
-            <span>Back to Service Records</span>
-          </button>
-          <h1 className="autocare-garage-main-title" style={{ margin: 0 }}>
-            Add Verified Maintenance Record
+            Add Maintenance Records
           </h1>
-          <p className="autocare-garage-main-subtitle">
-            Log certified maintenance entries to the client's Digital Passport on AutoCare 360.
+          <p
+            style={{
+              fontFamily: "'Inter', sans-serif",
+              fontWeight: 400,
+              fontSize: '13.5px',
+              lineHeight: '18px',
+              color: '#617187',
+              margin: 0,
+            }}
+          >
+            Record verified vehicle maintenance to create immutable digital ledger entries.
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button
+            type="button"
+            onClick={() => navigate('/garage/dashboard')}
             style={{
-              fontSize: '11.5px',
-              fontWeight: 800,
-              letterSpacing: '0.4px',
-              textTransform: 'uppercase',
-              background: '#fef3c7',
-              color: '#b45309',
-              border: '1px solid #fde68a',
-              padding: '4px 10px',
-              borderRadius: '6px',
+              background: '#FFFFFF',
+              border: '1px solid #DCE5EF',
+              borderRadius: '7px',
+              padding: '8px 16px',
+              color: '#15263D',
+              fontWeight: 700,
+              fontSize: '13.5px',
+              cursor: 'pointer',
             }}
           >
-            DRAFT · NOT COMMITTED
-          </span>
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => handleSubmit()}
+            disabled={loading}
+            style={{
+              background: '#0056A2',
+              borderRadius: '7px',
+              padding: '8px 18px',
+              color: '#FFFFFF',
+              fontWeight: 700,
+              fontSize: '13.5px',
+              border: 'none',
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(0, 86, 162, 0.22)',
+            }}
+          >
+            {loading ? 'Committing...' : 'Commit to Ledger'}
+          </button>
         </div>
       </div>
 
-      {/* Main Two-Column Layout Grid */}
+      {error && (
+        <div
+          style={{
+            padding: '10px 14px',
+            background: '#fef2f2',
+            border: '1px solid #fecaca',
+            color: '#b91c1c',
+            borderRadius: '6px',
+            marginBottom: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontSize: '13px',
+          }}
+        >
+          <AlertCircle size={16} />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {success && (
+        <div
+          style={{
+            padding: '10px 14px',
+            background: '#f0fdf4',
+            border: '1px solid #bbf7d0',
+            color: '#15803d',
+            borderRadius: '6px',
+            marginBottom: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontSize: '13px',
+          }}
+        >
+          <CheckCircle2 size={16} />
+          <span>{success}</span>
+        </div>
+      )}
+
+      {/* Record Workspace (Two-Column Layout) */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'minmax(0, 1.8fr) minmax(320px, 1fr)',
-          gap: '24px',
-          alignItems: 'start',
+          gridTemplateColumns: 'minmax(0, 1.7fr) minmax(300px, 1fr)',
+          gap: '20px',
         }}
       >
-        {/* ====================================================================
-            LEFT COLUMN: FORM SECTIONS
-            ==================================================================== */}
-        <form onSubmit={handlePublishRecord} style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
-          {/* AI OCR Scanner Banner / Drop-Zone */}
+        {/* Left Column: Record Form */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Card 1: Vehicle & Service */}
           <div
             style={{
-              background: 'linear-gradient(135deg, #003874 0%, #0056a2 100%)',
+              background: '#FFFFFF',
+              border: '1px solid #DCE5EF',
+              boxShadow: '0px 2px 8px rgba(18, 52, 90, 0.04)',
               borderRadius: '12px',
-              padding: '20px 22px',
-              color: '#ffffff',
-              boxShadow: '0 4px 14px rgba(0, 56, 116, 0.18)',
+              padding: '18px 20px',
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
+              flexDirection: 'column',
               gap: '14px',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', maxWidth: '520px' }}>
-              <div
-                style={{
-                  width: '44px',
-                  height: '44px',
-                  borderRadius: '10px',
-                  background: 'rgba(255, 255, 255, 0.15)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}
-              >
-                <Sparkles size={22} style={{ color: '#38bdf8' }} />
-              </div>
-              <div>
-                <h3 style={{ margin: '0 0 4px 0', fontSize: '15px', fontWeight: 800 }}>
-                  Scan Physical Job Card / Invoice with AI OCR
-                </h3>
-                <p style={{ margin: 0, fontSize: '12.5px', color: 'rgba(255, 255, 255, 0.85)' }}>
-                  Optical recognition extracts parts, labour, and odometer telemetry automatically.
-                </p>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleSimulateOcr}
-              className="autocare-garage-hero-btn"
+            <h3
               style={{
-                background: '#ffffff',
-                color: '#003874',
+                fontFamily: "'Inter', sans-serif",
                 fontWeight: 700,
-                fontSize: '13px',
-                padding: '8px 16px',
+                fontSize: '15.5px',
+                color: '#15263D',
+                margin: 0,
               }}
             >
-              Simulate Demo OCR Scan
-            </button>
-          </div>
+              Vehicle & service
+            </h3>
 
-          {/* Section 1: Vehicle & service */}
-          <section className="autocare-garage-panel">
-            <h2 className="autocare-garage-panel-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Car size={18} style={{ color: '#0056a2' }} />
-              <span>1. Vehicle &amp; Service Information</span>
-            </h2>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {/* Vehicle Selector */}
-              <div>
-                <label
-                  htmlFor="vehicle-select"
-                  style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}
-                >
-                  Client Vehicle *
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+              <div style={{ position: 'relative' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#617187', marginBottom: '5px' }}>
+                  Reg. Number
                 </label>
-                <select
-                  id="vehicle-select"
-                  value={selectedVehicleId}
-                  onChange={(e) => {
-                    const nextId = e.target.value;
-                    setSelectedVehicleId(nextId);
-                    const veh = getGarageVehicleById(nextId);
-                    if (veh) {
-                      setMileage(String(veh.mileage + 200));
-                    }
-                  }}
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <div style={{ position: 'relative', flex: 1 }}>
+                    <Search
+                      size={15}
+                      style={{
+                        position: 'absolute',
+                        left: '10px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        color: '#0056A2',
+                        pointerEvents: 'none',
+                      }}
+                    />
+                    <input
+                      type="text"
+                      value={regNumber}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setRegNumber(val);
+                        filterSuggestions(val);
+                        setShowSuggestions(true);
+                      }}
+                      onFocus={() => {
+                        filterSuggestions(regNumber);
+                        setShowSuggestions(true);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleLookup();
+                          setShowSuggestions(false);
+                        }
+                      }}
+                      placeholder="e.g. WP CAB-7890"
+                      style={{
+                        width: '100%',
+                        padding: '8px 10px 8px 32px',
+                        border: '1px solid #DCE5EF',
+                        borderRadius: '6px',
+                        fontSize: '13px',
+                        fontWeight: 700,
+                        color: '#15263D',
+                        boxSizing: 'border-box',
+                        height: '38px',
+                      }}
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleLookup();
+                      setShowSuggestions(false);
+                    }}
+                    disabled={lookupLoading}
+                    style={{
+                      background: '#0056A2',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '0 12px',
+                      color: '#FFFFFF',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '5px',
+                      height: '38px',
+                      fontWeight: 700,
+                      fontSize: '12px',
+                      flexShrink: 0,
+                    }}
+                    title="Lookup & verify vehicle"
+                  >
+                    <Search size={14} />
+                    <span>{lookupLoading ? '...' : 'Verify'}</span>
+                  </button>
+                </div>
+
+                {/* Autocomplete Suggestions Dropdown */}
+                {showSuggestions && suggestions.length > 0 && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      right: 0,
+                      background: '#FFFFFF',
+                      border: '1px solid #CBD5E1',
+                      borderRadius: '8px',
+                      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
+                      marginTop: '4px',
+                      zIndex: 9999,
+                      maxHeight: '260px',
+                      overflowY: 'auto',
+                    }}
+                  >
+                    <div
+                      style={{
+                        padding: '6px 10px',
+                        fontSize: '10.5px',
+                        color: '#64748B',
+                        fontWeight: 700,
+                        background: '#F8FAFC',
+                        borderBottom: '1px solid #E2E8F0',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.4px',
+                      }}
+                    >
+                      Matching Customer Vehicles ({suggestions.length})
+                    </div>
+                    {suggestions.map((v) => (
+                      <div
+                        key={v._id}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          selectVehicle(v);
+                        }}
+                        style={{
+                          padding: '9px 12px',
+                          borderBottom: '1px solid #F1F5F9',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          transition: 'background 0.1s ease',
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#F0F7FF')}
+                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#FFFFFF')}
+                      >
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span
+                              style={{
+                                background: '#E2E8F0',
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                fontSize: '11.5px',
+                                fontFamily: 'monospace',
+                                fontWeight: 800,
+                                color: '#0A1128',
+                              }}
+                            >
+                              {v.registrationNumber}
+                            </span>
+                            <strong style={{ fontSize: '12.5px', color: '#0A1128' }}>
+                              {v.manufacturer} {v.model}
+                            </strong>
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>
+                            Owner: {v.ownerId?.fullName || v.ownerId?.email || 'Registered Customer'}
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <span style={{ fontSize: '11px', color: '#0056A2', fontWeight: 600 }}>
+                            {(v.currentMileage || 0).toLocaleString()} km
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#617187', marginBottom: '5px' }}>
+                  Service Date
+                </label>
+                <input
+                  type="date"
+                  value={serviceDate}
+                  onChange={(e) => setServiceDate(e.target.value)}
                   style={{
                     width: '100%',
-                    padding: '10px 14px',
-                    borderRadius: '8px',
-                    border: errors.vehicleId ? '1.5px solid #ef4444' : '1px solid #cbd5e1',
-                    fontSize: '14px',
-                    background: '#ffffff',
-                    color: '#0f172a',
+                    padding: '8px 12px',
+                    border: '1px solid #DCE5EF',
+                    borderRadius: '6px',
+                    fontSize: '13.5px',
+                    color: '#15263D',
+                    boxSizing: 'border-box',
+                    height: '38px',
                   }}
-                >
-                  {customerVehicles.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {v.registration} — {v.make} {v.model} ({v.year}) · Owner: {v.customer.name}
-                    </option>
-                  ))}
-                </select>
-                {errors.vehicleId && (
-                  <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#ef4444' }}>{errors.vehicleId}</p>
-                )}
-
-                {/* Selected vehicle quick snapshot pill */}
-                <div
-                  style={{
-                    marginTop: '10px',
-                    padding: '10px 14px',
-                    background: '#f8fafc',
-                    borderRadius: '8px',
-                    border: '1px solid #e2e8f0',
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '14px',
-                    fontSize: '12.5px',
-                    color: '#475569',
-                  }}
-                >
-                  <span>
-                    <strong>VIN:</strong> <code style={{ color: '#0056a2' }}>{selectedVehicle.vin}</code>
-                  </span>
-                  <span>
-                    <strong>Registered Owner:</strong> {selectedVehicle.customer.name} ({selectedVehicle.customer.phone})
-                  </span>
-                  <span>
-                    <strong>Last Known Odometer:</strong> {selectedVehicle.mileage.toLocaleString()} km
-                  </span>
-                </div>
+                />
               </div>
 
-              {/* Date, Odometer, Service Type Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
-                {/* Service Date */}
-                <div>
-                  <label
-                    htmlFor="service-date"
-                    style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}
-                  >
-                    Service Date *
-                  </label>
-                  <input
-                    id="service-date"
-                    type="date"
-                    max={todayStr}
-                    value={serviceDate}
-                    onChange={(e) => setServiceDate(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '9px 12px',
-                      borderRadius: '8px',
-                      border: errors.serviceDate ? '1.5px solid #ef4444' : '1px solid #cbd5e1',
-                      fontSize: '13.5px',
-                      boxSizing: 'border-box',
-                    }}
-                  />
-                  {errors.serviceDate ? (
-                    <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#ef4444' }}>{errors.serviceDate}</p>
-                  ) : (
-                    <span style={{ fontSize: '11.5px', color: '#64748b' }}>Future dates blocked</span>
-                  )}
-                </div>
-
-                {/* Odometer */}
-                <div>
-                  <label
-                    htmlFor="odometer-input"
-                    style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}
-                  >
-                    Odometer (km) *
-                  </label>
-                  <input
-                    id="odometer-input"
-                    type="number"
-                    min="0"
-                    value={mileage}
-                    onChange={(e) => setMileage(e.target.value)}
-                    placeholder="e.g. 85500"
-                    style={{
-                      width: '100%',
-                      padding: '9px 12px',
-                      borderRadius: '8px',
-                      border: errors.mileage ? '1.5px solid #ef4444' : '1px solid #cbd5e1',
-                      fontSize: '13.5px',
-                      boxSizing: 'border-box',
-                    }}
-                  />
-                  {errors.mileage ? (
-                    <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#ef4444' }}>{errors.mileage}</p>
-                  ) : (
-                    <span style={{ fontSize: '11.5px', color: '#64748b' }}>Must be non-negative</span>
-                  )}
-                </div>
-
-                {/* Service Type */}
-                <div>
-                  <label
-                    htmlFor="service-type-select"
-                    style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}
-                  >
-                    Service Type *
-                  </label>
-                  <select
-                    id="service-type-select"
-                    value={serviceType}
-                    onChange={(e) => setServiceType(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '9px 12px',
-                      borderRadius: '8px',
-                      border: errors.serviceType ? '1.5px solid #ef4444' : '1px solid #cbd5e1',
-                      fontSize: '13.5px',
-                    }}
-                  >
-                    <option value="Routine Maintenance">Routine Maintenance</option>
-                    <option value="Major Overhaul">Major Overhaul</option>
-                    <option value="Brake System Overhaul">Brake System Overhaul</option>
-                    <option value="Transmission Fluid Flush">Transmission Fluid Flush</option>
-                    <option value="Hybrid Battery Conditioning">Hybrid Battery Conditioning</option>
-                    <option value="Suspension & Steering Repair">Suspension &amp; Steering Repair</option>
-                    <option value="Engine Diagnostics & Tune">Engine Diagnostics &amp; Tune</option>
-                    <option value="Electrical Repair">Electrical Repair</option>
-                    <option value="AC & HVAC Service">AC &amp; HVAC Service</option>
-                  </select>
-                  {errors.serviceType && (
-                    <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#ef4444' }}>{errors.serviceType}</p>
-                  )}
-                </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#617187', marginBottom: '5px' }}>
+                  Odometer (km)
+                </label>
+                <input
+                  type="number"
+                  value={mileage}
+                  onChange={(e) => setMileage(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    border: '1px solid #DCE5EF',
+                    borderRadius: '6px',
+                    fontSize: '13.5px',
+                    fontWeight: 600,
+                    color: '#15263D',
+                    boxSizing: 'border-box',
+                    height: '38px',
+                  }}
+                />
               </div>
             </div>
-          </section>
 
-          {/* Section 2: Garage & technician details */}
-          <section className="autocare-garage-panel">
-            <h2 className="autocare-garage-panel-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <ShieldCheck size={18} style={{ color: '#0056a2' }} />
-              <span>2. Garage &amp; Technician Details</span>
-            </h2>
+            {lookupNotice && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '8px 12px',
+                  background: foundVehicle ? '#EDF8EC' : '#FFF6DF',
+                  border: `1px solid ${foundVehicle ? '#BBF7D0' : '#FDE68A'}`,
+                  borderRadius: '6px',
+                  color: foundVehicle ? '#15803D' : '#B45309',
+                  fontSize: '12.5px',
+                  fontWeight: 600,
+                }}
+              >
+                {foundVehicle ? <ShieldCheck size={16} /> : <AlertCircle size={16} />}
+                <span>{lookupNotice}</span>
+              </div>
+            )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '16px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#617187', marginBottom: '5px' }}>
+                Service Category
+              </label>
+              <input
+                type="text"
+                value={serviceCategory}
+                onChange={(e) => setServiceCategory(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  border: '1px solid #DCE5EF',
+                  borderRadius: '6px',
+                  fontSize: '13.5px',
+                  color: '#15263D',
+                  boxSizing: 'border-box',
+                  height: '38px',
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Card 2: Garage & Technician Details */}
+          <div
+            style={{
+              background: '#FFFFFF',
+              border: '1px solid #DCE5EF',
+              boxShadow: '0px 2px 8px rgba(18, 52, 90, 0.04)',
+              borderRadius: '12px',
+              padding: '18px 20px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '14px',
+            }}
+          >
+            <h3
+              style={{
+                fontFamily: "'Inter', sans-serif",
+                fontWeight: 700,
+                fontSize: '15.5px',
+                color: '#15263D',
+                margin: 0,
+              }}
+            >
+              Garage & technician details
+            </h3>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
-                  Authorized Inspection Station
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#617187', marginBottom: '5px' }}>
+                  Garage Station
                 </label>
                 <input
                   type="text"
-                  value={garageName}
-                  disabled
+                  value={garageStation}
+                  onChange={(e) => setGarageStation(e.target.value)}
                   style={{
                     width: '100%',
-                    padding: '9px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid #cbd5e1',
-                    background: '#f1f5f9',
-                    color: '#334155',
-                    fontSize: '13px',
-                    fontWeight: 600,
+                    padding: '8px 12px',
+                    border: '1px solid #DCE5EF',
+                    borderRadius: '6px',
+                    fontSize: '13.5px',
+                    color: '#15263D',
                     boxSizing: 'border-box',
+                    height: '38px',
                   }}
                 />
-                <span style={{ fontSize: '11.5px', color: '#059669', fontWeight: 600, marginTop: '4px', display: 'inline-block' }}>
-                  ✓ SLT-Certified Level 4 Repair Workshop (BR-03)
-                </span>
               </div>
 
               <div>
-                <label
-                  htmlFor="tech-select"
-                  style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}
-                >
-                  Assigned Lead Technician *
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#617187', marginBottom: '5px' }}>
+                  Lead Technician
                 </label>
-                <select
-                  id="tech-select"
+                <input
+                  type="text"
                   value={technician}
                   onChange={(e) => setTechnician(e.target.value)}
                   style={{
                     width: '100%',
-                    padding: '9px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid #cbd5e1',
-                    fontSize: '13.5px',
-                  }}
-                >
-                  <option value="Kaveesha Perera (Master Tech)">Kaveesha Perera (Master Tech)</option>
-                  <option value="Chaminda Rathnayake (Senior Tech)">Chaminda Rathnayake (Senior Tech)</option>
-                  <option value="Sunil Weerasinghe (Electrical Specialist)">Sunil Weerasinghe (Electrical Specialist)</option>
-                  <option value="Dinesh Gamage (Brake Specialist)">Dinesh Gamage (Brake Specialist)</option>
-                </select>
-              </div>
-            </div>
-          </section>
-
-          {/* Section 3: Work & parts */}
-          <section className="autocare-garage-panel">
-            <h2 className="autocare-garage-panel-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Wrench size={18} style={{ color: '#0056a2' }} />
-              <span>3. Work Performed &amp; Parts Ledger</span>
-            </h2>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {/* Work Performed Description */}
-              <div>
-                <label
-                  htmlFor="work-performed-input"
-                  style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}
-                >
-                  Work Performed Description *
-                </label>
-                <textarea
-                  id="work-performed-input"
-                  rows={4}
-                  value={workPerformed}
-                  onChange={(e) => setWorkPerformed(e.target.value)}
-                  placeholder="Detail the mechanical or electrical actions completed, diagnostics run, and fluid specs..."
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderRadius: '8px',
-                    border: errors.workPerformed ? '1.5px solid #ef4444' : '1px solid #cbd5e1',
-                    fontSize: '13.5px',
-                    boxSizing: 'border-box',
-                    resize: 'vertical',
-                  }}
-                />
-                {errors.workPerformed && (
-                  <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#ef4444' }}>{errors.workPerformed}</p>
-                )}
-              </div>
-
-              {/* Parts Replaced */}
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
-                  Parts Replaced / Installed
-                </label>
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
-                  <input
-                    type="text"
-                    value={newPartInput}
-                    onChange={(e) => setNewPartInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddPart();
-                      }
-                    }}
-                    placeholder="Enter part name / part number (e.g. Front Brake Pads Ceramic)"
-                    style={{
-                      flex: 1,
-                      padding: '9px 12px',
-                      borderRadius: '8px',
-                      border: '1px solid #cbd5e1',
-                      fontSize: '13.5px',
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddPart}
-                    className="autocare-garage-btn-primary"
-                    style={{ padding: '8px 16px', fontSize: '13px' }}
-                  >
-                    <Plus size={15} />
-                    <span>Add Part</span>
-                  </button>
-                </div>
-
-                {/* Parts Tag Chips */}
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                  {partsList.map((part) => (
-                    <span
-                      key={part}
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        background: '#f1f5f9',
-                        color: '#1e293b',
-                        border: '1px solid #cbd5e1',
-                        borderRadius: '20px',
-                        padding: '4px 12px',
-                        fontSize: '12.5px',
-                        fontWeight: 600,
-                      }}
-                    >
-                      <span>{part}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemovePart(part)}
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          cursor: 'pointer',
-                          color: '#64748b',
-                          padding: 0,
-                          display: 'flex',
-                          alignItems: 'center',
-                        }}
-                        aria-label={`Remove part ${part}`}
-                      >
-                        <X size={14} />
-                      </button>
-                    </span>
-                  ))}
-                  {partsList.length === 0 && (
-                    <span style={{ fontSize: '12.5px', color: '#94a3b8', fontStyle: 'italic' }}>
-                      No parts added yet.
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Cost Inputs & Dynamic Calculation */}
-              <div
-                style={{
-                  background: '#f8fafc',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '10px',
-                  padding: '16px 20px',
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-                  gap: '16px',
-                  alignItems: 'center',
-                }}
-              >
-                <div>
-                  <label
-                    htmlFor="labour-cost-input"
-                    style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: '#475569', marginBottom: '4px' }}
-                  >
-                    Labour Cost (LKR)
-                  </label>
-                  <input
-                    id="labour-cost-input"
-                    type="number"
-                    min="0"
-                    value={labourCost}
-                    onChange={(e) => setLabourCost(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '9px 12px',
-                      borderRadius: '8px',
-                      border: errors.labourCost ? '1.5px solid #ef4444' : '1px solid #cbd5e1',
-                      fontSize: '14px',
-                      boxSizing: 'border-box',
-                    }}
-                  />
-                  {errors.labourCost && (
-                    <p style={{ margin: '3px 0 0 0', fontSize: '11px', color: '#ef4444' }}>{errors.labourCost}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="parts-cost-input"
-                    style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: '#475569', marginBottom: '4px' }}
-                  >
-                    Parts Cost (LKR)
-                  </label>
-                  <input
-                    id="parts-cost-input"
-                    type="number"
-                    min="0"
-                    value={partsCost}
-                    onChange={(e) => setPartsCost(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '9px 12px',
-                      borderRadius: '8px',
-                      border: errors.partsCost ? '1.5px solid #ef4444' : '1px solid #cbd5e1',
-                      fontSize: '14px',
-                      boxSizing: 'border-box',
-                    }}
-                  />
-                  {errors.partsCost && (
-                    <p style={{ margin: '3px 0 0 0', fontSize: '11px', color: '#ef4444' }}>{errors.partsCost}</p>
-                  )}
-                </div>
-
-                <div>
-                  <span style={{ display: 'block', fontSize: '12.5px', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
-                    Calculated Total (LKR)
-                  </span>
-                  <div
-                    style={{
-                      padding: '9px 14px',
-                      borderRadius: '8px',
-                      background: '#003874',
-                      color: '#ffffff',
-                      fontSize: '16px',
-                      fontWeight: 800,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                    }}
-                  >
-                    <span>LKR</span>
-                    <span>{computedTotal.toLocaleString()}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Section 4: Documents & service images */}
-          <section className="autocare-garage-panel">
-            <h2 className="autocare-garage-panel-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <FileText size={18} style={{ color: '#0056a2' }} />
-              <span>4. Documents &amp; Service Images</span>
-            </h2>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
-              {/* Document upload drop-zone */}
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
-                  Attached Invoices &amp; Inspection Reports
-                </label>
-                {/* Hidden Real File Input */}
-                <input
-                  type="file"
-                  ref={invoiceInputRef}
-                  onChange={handleInvoiceFileChange}
-                  accept=".pdf,image/png,image/jpeg,image/jpg"
-                  style={{ display: 'none' }}
-                />
-                <div
-                  onClick={() => invoiceInputRef.current?.click()}
-                  style={{
-                    border: '2px dashed #0056a2',
-                    borderRadius: '8px',
-                    padding: '16px',
-                    textAlign: 'center',
-                    background: '#f0f7ff',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  <Upload size={20} style={{ color: '#0056a2', margin: '0 auto 6px auto' }} />
-                  <p style={{ margin: 0, fontSize: '12.5px', fontWeight: 600, color: '#0f172a' }}>
-                    {isUploadingMedia ? 'Uploading...' : 'Click to select Invoice / Work Order PDF'}
-                  </p>
-                  <span style={{ fontSize: '11px', color: '#64748b' }}>PDF, PNG, JPG up to 15MB (Saved to DB)</span>
-                </div>
-
-                {/* Uploaded files list */}
-                <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  {uploadedFiles.map((file, idx) => (
-                    <div
-                      key={idx}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '6px 10px',
-                        background: '#f1f5f9',
-                        borderRadius: '6px',
-                        fontSize: '12px',
-                      }}
-                    >
-                      <a
-                        href={uploadedInvoiceUrl ? (uploadedInvoiceUrl.startsWith('http') ? uploadedInvoiceUrl : `http://localhost:5000${uploadedInvoiceUrl}`) : '#'}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{ color: '#0056a2', fontWeight: 600, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                      >
-                        <FileText size={13} />
-                        <span>{file}</span>
-                      </a>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setUploadedFiles(uploadedFiles.filter((_, i) => i !== idx));
-                          setUploadedInvoiceUrl('');
-                        }}
-                        style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#ef4444', padding: 0 }}
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Service images placeholder */}
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
-                  Before &amp; After Inspection Photos
-                </label>
-                {/* Hidden Real Photo Input */}
-                <input
-                  type="file"
-                  ref={photosInputRef}
-                  onChange={handlePhotosFileChange}
-                  multiple
-                  accept="image/png,image/jpeg,image/jpg,image/webp"
-                  style={{ display: 'none' }}
-                />
-                <div
-                  onClick={() => photosInputRef.current?.click()}
-                  style={{
-                    border: '2px dashed #059669',
-                    borderRadius: '8px',
-                    padding: '16px',
-                    textAlign: 'center',
-                    background: '#ecfdf5',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  <ImageIcon size={20} style={{ color: '#059669', margin: '0 auto 6px auto' }} />
-                  <p style={{ margin: 0, fontSize: '12.5px', fontWeight: 600, color: '#0f172a' }}>
-                    {isUploadingMedia ? 'Uploading...' : 'Click to attach component photos'}
-                  </p>
-                  <span style={{ fontSize: '11px', color: '#64748b' }}>Upload high-res JPG, PNG (Multiple files supported)</span>
-                </div>
-
-                {/* Attached photos chips */}
-                <div style={{ marginTop: '10px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {uploadedPhotos.map((photo, idx) => (
-                    <span
-                      key={idx}
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        background: '#ecfdf5',
-                        color: '#065f46',
-                        border: '1px solid #a7f3d0',
-                        borderRadius: '6px',
-                        padding: '4px 8px',
-                        fontSize: '11.5px',
-                        fontWeight: 600,
-                      }}
-                    >
-                      <ImageIcon size={12} />
-                      <span>{photo}</span>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setUploadedPhotos(uploadedPhotos.filter((_, i) => i !== idx));
-                          setUploadedPhotoUrls(uploadedPhotoUrls.filter((_, i) => i !== idx));
-                        }}
-                        style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#ef4444', padding: 0 }}
-                      >
-                        <X size={12} />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Section 5: Owner consent & certification */}
-          <section
-            style={{
-              background: '#ffffff',
-              border: errors.consent ? '1.5px solid #ef4444' : '1px solid #e2e8f0',
-              borderRadius: '12px',
-              padding: '18px 22px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-            }}
-          >
-            <label
-              style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '12px',
-                cursor: 'pointer',
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={ownerConsent}
-                onChange={(e) => setOwnerConsent(e.target.checked)}
-                style={{
-                  width: '18px',
-                  height: '18px',
-                  marginTop: '2px',
-                  cursor: 'pointer',
-                }}
-              />
-              <div style={{ fontSize: '13px', color: '#334155', lineHeight: '1.45' }}>
-                <strong style={{ color: '#0f172a' }}>Owner Authorization &amp; Cryptographic Certification:</strong>{' '}
-                I certify that the vehicle owner ({selectedVehicle.customer.name}) has authorized these repairs and the
-                information accurately reflects work performed at Perera Auto Works. An OTP verification notification
-                will be sent to the owner's phone ({selectedVehicle.customer.phone}).
-              </div>
-            </label>
-            {errors.consent && (
-              <p style={{ margin: '8px 0 0 30px', fontSize: '12px', color: '#ef4444' }}>{errors.consent}</p>
-            )}
-          </section>
-        </form>
-
-        {/* ====================================================================
-            RIGHT COLUMN: STICKY RECORD SUMMARY CARD
-            ==================================================================== */}
-        <div style={{ position: 'sticky', top: '80px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
-          {/* Summary Card */}
-          <div
-            style={{
-              background: '#ffffff',
-              border: '1px solid #e2e8f0',
-              borderRadius: '12px',
-              padding: '22px',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                paddingBottom: '14px',
-                borderBottom: '1px solid #f1f5f9',
-                marginBottom: '16px',
-              }}
-            >
-              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#0f172a' }}>
-                Record Summary
-              </h3>
-              <span
-                style={{
-                  fontSize: '11px',
-                  fontWeight: 800,
-                  background: '#ecfdf5',
-                  color: '#059669',
-                  padding: '2px 8px',
-                  borderRadius: '10px',
-                }}
-              >
-                READY TO AUDIT
-              </span>
-            </div>
-
-            {/* Vehicle & Customer summary */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#64748b' }}>Vehicle</span>
-                <strong style={{ color: '#0f172a' }}>{selectedVehicle.registration}</strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#64748b' }}>Model</span>
-                <span style={{ color: '#334155' }}>
-                  {selectedVehicle.make} {selectedVehicle.model}
-                </span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#64748b' }}>Customer</span>
-                <strong style={{ color: '#0f172a' }}>{selectedVehicle.customer.name}</strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#64748b' }}>Service Date</span>
-                <strong style={{ color: '#0056a2' }}>{serviceDate || '—'}</strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#64748b' }}>Odometer</span>
-                <strong style={{ color: '#0f172a' }}>
-                  {mileage ? `${Number(mileage).toLocaleString()} km` : '—'}
-                </strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#64748b' }}>Category</span>
-                <span
-                  style={{
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    color: '#0284c7',
-                    background: '#e0f2fe',
-                    padding: '2px 8px',
+                    padding: '8px 12px',
+                    border: '1px solid #DCE5EF',
                     borderRadius: '6px',
+                    fontSize: '13.5px',
+                    color: '#15263D',
+                    boxSizing: 'border-box',
+                    height: '38px',
                   }}
-                >
-                  {serviceType}
-                </span>
+                />
               </div>
-            </div>
-
-            {/* Financial Ledger Section */}
-            <div
-              style={{
-                marginTop: '16px',
-                paddingTop: '14px',
-                borderTop: '1px solid #f1f5f9',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '8px',
-                fontSize: '13px',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b' }}>
-                <span>Labour Cost</span>
-                <span>LKR {(parseFloat(labourCost) || 0).toLocaleString()}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b' }}>
-                <span>Parts ({partsList.length} items)</span>
-                <span>LKR {(parseFloat(partsCost) || 0).toLocaleString()}</span>
-              </div>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  paddingTop: '8px',
-                  borderTop: '1px dashed #cbd5e1',
-                  fontSize: '15px',
-                  fontWeight: 800,
-                  color: '#0f172a',
-                }}
-              >
-                <span>Total Ledger Amount</span>
-                <span style={{ color: '#003874' }}>LKR {computedTotal.toLocaleString()}</span>
-              </div>
-            </div>
-
-            {/* Blockchain Node Proof Preview */}
-            <div
-              style={{
-                marginTop: '16px',
-                background: '#f8fafc',
-                borderRadius: '8px',
-                padding: '12px',
-                border: '1px solid #e2e8f0',
-                fontSize: '11.5px',
-                color: '#64748b',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#059669', fontWeight: 700, marginBottom: '4px' }}>
-                <ShieldCheck size={14} />
-                <span>SLT Mobitel Trust Network Anchor</span>
-              </div>
-              <div>Station Node: <code>SLT-PAW-COL05-NODE</code></div>
-              <div>Payload Hash: <code>0x7f2a...981c</code></div>
-            </div>
-
-            {/* Action Buttons */}
-            <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <button
-                type="button"
-                onClick={handlePublishRecord}
-                disabled={isSubmitting}
-                className="autocare-garage-btn-primary"
-                style={{ width: '100%', justifyContent: 'center', padding: '12px' }}
-              >
-                <ShieldCheck size={18} />
-                <span>{isSubmitting ? 'Publishing to Ledger...' : 'Publish Verified Record'}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleSaveDraft}
-                className="autocare-garage-hero-btn"
-                style={{
-                  width: '100%',
-                  background: '#f8fafc',
-                  border: '1px solid #cbd5e1',
-                  color: '#334155',
-                  padding: '10px',
-                }}
-              >
-                Save Draft
-              </button>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* ====================================================================
-          SUCCESS PUBLISHED MODAL
-          ==================================================================== */}
-      {showSuccessModal && (
-        <div
-          className="autocare-garage-modal-backdrop"
-          onClick={() => setShowSuccessModal(false)}
-          role="dialog"
-          aria-modal="true"
-        >
+          {/* Card 3: Work & Parts */}
           <div
-            className="autocare-garage-modal"
-            style={{ maxWidth: '520px', textAlign: 'center' }}
-            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#FFFFFF',
+              border: '1px solid #DCE5EF',
+              boxShadow: '0px 2px 8px rgba(18, 52, 90, 0.04)',
+              borderRadius: '12px',
+              padding: '18px 20px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '14px',
+            }}
           >
-            <div className="autocare-garage-modal-body" style={{ padding: '32px 24px' }}>
+            <h3
+              style={{
+                fontFamily: "'Inter', sans-serif",
+                fontWeight: 700,
+                fontSize: '15.5px',
+                color: '#15263D',
+                margin: 0,
+              }}
+            >
+              Work & parts
+            </h3>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#617187', marginBottom: '5px' }}>
+                Work Performed Summary
+              </label>
+              <textarea
+                rows={2}
+                value={workPerformed}
+                onChange={(e) => setWorkPerformed(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  border: '1px solid #DCE5EF',
+                  borderRadius: '6px',
+                  fontSize: '13.5px',
+                  color: '#15263D',
+                  fontFamily: 'inherit',
+                  boxSizing: 'border-box',
+                }}
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#617187', marginBottom: '5px' }}>
+                Parts Replaced & Specs
+              </label>
+              <textarea
+                rows={2}
+                value={partsReplaced}
+                onChange={(e) => setPartsReplaced(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  border: '1px solid #DCE5EF',
+                  borderRadius: '6px',
+                  fontSize: '13.5px',
+                  color: '#15263D',
+                  fontFamily: 'inherit',
+                  boxSizing: 'border-box',
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#617187', marginBottom: '5px' }}>
+                  Parts (LKR)
+                </label>
+                <input
+                  type="number"
+                  value={partsCost}
+                  onChange={(e) => setPartsCost(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    border: '1px solid #DCE5EF',
+                    borderRadius: '6px',
+                    fontSize: '13.5px',
+                    color: '#15263D',
+                    boxSizing: 'border-box',
+                    height: '38px',
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#617187', marginBottom: '5px' }}>
+                  Labour (LKR)
+                </label>
+                <input
+                  type="number"
+                  value={labourCost}
+                  onChange={(e) => setLabourCost(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    border: '1px solid #DCE5EF',
+                    borderRadius: '6px',
+                    fontSize: '13.5px',
+                    color: '#15263D',
+                    boxSizing: 'border-box',
+                    height: '38px',
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#617187', marginBottom: '5px' }}>
+                  Total (LKR)
+                </label>
+                <div
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    background: '#F8FAFC',
+                    border: '1px solid #DCE5EF',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    fontWeight: 800,
+                    color: '#0056A2',
+                    boxSizing: 'border-box',
+                    height: '38px',
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                >
+                  Rs. {totalCost.toLocaleString()}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 4: Documents & Service Images */}
+          <div
+            style={{
+              background: '#FFFFFF',
+              border: '1px solid #DCE5EF',
+              boxShadow: '0px 2px 8px rgba(18, 52, 90, 0.04)',
+              borderRadius: '12px',
+              padding: '18px 20px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+            }}
+          >
+            <h3
+              style={{
+                fontFamily: "'Inter', sans-serif",
+                fontWeight: 700,
+                fontSize: '15.5px',
+                color: '#15263D',
+                margin: 0,
+              }}
+            >
+              Documents & service images
+            </h3>
+
+            <span style={{ fontSize: '13px', fontWeight: 600, color: '#0A1128' }}>
+              Uploaded Service & Invoice Photos
+            </span>
+
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
               <div
                 style={{
-                  width: '64px',
-                  height: '64px',
-                  borderRadius: '50%',
-                  background: '#ecfdf5',
-                  color: '#059669',
+                  width: '90px',
+                  height: '90px',
+                  borderRadius: '8px',
+                  background: '#E2E8F0',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  margin: '0 auto 16px auto',
+                  color: '#64748B',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  textAlign: 'center',
+                  padding: '6px',
                 }}
               >
-                <Check size={36} />
+                Engine Bay Foto
               </div>
-
-              <h2 style={{ fontSize: '22px', fontWeight: 800, color: '#0f172a', margin: '0 0 6px 0' }}>
-                Maintenance Record Submitted!
-              </h2>
-              <p style={{ fontSize: '13.5px', color: '#64748b', margin: '0 0 20px 0' }}>
-                Service entry recorded for <strong>{selectedVehicle.registration}</strong> digital passport.
-              </p>
 
               <div
                 style={{
-                  background: '#f8fafc',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '10px',
-                  padding: '14px',
-                  textAlign: 'left',
-                  fontSize: '12.5px',
-                  marginBottom: '20px',
+                  width: '90px',
+                  height: '90px',
+                  borderRadius: '8px',
+                  background: '#E2E8F0',
                   display: 'flex',
-                  flexDirection: 'column',
-                  gap: '6px',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#64748B',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  textAlign: 'center',
+                  padding: '6px',
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#64748b' }}>Vehicle</span>
-                  <strong>{selectedVehicle.registration} ({selectedVehicle.make} {selectedVehicle.model})</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#64748b' }}>Amount Billed</span>
-                  <strong>LKR {computedTotal.toLocaleString()}</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#64748b' }}>Record Reference</span>
-                  <code style={{ fontSize: '11px', color: '#0056a2' }}>{publishedTxHash.slice(0, 16)}...</code>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#64748b' }}>Customer OTP Verification</span>
-                  <span style={{ color: '#059669', fontWeight: 700 }}>SMS Sent to {selectedVehicle.customer.phone}</span>
-                </div>
+                Air Filter Foto
               </div>
 
-              <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-                <button
-                  type="button"
-                  className="autocare-garage-btn-primary"
-                  onClick={() => navigate('/garage/service-records')}
-                >
-                  View in Service Records
-                </button>
-                <button
-                  type="button"
-                  className="autocare-garage-hero-btn"
-                  style={{ background: '#f8fafc', border: '1px solid #cbd5e1' }}
-                  onClick={() => navigate(`/garage/vehicles/${selectedVehicle.id}`)}
-                >
-                  View Vehicle Passport
-                </button>
+              <div
+                style={{
+                  width: '110px',
+                  height: '90px',
+                  border: '1.5px dashed #CBD5E1',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '4px',
+                  cursor: 'pointer',
+                  color: '#64748B',
+                  background: '#F8FAFC',
+                }}
+              >
+                <Plus size={18} style={{ color: '#64748B' }} />
+                <span style={{ fontSize: '12px', fontWeight: 600 }}>Add File</span>
               </div>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* Toast Notification */}
-      {toast.show && (
-        <div className="autocare-garage-toast" role="alert">
-          <CheckCircle2 size={18} style={{ color: '#00B4EB', flexShrink: 0 }} />
-          <span>{toast.message}</span>
-          <button
-            type="button"
-            className="autocare-garage-toast-close"
-            onClick={() => setToast((prev) => ({ ...prev, show: false }))}
+          {/* Card 5: Owner Consent */}
+          <div
+            style={{
+              background: '#FFFFFF',
+              border: '1px solid #DCE5EF',
+              boxShadow: '0px 2px 8px rgba(18, 52, 90, 0.04)',
+              borderRadius: '12px',
+              padding: '16px 20px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px',
+            }}
           >
-            <X size={16} />
-          </button>
+            <h3
+              style={{
+                fontFamily: "'Inter', sans-serif",
+                fontWeight: 700,
+                fontSize: '15.5px',
+                color: '#15263D',
+                margin: 0,
+              }}
+            >
+              Owner consent
+            </h3>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={consentApproved}
+                onChange={(e) => setConsentApproved(e.target.checked)}
+                style={{ width: '16px', height: '16px', accentColor: '#0056A2' }}
+              />
+              <span style={{ fontSize: '13px', color: '#15263D' }}>
+                Owner authorized service entry via mobile SMS OTP verification.
+              </span>
+            </label>
+          </div>
         </div>
-      )}
+
+        {/* Right Column: Summary Rail */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Rail Card 1: Record Summary */}
+          <div
+            style={{
+              background: '#FFFFFF',
+              border: '1px solid #DCE5EF',
+              boxShadow: '0px 2px 8px rgba(18, 52, 90, 0.04)',
+              borderRadius: '12px',
+              padding: '18px 20px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+            }}
+          >
+            <h3
+              style={{
+                fontFamily: "'Inter', sans-serif",
+                fontWeight: 700,
+                fontSize: '15.5px',
+                color: '#15263D',
+                margin: 0,
+              }}
+            >
+              Record summary
+            </h3>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <span style={{ fontSize: '13px', color: '#15263D' }}>
+                Vehicle: <strong>{regNumber}</strong>
+              </span>
+              <span style={{ fontSize: '13px', color: '#15263D' }}>
+                Mileage: <strong>{Number(mileage).toLocaleString()} km</strong>
+              </span>
+              <span style={{ fontSize: '13px', color: '#15263D' }}>
+                Date: <strong>{serviceDate}</strong>
+              </span>
+              <span
+                style={{
+                  fontSize: '20px',
+                  fontWeight: 800,
+                  color: '#15263D',
+                  marginTop: '4px',
+                }}
+              >
+                Rs. {totalCost.toLocaleString()}
+              </span>
+            </div>
+
+            <div
+              style={{
+                display: 'inline-block',
+                background: '#EDF8EC',
+                color: '#50B748',
+                borderRadius: '20px',
+                padding: '3px 10px',
+                fontSize: '11px',
+                fontWeight: 700,
+                width: 'fit-content',
+              }}
+            >
+              Verified Entry
+            </div>
+          </div>
+
+          {/* Rail Card 2: AI Invoice Scanner (OCR) */}
+          <div
+            style={{
+              background: '#FFFFFF',
+              border: '1px solid #E2E8F0',
+              borderRadius: '14px',
+              padding: '18px 20px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '14px',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.02)',
+            }}
+          >
+            <h3
+              style={{
+                fontFamily: "'Inter', sans-serif",
+                fontWeight: 700,
+                fontSize: '15.5px',
+                color: '#0A1128',
+                margin: 0,
+              }}
+            >
+              AI Invoice Scanner (OCR)
+            </h3>
+
+            {/* Upload trigger box */}
+            <div
+              style={{
+                border: '1.2px dashed #0056A2',
+                borderRadius: '10px',
+                padding: '16px 12px',
+                textAlign: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '6px',
+                background: '#F8FAFC',
+              }}
+            >
+              <Upload size={24} style={{ color: '#0056A2' }} />
+              <span style={{ fontWeight: 700, fontSize: '13px', color: '#0056A2' }}>
+                INVOICE_COPY_045812.PDF
+              </span>
+              <span style={{ fontSize: '12px', color: '#64748B' }}>
+                Scanner status: File uploaded
+              </span>
+            </div>
+
+            {/* Extracted Values Review */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <span style={{ fontWeight: 600, fontSize: '13px', color: '#0A1128' }}>
+                Extracted Values Review:
+              </span>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: '#64748B', fontSize: '12.5px' }}>Extracted Odo</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <strong style={{ fontSize: '13.5px', color: '#0A1128' }}>85,240 km</strong>
+                  <Check size={16} style={{ color: '#50B748' }} />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: '#64748B', fontSize: '12.5px' }}>Extracted Cost</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <strong style={{ fontSize: '13.5px', color: '#0A1128' }}>LKR 18,500</strong>
+                  <Check size={16} style={{ color: '#50B748' }} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Rail Card 3: Ledger Notice (Dark Blue Card) */}
+          <div
+            style={{
+              background: '#0A1128',
+              borderRadius: '14px',
+              padding: '18px 20px',
+              color: '#FFFFFF',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Lock size={18} style={{ color: '#00B4EB' }} />
+              <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#FFFFFF' }}>
+                Ledger Notice
+              </h4>
+            </div>
+
+            <p style={{ margin: 0, fontSize: '12px', lineHeight: '18px', color: '#CBD5E1' }}>
+              Your entry will be cryptographically bound to the chassis index tree. Once issued, you
+              will lose administrative modification rights to ensure audit consensus.
+            </p>
+          </div>
+        </div>
+      </div>
     </GarageLayout>
   );
 };
