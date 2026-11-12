@@ -983,21 +983,8 @@ export const ViewVehiclePage: React.FC = () => {
 
                     <Link
                       to={`/expenses?vehicleId=${vehicle?._id || id || ''}`}
+                      state={{ vehicleId: vehicle?._id || id, vehicle }}
                       className="autocare-btn-expense-tracking"
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        padding: '9px 15px',
-                        background: '#eff6ff',
-                        border: '1px solid #bfdbfe',
-                        borderRadius: '8px',
-                        color: '#0056A2',
-                        fontSize: '13.5px',
-                        fontWeight: 700,
-                        textDecoration: 'none',
-                        transition: 'all 0.15s ease',
-                      }}
                       title="View Expense Tracking and Financial Ledger"
                     >
                       <Receipt size={15} />
@@ -1070,14 +1057,8 @@ export const ViewVehiclePage: React.FC = () => {
                   </p>
                 </div>
 
-                {/* Metric 4: Lifetime Service Cost (Calculated from real records) */}
-                <Link
-                  to={`/expenses?vehicleId=${id}`}
-                  state={{ vehicleId: id, vehicle }}
-                  className="autocare-view-metric-card"
-                  style={{ textDecoration: 'none', color: 'inherit' }}
-                  title="View detailed expense tracking"
-                >
+                {/* Metric 4: Lifetime Service Cost (Information Only) */}
+                <div className="autocare-view-metric-card">
                   <div className="autocare-view-metric-header">
                     <span className="autocare-view-metric-label">Lifetime service cost</span>
                     <Receipt size={20} className="autocare-view-metric-icon" color="#0056A2" />
@@ -1090,7 +1071,7 @@ export const ViewVehiclePage: React.FC = () => {
                       ? `From ${allServices.length} recorded service entr${allServices.length === 1 ? 'y' : 'ies'}`
                       : 'Based on available records'}
                   </p>
-                </Link>
+                </div>
               </section>
 
               {/* SECTION: Compliance & Regulatory Expiry Monitoring */}

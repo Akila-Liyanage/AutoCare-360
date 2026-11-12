@@ -322,6 +322,29 @@
   transform: translateY(-1px);
 }
 
+.autocare-btn-expense-tracking {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #0056A2;
+  font-size: 13.5px;
+  font-weight: 700;
+  padding: 9px 18px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.autocare-btn-expense-tracking:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  color: #004080;
+  transform: translateY(-1px);
+}
+
 /* --------------------------------------------------------------------------
    4 Metric Cards Row
    -------------------------------------------------------------------------- */
@@ -341,12 +364,7 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.autocare-view-metric-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+  cursor: default;
 }
 
 .autocare-view-metric-header {
@@ -1038,6 +1056,7 @@
   }
 
   .autocare-btn-download-passport,
+  .autocare-btn-expense-tracking,
   .autocare-btn-edit-vehicle,
   .autocare-btn-transfer-ownership {
     width: 100%;
@@ -1092,6 +1111,7 @@
   .autocare-footer,
   .autocare-view-hero-actions,
   .autocare-btn-download-passport,
+  .autocare-btn-expense-tracking,
   .autocare-btn-edit-vehicle,
   .autocare-btn-transfer-ownership,
   .autocare-modal-backdrop,
