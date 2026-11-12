@@ -40,6 +40,7 @@ import GenerateQuotationPage from './pages/garage/GenerateQuotationPage';
 import InvoiceGeneratorPage from './pages/garage/InvoiceGeneratorPage';
 import GarageVerificationPendingPage from './pages/garage/GarageVerificationPendingPage';
 import AdminProtectedRoute from './components/auth/AdminProtectedRoute';
+import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import AdminUserManagementPage from './pages/admin/AdminUserManagementPage';
 import AdminGarageVerificationPage from './pages/admin/AdminGarageVerificationPage';
 import AdminGarageDetailsPage from './pages/admin/AdminGarageDetailsPage';
@@ -129,10 +130,11 @@ export const App: React.FC = () => {
 
           {/* System Administrator Console (AdminProtectedRoute Guarded) */}
           <Route element={<AdminProtectedRoute />}>
+            <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
             <Route path="/admin/users" element={<AdminUserManagementPage />} />
             <Route path="/admin/garages" element={<AdminGarageVerificationPage />} />
             <Route path="/admin/garages/:id" element={<AdminGarageDetailsPage />} />
-            <Route path="/admin" element={<Navigate to="/admin/users" replace />} />
+            <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
           </Route>
 
           {/* Fallback */}

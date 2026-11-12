@@ -99,7 +99,7 @@ export const Navbar: React.FC = () => {
   const navLinks =
     user?.role === 'admin'
       ? [
-          { label: 'Home', path: '/' },
+          { label: 'Dashboard', path: '/admin/dashboard' },
           { label: 'User Management', path: '/admin/users' },
           { label: 'Garage Verification', path: '/admin/garages' },
         ]
@@ -437,6 +437,13 @@ export const Navbar: React.FC = () => {
                 )}
                 {user?.role === 'admin' && (
                   <>
+                    <Link
+                      to="/admin/dashboard"
+                      className="autocare-mobile-link"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Dashboard
+                    </Link>
                     <Link
                       to="/admin/users"
                       className="autocare-mobile-link"

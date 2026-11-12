@@ -103,7 +103,7 @@ export const LoginPage: React.FC = () => {
         const resolvedStatus = authenticatedUser?.status;
 
         if (resolvedRole === 'admin') {
-          navigate('/admin/garages');
+          navigate('/admin/dashboard');
         } else if (resolvedRole === 'garage') {
           if (resolvedStatus === 'pending') {
             navigate('/garage/verification-pending');
