@@ -379,19 +379,21 @@ export const GarageSharingPage: React.FC = () => {
         }}
       >
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          {[
-            { key: 'ALL', label: `All (${shares.length})` },
-            { key: 'ACTIVE', label: `Active (${activeCount})` },
-            { key: 'REVOKED', label: `Revoked (${revokedCount})` },
-            { key: 'EXPIRED', label: `Expired (${expiredCount})` },
-            { key: 'REQUESTS', label: `Requests (${requestsCount})` },
-          ].map((tab) => {
+          {(
+            [
+              { key: 'ALL', label: `All (${shares.length})` },
+              { key: 'ACTIVE', label: `Active (${activeCount})` },
+              { key: 'REVOKED', label: `Revoked (${revokedCount})` },
+              { key: 'EXPIRED', label: `Expired (${expiredCount})` },
+              { key: 'REQUESTS', label: `Requests (${requestsCount})` },
+            ] as const
+          ).map((tab) => {
             const isSel = activeFilter === tab.key;
             return (
               <button
                 key={tab.key}
                 type="button"
-                onClick={() => setActiveFilter(tab.key as any)}
+                onClick={() => setActiveFilter(tab.key)}
                 style={{
                   background: isSel ? '#0056A2' : '#F1F5F9',
                   color: isSel ? '#FFFFFF' : '#475569',
@@ -737,7 +739,7 @@ export const GarageSharingPage: React.FC = () => {
               </div>
             </div>
             <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '12px', color: '#475569', lineHeight: '20px' }}>
-              <li>Single-use dynamic cryptographic tokens</li>
+              <li>Single-use dynamic access tokens</li>
               <li>Hardware footprint & IP verification logging</li>
               <li>Time-limited ledger access windows</li>
               <li>Instant remote revocation with zero cached access</li>

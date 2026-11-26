@@ -39,6 +39,18 @@ interface AuditEvent {
   };
 }
 
+interface RawAuditLog {
+  _id?: string;
+  createdAt?: string;
+  actorName?: string;
+  actorId?: { fullName?: string };
+  actorRole?: string;
+  action?: string;
+  vehicleId?: { registrationNumber?: string; manufacturer?: string; model?: string };
+  ipAddress?: string;
+  status?: string;
+}
+
 export const GarageAuditTrailPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<'ALL' | 'service' | 'ownership' | 'access' | 'security'>('ALL');
   const [timeFilter, setTimeFilter] = useState<string>('Last 30 days');
@@ -97,7 +109,7 @@ export const GarageAuditTrailPage: React.FC = () => {
       timeline: [
         { time: '09:10:00', event: 'Service inspection completed by Indika Perera' },
         { time: '09:13:20', event: 'Owner OTP confirmation signed' },
-        { time: '09:15:00', event: 'SHA-256 block cryptographically committed to ledger' },
+        { time: '09:15:00', event: 'Service record verified and committed to log' },
       ],
       permissions: {
         scope: 'Full Service Publishing',
@@ -159,7 +171,7 @@ export const GarageAuditTrailPage: React.FC = () => {
       ],
       permissions: {
         scope: 'None (Blocked)',
-        grantedBy: 'Automated Intrusion Defense',
+        grantedBy: 'Automated Security Filter',
         grantedOn: '17 Sep 2026',
         expiry: 'Permanent Ban',
       },
@@ -182,7 +194,7 @@ export const GarageAuditTrailPage: React.FC = () => {
       status: 'verified',
       hash: '0x99238bc110a56fe338d82134589921bc',
       timeline: [
-        { time: '10:09:45', event: 'Authority PKI digital certificate verified' },
+        { time: '10:09:45', event: 'Authority digital certificate verified' },
         { time: '10:11:00', event: 'Full chain of custody & ownership timeline pulled' },
       ],
       permissions: {
@@ -200,7 +212,7 @@ export const GarageAuditTrailPage: React.FC = () => {
       try {
         const res = await api.get('/garage/audit-logs');
         if (isMounted && res.data?.data?.logs && Array.isArray(res.data.data.logs) && res.data.data.logs.length > 0) {
-          const apiItems: AuditEvent[] = res.data.data.logs.map((l: any, idx: number) => ({
+          const apiItems: AuditEvent[] = res.data.data.logs.map((l: RawAuditLog, idx: number) => ({
             id: l._id || String(idx),
             eventId: `EVT-${9490 - idx}`,
             timeDate: new Date(l.createdAt || Date.now()).toLocaleDateString('en-GB', {
@@ -402,7 +414,7 @@ export const GarageAuditTrailPage: React.FC = () => {
             {events.length > 0 ? '98%' : '100%'}
           </div>
           <div style={{ fontSize: '12px', color: '#50B748', fontWeight: 500 }}>
-            Cryptographic integrity check
+            System integrity check
           </div>
         </div>
 
@@ -465,19 +477,21 @@ export const GarageAuditTrailPage: React.FC = () => {
         }}
       >
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          {[
-            { key: 'ALL', label: `All activity (${events.length})` },
-            { key: 'service', label: `Service (${events.filter((e) => e.actionCategory === 'service').length})` },
-            { key: 'ownership', label: `Ownership (${events.filter((e) => e.actionCategory === 'ownership').length})` },
-            { key: 'access', label: `Access (${events.filter((e) => e.actionCategory === 'access').length})` },
-            { key: 'security', label: `Security (${events.filter((e) => e.actionCategory === 'security').length})` },
-          ].map((pill) => {
+          {(
+            [
+              { key: 'ALL', label: `All activity (${events.length})` },
+              { key: 'service', label: `Service (${events.filter((e) => e.actionCategory === 'service').length})` },
+              { key: 'ownership', label: `Ownership (${events.filter((e) => e.actionCategory === 'ownership').length})` },
+              { key: 'access', label: `Access (${events.filter((e) => e.actionCategory === 'access').length})` },
+              { key: 'security', label: `Security (${events.filter((e) => e.actionCategory === 'security').length})` },
+            ] as const
+          ).map((pill) => {
             const isSel = selectedCategory === pill.key;
             return (
               <button
                 key={pill.key}
                 type="button"
-                onClick={() => setSelectedCategory(pill.key as any)}
+                onClick={() => setSelectedCategory(pill.key)}
                 style={{
                   background: isSel ? '#0056A2' : '#F1F5F9',
                   color: isSel ? '#FFFFFF' : '#475569',
@@ -976,7 +990,7 @@ export const GarageAuditTrailPage: React.FC = () => {
               >
                 <div>
                   <div style={{ fontSize: '11px', fontWeight: 700, color: '#93C5FD', letterSpacing: '0.04em' }}>
-                    CRYPTOGRAPHIC PROOF (SHA-256)
+                    RECORD VERIFICATION HASH
                   </div>
                   <div style={{ fontFamily: 'monospace', fontSize: '12px', color: '#E2E8F0', marginTop: '2px' }}>
                     {activeEvent.hash}
@@ -984,7 +998,7 @@ export const GarageAuditTrailPage: React.FC = () => {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#50B748', fontSize: '12px', fontWeight: 700 }}>
                   <ShieldCheck size={16} />
-                  <span>Immutable Block</span>
+                  <span>Verified Platform Record</span>
                 </div>
               </div>
             </div>

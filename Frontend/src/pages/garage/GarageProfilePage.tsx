@@ -23,7 +23,7 @@ export const GarageProfilePage: React.FC = () => {
     phone: user?.phone || '+94 77 000 1234',
     role: 'Garage administrator',
     status: user?.status || 'active',
-    garageIdentifier: (user as any)?.accreditationNumber || 'BR-03',
+    garageIdentifier: user?.accreditationNumber || 'BR-03',
     validThrough: '31 Dec 2026',
     registrationType: 'Verified Garage Partner',
     businessRegistrationNumber: 'PV-PAW-2024-0318',

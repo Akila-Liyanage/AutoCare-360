@@ -253,7 +253,7 @@ export const GarageDashboardPage: React.FC = () => {
       </section>
 
       {/* ====================================================================
-          SPLITS ROW (Recent Entries + Active AI OCR Queue)
+          SPLITS ROW (Recent Entries + Document Processing Queue)
           ==================================================================== */}
       <div
         style={{
@@ -294,7 +294,17 @@ export const GarageDashboardPage: React.FC = () => {
             {recentEntries.map((entry, idx) => (
               <div
                 key={entry.id || idx}
-                onClick={() => setSelectedRecord(entry as any)}
+                onClick={() =>
+                  setSelectedRecord({
+                    id: entry.id,
+                    _id: entry._id,
+                    vehicleTitle: entry.vehicleTitle,
+                    regNumber: entry.regNumber,
+                    mileage: entry.mileage,
+                    serviceDescription: entry.serviceDescription,
+                    status: entry.status,
+                  })
+                }
                 style={{
                   display: 'flex',
                   justifyContent: 'space-between',
@@ -353,7 +363,7 @@ export const GarageDashboardPage: React.FC = () => {
           </div>
         </section>
 
-        {/* Right Column: Active AI OCR Queue */}
+        {/* Right Column: Document Processing Queue */}
         <section
           style={{
             background: '#FFFFFF',
@@ -365,7 +375,7 @@ export const GarageDashboardPage: React.FC = () => {
             gap: '14px',
             boxShadow: '0 1px 4px rgba(0, 0, 0, 0.02)',
           }}
-          aria-label="Active AI OCR Queue"
+          aria-label="Document Processing Queue"
         >
           <h2
             style={{
@@ -377,7 +387,7 @@ export const GarageDashboardPage: React.FC = () => {
               margin: 0,
             }}
           >
-            Active AI OCR Queue
+            Document Processing Queue
           </h2>
 
           {/* Queue Indicator Box */}
@@ -519,9 +529,19 @@ export const GarageDashboardPage: React.FC = () => {
               ) : (
                 records.map((rec, idx) => (
                   <tr
-                    key={rec.id || (rec as any)._id || idx}
+                    key={rec.id || rec._id || idx}
                     style={{ borderBottom: '1px solid #DCE5EF', cursor: 'pointer', transition: 'background 0.15s ease' }}
-                    onClick={() => setSelectedRecord(rec as any)}
+                    onClick={() =>
+                      setSelectedRecord({
+                        id: rec.id,
+                        _id: rec._id,
+                        vehicleId: rec.vehicleId,
+                        vehicleRef: rec.vehicleRef,
+                        customerName: rec.customerName,
+                        date: rec.date,
+                        status: rec.status,
+                      })
+                    }
                     onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#F8FAFC')}
                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                   >
@@ -557,7 +577,15 @@ export const GarageDashboardPage: React.FC = () => {
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setSelectedRecord(rec as any);
+                          setSelectedRecord({
+                            id: rec.id,
+                            _id: rec._id,
+                            vehicleId: rec.vehicleId,
+                            vehicleRef: rec.vehicleRef,
+                            customerName: rec.customerName,
+                            date: rec.date,
+                            status: rec.status,
+                          });
                         }}
                         style={{
                           background: '#F1F5F9',

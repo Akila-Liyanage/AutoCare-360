@@ -34,6 +34,7 @@ export interface OCRWarningItem {
 
 export interface GarageRecordItem {
   id: string;
+  _id?: string;
   vehicleId: string;
   vehicleRef: string;
   customerName: string;
@@ -95,7 +96,7 @@ export const FIGMA_OCR_QUEUE: OCRQueueItem = {
 
 export const FIGMA_OCR_WARNING: OCRWarningItem = {
   id: 'warn-1',
-  title: 'OCR Validation Warning',
+  title: 'Document Validation Warning',
   message: 'Manual check required for odometer match.',
 };
 

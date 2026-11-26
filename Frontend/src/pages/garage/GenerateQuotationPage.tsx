@@ -55,12 +55,24 @@ interface QuotationItem {
   createdAt: string;
 }
 
+interface GarageVehicleOption {
+  _id?: string;
+  registrationNumber?: string;
+  manufacturer?: string;
+  model?: string;
+  ownerId?: {
+    fullName?: string;
+    email?: string;
+    phone?: string;
+  };
+}
+
 export const GenerateQuotationPage: React.FC = () => {
   // Builder State
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>('');
   const [customerName, setCustomerName] = useState<string>('');
   const [vehicleReg, setVehicleReg] = useState<string>('');
-  const [validUntil, setValidUntil] = useState<string>(
+  const [validUntil, setValidUntil] = useState<string>(() =>
     new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   );
   const [notes, setNotes] = useState<string>(
@@ -73,9 +85,9 @@ export const GenerateQuotationPage: React.FC = () => {
     { id: '3', description: 'Front Ceramic Brake Pads (Set)', qty: 1, unitPrice: 18500 },
   ]);
 
-  const [vehiclesList, setVehiclesList] = useState<any[]>([]);
+  const [vehiclesList, setVehiclesList] = useState<GarageVehicleOption[]>([]);
   const [quotationsList, setQuotationsList] = useState<QuotationItem[]>([]);
-  const [loadingQuotations, setLoadingQuotations] = useState<boolean>(false);
+  const [loadingQuotations, setLoadingQuotations] = useState<boolean>(true);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -87,24 +99,6 @@ export const GenerateQuotationPage: React.FC = () => {
   const tax = Math.round(subtotal * 0.08); // 8% VAT
   const grandTotal = subtotal + tax;
 
-  // Load available vehicles for fast selection
-  const fetchVehicles = useCallback(async () => {
-    try {
-      const res = await api.get('/garage/vehicles');
-      const list = res.data?.data?.vehicles || [];
-      setVehiclesList(list);
-      if (list.length > 0 && !vehicleReg) {
-        setSelectedVehicleId(list[0]._id || '');
-        setVehicleReg(list[0].registrationNumber || '');
-        if (list[0].ownerId?.fullName) {
-          setCustomerName(list[0].ownerId.fullName);
-        }
-      }
-    } catch {
-      // Fallback
-    }
-  }, [vehicleReg]);
-
   // Load official quotations issued by this garage
   const fetchQuotations = useCallback(async () => {
     setLoadingQuotations(true);
@@ -112,17 +106,53 @@ export const GenerateQuotationPage: React.FC = () => {
       const res = await api.get('/garage/quotations');
       const list = res.data?.data?.quotations || [];
       setQuotationsList(list);
-    } catch (err: any) {
-      console.warn('Could not fetch garage quotations:', err?.message);
+    } catch (err: unknown) {
+      const errObj = err as { message?: string };
+      console.warn('Could not fetch garage quotations:', errObj?.message);
     } finally {
       setLoadingQuotations(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchVehicles();
-    fetchQuotations();
-  }, [fetchVehicles, fetchQuotations]);
+    let isMounted = true;
+    const loadInitialData = async () => {
+      try {
+        const [vRes, qRes] = await Promise.allSettled([
+          api.get('/garage/vehicles'),
+          api.get('/garage/quotations'),
+        ]);
+
+        if (!isMounted) return;
+
+        if (vRes.status === 'fulfilled') {
+          const list: GarageVehicleOption[] = vRes.value.data?.data?.vehicles || [];
+          setVehiclesList(list);
+          if (list.length > 0 && !vehicleReg) {
+            setSelectedVehicleId(list[0]._id || '');
+            setVehicleReg(list[0].registrationNumber || '');
+            if (list[0].ownerId?.fullName) {
+              setCustomerName(list[0].ownerId.fullName);
+            }
+          }
+        }
+
+        if (qRes.status === 'fulfilled') {
+          const list = qRes.value.data?.data?.quotations || [];
+          setQuotationsList(list);
+        }
+      } finally {
+        if (isMounted) {
+          setLoadingQuotations(false);
+        }
+      }
+    };
+
+    loadInitialData();
+    return () => {
+      isMounted = false;
+    };
+  }, [vehicleReg]);
 
   const handleSelectVehicle = (reg: string) => {
     setVehicleReg(reg);
@@ -148,7 +178,7 @@ export const GenerateQuotationPage: React.FC = () => {
     setLineItems(lineItems.filter((item) => item.id !== id));
   };
 
-  const handleUpdateItem = (id: string, field: keyof LineItem, val: any) => {
+  const handleUpdateItem = (id: string, field: keyof LineItem, val: string | number) => {
     setLineItems(
       lineItems.map((item) => (item.id === id ? { ...item, [field]: val } : item))
     );
@@ -204,9 +234,10 @@ export const GenerateQuotationPage: React.FC = () => {
       if (newQuotation) {
         setSelectedQuotation(newQuotation);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errObj = err as { response?: { data?: { message?: string } } };
       const errorMsg =
-        err?.response?.data?.message || 'Failed to dispatch quotation. Please verify vehicle registration.';
+        errObj?.response?.data?.message || 'Failed to dispatch quotation. Please verify vehicle registration.';
       setFeedback({ type: 'error', msg: errorMsg });
     } finally {
       setLoading(false);
@@ -917,13 +948,13 @@ export const GenerateQuotationPage: React.FC = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Lock size={18} style={{ color: '#00B4EB' }} />
               <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#FFFFFF' }}>
-                Ledger notice
+                Quotation notice
               </h4>
             </div>
 
             <p style={{ margin: 0, fontSize: '12px', lineHeight: '18px', color: '#C4D3E5' }}>
-              Dispatching this quotation registers an off-chain cryptographic intent on the vehicle
-              history tree. The customer will receive an immediate notification to review, accept, or decline.
+              Dispatching this quotation registers the estimate in the vehicle service record.
+              The customer will receive an immediate notification to review, accept, or decline.
             </p>
           </div>
         </div>

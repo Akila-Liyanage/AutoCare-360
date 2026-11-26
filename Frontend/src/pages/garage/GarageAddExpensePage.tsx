@@ -99,8 +99,9 @@ export const GarageAddExpensePage: React.FC = () => {
           navigate('/garage/vehicles');
         }
       }, 1200);
-    } catch (err: any) {
-      setErrorMsg(err.response?.data?.message || 'Failed to record expense. Please try again.');
+    } catch (err: unknown) {
+      const errObj = err as { response?: { data?: { message?: string } } };
+      setErrorMsg(errObj?.response?.data?.message || 'Failed to record expense. Please try again.');
     } finally {
       setLoading(false);
     }

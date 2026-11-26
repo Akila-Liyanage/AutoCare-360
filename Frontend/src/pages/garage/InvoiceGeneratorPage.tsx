@@ -65,9 +65,8 @@ export const InvoiceGeneratorPage: React.FC = () => {
       }
     } catch (err: unknown) {
       setVehicleVerified(false);
-      const msg = err && typeof err === 'object' && 'response' in err && (err as any).response?.data?.message
-        ? (err as any).response.data.message
-        : `Vehicle "${regNumber}" is not registered on the platform.`;
+      const errObj = err as { response?: { data?: { message?: string } } };
+      const msg = errObj?.response?.data?.message || `Vehicle "${regNumber}" is not registered on the platform.`;
       setFeedback({ type: 'error', msg });
     } finally {
       setLoading(false);
@@ -642,13 +641,13 @@ export const InvoiceGeneratorPage: React.FC = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Lock size={18} style={{ color: '#00B4EB' }} />
               <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#FFFFFF' }}>
-                Ledger notice
+                Invoice notice
               </h4>
             </div>
 
             <p style={{ margin: 0, fontSize: '12px', lineHeight: '18px', color: '#C4D3E5' }}>
-              Upon issuance, an immutable hash receipt will be broadcast to the vehicle owner passport.
-              Invoices cannot be altered after ledger consensus.
+              Upon issuance, an official digital invoice will be delivered to the vehicle owner's digital passport.
+              Invoices cannot be altered once finalized.
             </p>
           </div>
         </div>

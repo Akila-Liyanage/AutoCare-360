@@ -137,7 +137,7 @@ export const AddMaintenanceRecordPage: React.FC = () => {
     setOcrInvoiceFile(file);
     setOcrInvoiceFileName(file.name);
     setOcrScanning(true);
-    setOcrStatus('Scanning invoice with AI OCR...');
+    setOcrStatus('Processing document...');
 
     setTimeout(() => {
       setOcrScanning(false);
@@ -151,6 +151,68 @@ export const AddMaintenanceRecordPage: React.FC = () => {
   };
 
   const totalCost = (parseFloat(partsCost) || 0) + (parseFloat(labourCost) || 0);
+
+  const isMileageRollback = Boolean(
+    foundVehicle &&
+    typeof foundVehicle.currentMileage === 'number' &&
+    foundVehicle.currentMileage > 0 &&
+    mileage &&
+    Number(mileage) < foundVehicle.currentMileage
+  );
+
+  const filterSuggestions = (query: string) => {
+    if (!query || !query.trim()) {
+      setSuggestions(availableVehicles);
+      return;
+    }
+    const q = query.toLowerCase().trim();
+    const matches = availableVehicles.filter(
+      (v) =>
+        v.registrationNumber?.toLowerCase().includes(q) ||
+        v.manufacturer?.toLowerCase().includes(q) ||
+        v.model?.toLowerCase().includes(q) ||
+        v.ownerId?.fullName?.toLowerCase().includes(q) ||
+        v.ownerId?.email?.toLowerCase().includes(q)
+    );
+    setSuggestions(matches);
+  };
+
+  const selectVehicle = (v: LookedUpVehicle) => {
+    setRegNumber(v.registrationNumber);
+    setFoundVehicle(v);
+    if (v.currentMileage) {
+      setMileage(String(v.currentMileage + 500));
+    }
+    setLookupNotice(
+      `✓ Verified: ${v.manufacturer} ${v.model} (${v.manufacturingYear || 'N/A'}) · Owner: ${v.ownerId?.fullName || v.ownerId?.email || 'Registered Customer'
+      }`
+    );
+    setShowSuggestions(false);
+  };
+
+  const handleLookup = async (overrideReg?: string) => {
+    const targetReg = overrideReg || regNumber;
+    if (!targetReg.trim()) return;
+    setLookupLoading(true);
+    setLookupNotice('');
+    try {
+      const res = await api.get(`/vehicles/lookup?regNumber=${encodeURIComponent(targetReg.trim())}`);
+      if (res.data?.data?.vehicle) {
+        const v: LookedUpVehicle = res.data.data.vehicle;
+        selectVehicle(v);
+      } else {
+        setFoundVehicle(null);
+        setLookupNotice('No registered vehicle found with this registration number.');
+      }
+    } catch (err: unknown) {
+      setFoundVehicle(null);
+      const apiErr = err as { response?: { data?: { message?: string } } };
+      const msg = apiErr.response?.data?.message || 'Vehicle not registered on the platform.';
+      setLookupNotice(msg);
+    } finally {
+      setLookupLoading(false);
+    }
+  };
 
   // Fetch all registered customer vehicles for real-time autocomplete suggestions
   useEffect(() => {
@@ -192,63 +254,8 @@ export const AddMaintenanceRecordPage: React.FC = () => {
     return () => {
       isMounted = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlReg, urlVehicleId]);
-
-  const filterSuggestions = (query: string) => {
-    if (!query || !query.trim()) {
-      setSuggestions(availableVehicles);
-      return;
-    }
-    const q = query.toLowerCase().trim();
-    const matches = availableVehicles.filter(
-      (v) =>
-        v.registrationNumber?.toLowerCase().includes(q) ||
-        v.manufacturer?.toLowerCase().includes(q) ||
-        v.model?.toLowerCase().includes(q) ||
-        v.ownerId?.fullName?.toLowerCase().includes(q) ||
-        v.ownerId?.email?.toLowerCase().includes(q)
-    );
-    setSuggestions(matches);
-  };
-
-  const selectVehicle = (v: LookedUpVehicle) => {
-    setRegNumber(v.registrationNumber);
-    setFoundVehicle(v);
-    if (v.currentMileage) {
-      setMileage(String(v.currentMileage + 500));
-    }
-    setLookupNotice(
-      `✓ Verified: ${v.manufacturer} ${v.model} (${v.manufacturingYear || 'N/A'}) · Owner: ${
-        v.ownerId?.fullName || v.ownerId?.email || 'Registered Customer'
-      }`
-    );
-    setShowSuggestions(false);
-  };
-
-  const handleLookup = async (overrideReg?: string) => {
-    const targetReg = overrideReg || regNumber;
-    if (!targetReg.trim()) return;
-    setLookupLoading(true);
-    setLookupNotice('');
-    try {
-      const res = await api.get(`/vehicles/lookup?regNumber=${encodeURIComponent(targetReg.trim())}`);
-      if (res.data?.data?.vehicle) {
-        const v: LookedUpVehicle = res.data.data.vehicle;
-        selectVehicle(v);
-      } else {
-        setFoundVehicle(null);
-        setLookupNotice('No registered vehicle found with this registration number.');
-      }
-    } catch (err: unknown) {
-      setFoundVehicle(null);
-      const msg = err && typeof err === 'object' && 'response' in err && (err as any).response?.data?.message
-        ? (err as any).response.data.message
-        : 'Vehicle not registered on the platform.';
-      setLookupNotice(msg);
-    } finally {
-      setLookupLoading(false);
-    }
-  };
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -261,6 +268,15 @@ export const AddMaintenanceRecordPage: React.FC = () => {
     }
     if (!mileage || Number(mileage) <= 0) {
       setError('A valid odometer mileage reading is required.');
+      return;
+    }
+    if (
+      foundVehicle &&
+      typeof foundVehicle.currentMileage === 'number' &&
+      foundVehicle.currentMileage > 0 &&
+      Number(mileage) < foundVehicle.currentMileage
+    ) {
+      setError("Service mileage cannot be lower than the vehicle's current recorded mileage.");
       return;
     }
 
@@ -314,12 +330,11 @@ export const AddMaintenanceRecordPage: React.FC = () => {
         invoiceUrl,
       });
 
-      setSuccess('Service record successfully committed to immutable vehicle ledger with verified documents!');
+      setSuccess('Service record successfully saved to the vehicle record with verified documents!');
       setTimeout(() => navigate('/garage/dashboard'), 1500);
     } catch (err: unknown) {
-      const msg = err && typeof err === 'object' && 'response' in err && (err as any).response?.data?.message
-        ? (err as any).response.data.message
-        : 'Failed to commit service record to ledger.';
+      const apiErr = err as { response?: { data?: { message?: string } } } | undefined;
+      const msg = apiErr?.response?.data?.message || 'Failed to save service record.';
       setError(msg);
     } finally {
       setLoading(false);
@@ -362,7 +377,7 @@ export const AddMaintenanceRecordPage: React.FC = () => {
               margin: 0,
             }}
           >
-            Record verified vehicle maintenance to create immutable digital ledger entries.
+            Record verified vehicle maintenance for the digital vehicle service record.
           </p>
         </div>
 
@@ -675,19 +690,35 @@ export const AddMaintenanceRecordPage: React.FC = () => {
                 <input
                   type="number"
                   value={mileage}
-                  onChange={(e) => setMileage(e.target.value)}
+                  onChange={(e) => {
+                    setMileage(e.target.value);
+                    if (error) setError('');
+                  }}
                   style={{
                     width: '100%',
                     padding: '8px 12px',
-                    border: '1px solid #DCE5EF',
+                    border: isMileageRollback ? '1.5px solid #EF4444' : '1px solid #DCE5EF',
                     borderRadius: '6px',
                     fontSize: '13.5px',
                     fontWeight: 600,
-                    color: '#15263D',
+                    color: isMileageRollback ? '#B91C1C' : '#15263D',
                     boxSizing: 'border-box',
                     height: '38px',
                   }}
                 />
+                {isMileageRollback && (
+                  <span
+                    style={{
+                      display: 'block',
+                      marginTop: '4px',
+                      fontSize: '11.5px',
+                      color: '#B91C1C',
+                      fontWeight: 600,
+                    }}
+                  >
+                    Service mileage cannot be lower than the vehicle's current recorded mileage.
+                  </span>
+                )}
               </div>
             </div>
 
@@ -1268,7 +1299,7 @@ export const AddMaintenanceRecordPage: React.FC = () => {
                 {ocrInvoiceFileName}
               </span>
               <span style={{ fontSize: '12px', color: ocrScanning ? '#0056A2' : '#64748B', fontWeight: ocrScanning ? 600 : 400 }}>
-                {ocrScanning ? 'Scanning document with AI OCR...' : `Scanner status: ${ocrStatus}`}
+                {ocrScanning ? 'Processing document...' : `Scanner status: ${ocrStatus}`}
               </span>
               <span style={{ fontSize: '11px', color: '#0056A2', fontWeight: 600, textDecoration: 'underline', marginTop: '2px' }}>
                 Click to upload another invoice
@@ -1314,13 +1345,13 @@ export const AddMaintenanceRecordPage: React.FC = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Lock size={18} style={{ color: '#00B4EB' }} />
               <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#FFFFFF' }}>
-                Ledger Notice
+                Service Record Notice
               </h4>
             </div>
 
             <p style={{ margin: 0, fontSize: '12px', lineHeight: '18px', color: '#CBD5E1' }}>
-              Your entry will be cryptographically bound to the chassis index tree. Once issued, you
-              will lose administrative modification rights to ensure audit consensus.
+              Your entry will be officially linked to this vehicle's service history. Once issued, entries
+              cannot be modified directly to ensure record integrity.
             </p>
           </div>
         </div>

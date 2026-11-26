@@ -16,18 +16,18 @@ import '../../styles/garage-dashboard.css';
 
 export interface GarageLayoutProps {
   activeItem?:
-    | 'Overview'
-    | 'Vehicles'
-    | 'Maintenance'
-    | 'Service records'
-    | 'Quotations'
-    | 'Invoices'
-    | 'Documents'
-    | 'Sharing'
-    | 'Sharing & access'
-    | 'Audit trail'
-    | 'Profile'
-    | string;
+  | 'Overview'
+  | 'Vehicles'
+  | 'Maintenance'
+  | 'Service records'
+  | 'Quotations'
+  | 'Invoices'
+  | 'Documents'
+  | 'Sharing'
+  | 'Sharing & access'
+  | 'Audit trail'
+  | 'Profile'
+  | string;
   breadcrumbCurrent?: string;
   children: React.ReactNode;
 }
@@ -91,33 +91,33 @@ export const GarageLayout: React.FC<GarageLayoutProps> = ({
     label: string;
     path: string;
   }> = [
-    { id: 'Overview', label: 'Overview', path: '/garage/dashboard' },
-    { id: 'Vehicles', label: 'Vehicles', path: '/garage/vehicles' },
-    { id: 'Service records', label: 'Service records', path: '/garage/service-records' },
-    { id: 'Generate quotation', label: 'Generate quotation', path: '/garage/quotations' },
-    { id: 'Invoice generator', label: 'Invoice generator', path: '/garage/invoices' },
-    { id: 'Audit trail', label: 'Audit trail', path: '/garage/audit' },
-    { id: 'Notifications', label: 'Notifications', path: '/garage/notifications' },
-    { id: 'Profile', label: 'Profile', path: '/garage/profile' },
-  ];
+      { id: 'Overview', label: 'Overview', path: '/garage/dashboard' },
+      { id: 'Vehicles', label: 'Vehicles', path: '/garage/vehicles' },
+      { id: 'Service records', label: 'Service records', path: '/garage/service-records' },
+      { id: 'Generate quotation', label: 'Generate quotation', path: '/garage/quotations' },
+      { id: 'Invoice generator', label: 'Invoice generator', path: '/garage/invoices' },
+      { id: 'Audit trail', label: 'Audit trail', path: '/garage/audit' },
+      { id: 'Notifications', label: 'Notifications', path: '/garage/notifications' },
+      { id: 'Profile', label: 'Profile', path: '/garage/profile' },
+    ];
 
   const currentActive =
     activeItem ||
     (location.pathname.startsWith('/garage/vehicles')
       ? 'Vehicles'
       : location.pathname.startsWith('/garage/service-records') || location.pathname.startsWith('/garage/maintenance')
-      ? 'Service records'
-      : location.pathname.startsWith('/garage/quotations')
-      ? 'Generate quotation'
-      : location.pathname.startsWith('/garage/invoices')
-      ? 'Invoice generator'
-      : location.pathname.startsWith('/garage/audit')
-      ? 'Audit trail'
-      : location.pathname.startsWith('/garage/notifications')
-      ? 'Notifications'
-      : location.pathname.startsWith('/garage/profile') || location.pathname.startsWith('/profile')
-      ? 'Profile'
-      : 'Overview');
+        ? 'Service records'
+        : location.pathname.startsWith('/garage/quotations')
+          ? 'Generate quotation'
+          : location.pathname.startsWith('/garage/invoices')
+            ? 'Invoice generator'
+            : location.pathname.startsWith('/garage/audit')
+              ? 'Audit trail'
+              : location.pathname.startsWith('/garage/notifications')
+                ? 'Notifications'
+                : location.pathname.startsWith('/garage/profile') || location.pathname.startsWith('/profile')
+                  ? 'Profile'
+                  : 'Overview');
 
   const handleNavClick = (item: (typeof sidebarMenuItems)[0]) => {
     setMobileMenuOpen(false);
@@ -309,7 +309,7 @@ export const GarageLayout: React.FC<GarageLayoutProps> = ({
 
           <div className="autocare-garage-topbar-actions" style={{ gap: '16px' }}>
             <Link
-              to="/notifications"
+              to={user?.role === 'garage' ? '/garage/notifications' : '/notifications'}
               className="autocare-garage-notify-btn"
               aria-label="Garage Notifications"
               title="Notifications"
