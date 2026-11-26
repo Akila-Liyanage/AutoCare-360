@@ -23,6 +23,7 @@ import ExpenseTrackingPage from './pages/expenses/ExpenseTrackingPage';
 import SecureLinkSharingPage from './pages/sharing/SecureLinkSharingPage';
 import QRCodeSharingPage from './pages/sharing/QRCodeSharingPage';
 import AccessPermissionManagementPage from './pages/sharing/AccessPermissionManagementPage';
+import AccessGrantedDetailsPage from './pages/sharing/AccessGrantedDetailsPage';
 import ConfigureAccessPermissionsPage from './pages/sharing/ConfigureAccessPermissionsPage';
 import BuyerSharedRecordViewPage from './pages/sharing/BuyerSharedRecordViewPage';
 import GarageDashboardPage from './pages/garage/GarageDashboardPage';
@@ -100,6 +101,7 @@ export const App: React.FC = () => {
 
             {/* Access Permission Management — BR-06 */}
             <Route path="/sharing/permissions" element={<AccessPermissionManagementPage />} />
+            <Route path="/sharing/permissions/granted" element={<AccessGrantedDetailsPage />} />
 
             {/* Data Protection / Configure Access Permissions */}
             <Route path="/sharing/protection" element={<ConfigureAccessPermissionsPage />} />

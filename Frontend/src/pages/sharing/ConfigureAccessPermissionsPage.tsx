@@ -25,11 +25,27 @@ interface CheckboxState {
   detailedInvoices: boolean;
 }
 
+interface GenerationSnapshot {
+  recipientEntity: string;
+  recipientEmail: string;
+  expiryDuration: string;
+  expiryDateTime: string;
+  accessMethod: AccessMethod;
+  visibilityScope: VisibilityScope;
+  checkboxes: CheckboxState;
+}
+
 interface ToastState {
   show: boolean;
   message: string;
   type: 'success' | 'info';
 }
+
+const formatExpiryDisplay = (raw: string): string => {
+  if (!raw) return '30 Sep 2026 · 10:30';
+  const cleaned = raw.replace(/^Expires\s*/i, '').trim();
+  return cleaned.replace(/,\s*/, ' · ');
+};
 
 const ConfigureAccessPermissionsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -55,9 +71,27 @@ const ConfigureAccessPermissionsPage: React.FC = () => {
     detailedInvoices: false
   });
 
-  // Active Credentials Key
-  const [credentialsKey, setCredentialsKey] = useState<string>(
-    'https://autocare360.lk/verify/auth_token=8f9e...2b7c'
+  // Generated credential state
+  const [hasGenerated, setHasGenerated] = useState<boolean>(false);
+  const [generationSnapshot, setGenerationSnapshot] = useState<GenerationSnapshot | null>(null);
+  const [credentialCode, setCredentialCode] = useState<string>('AC360-PREVIEW-8F9E');
+  const [previewUrl, setPreviewUrl] = useState<string>(
+    'https://autocare360.lk/verify/preview/AC360-PREVIEW-8F9E'
+  );
+
+  // Check if inputs differ from generation snapshot
+  const isConfigChanged = Boolean(
+    hasGenerated &&
+    generationSnapshot &&
+    (generationSnapshot.recipientEntity !== recipientEntity.trim() ||
+      generationSnapshot.recipientEmail !== recipientEmail.trim() ||
+      generationSnapshot.expiryDuration !== expiryDuration.trim() ||
+      generationSnapshot.expiryDateTime !== expiryDateTime.trim() ||
+      generationSnapshot.accessMethod !== accessMethod ||
+      generationSnapshot.visibilityScope !== visibilityScope ||
+      generationSnapshot.checkboxes.odometerTelemetry !== checkboxes.odometerTelemetry ||
+      generationSnapshot.checkboxes.certifiedChronology !== checkboxes.certifiedChronology ||
+      generationSnapshot.checkboxes.detailedInvoices !== checkboxes.detailedInvoices)
   );
 
   // Toast feedback
@@ -109,21 +143,30 @@ const ConfigureAccessPermissionsPage: React.FC = () => {
   };
 
   const handleGenerateLink = () => {
-    const randomHash1 = Math.random().toString(36).substring(2, 6);
-    const randomHash2 = Math.random().toString(36).substring(2, 6);
-    const newKey = `https://autocare360.lk/verify/auth_token=${randomHash1}...${randomHash2}`;
-    setCredentialsKey(newKey);
+    setHasGenerated(true);
+    setGenerationSnapshot({
+      recipientEntity: recipientEntity.trim(),
+      recipientEmail: recipientEmail.trim(),
+      expiryDuration: expiryDuration.trim(),
+      expiryDateTime: expiryDateTime.trim(),
+      accessMethod,
+      visibilityScope,
+      checkboxes: { ...checkboxes }
+    });
+    setCredentialCode('AC360-PREVIEW-8F9E');
+    setPreviewUrl('https://autocare360.lk/verify/preview/AC360-PREVIEW-8F9E');
     showToast(
       `Preview share link generated for ${recipientEntity || 'recipient'}. For live tokenized access, use Secure Link Sharing.`,
       'info'
     );
   };
 
-  const handleCopy = () => {
+  const handleCopy = (textToCopy?: string) => {
+    const target = textToCopy || previewUrl || credentialCode;
     if (navigator?.clipboard?.writeText) {
-      navigator.clipboard.writeText(credentialsKey).catch(() => {});
+      navigator.clipboard.writeText(target).catch(() => {});
     }
-    showToast('Active credentials key copied to clipboard!', 'success');
+    showToast('Copied preview credential', 'success');
   };
 
   return (
@@ -402,10 +445,10 @@ const ConfigureAccessPermissionsPage: React.FC = () => {
 
             {/* Right Column: Live Passport Preview + Active Credentials */}
             <div className="autocare-protect-right-col">
-              {/* Card 1: Live Passport Preview */}
-              <section className="autocare-protect-preview-card" aria-label="Live Passport Preview">
+              {/* Card 1: Protected Passport Preview */}
+              <section className="autocare-protect-preview-card" aria-label="Protected Passport Preview">
                 <div className="autocare-protect-preview-top">
-                  <span className="autocare-protect-preview-label">LIVE PASSPORT PREVIEW</span>
+                  <span className="autocare-protect-preview-label">PROTECTED PASSPORT PREVIEW</span>
                   <span className="autocare-protect-badge-protected">PROTECTED VIEW</span>
                 </div>
 
@@ -446,31 +489,227 @@ const ConfigureAccessPermissionsPage: React.FC = () => {
                   onClick={handleGenerateLink}
                 >
                   <ShieldCheck size={18} />
-                  <span>Generate Verifiable Link</span>
+                  <span>{hasGenerated ? 'Regenerate Preview Link' : 'Generate Verifiable Link'}</span>
                 </button>
               </section>
 
-              {/* Card 2: Active Credentials Key */}
-              <section className="autocare-protect-creds-card" aria-label="Active Credentials Key">
-                <h2 className="autocare-protect-creds-title">Active Credentials Key</h2>
-                <div className="autocare-protect-creds-row">
-                  <input
-                    type="text"
-                    readOnly
-                    className="autocare-protect-creds-input"
-                    value={credentialsKey}
-                    aria-label="Active credentials token link"
-                  />
-                  <button
-                    type="button"
-                    className="autocare-protect-btn-copy"
-                    onClick={handleCopy}
+              {/* Card 2: Persistent Result Card — Preview Credential */}
+              {hasGenerated && (
+                <section className="autocare-protect-creds-card" aria-label="Preview Credential">
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      marginBottom: '14px',
+                      flexWrap: 'wrap',
+                      gap: '8px'
+                    }}
                   >
-                    <Copy size={15} />
-                    <span>Copy</span>
-                  </button>
-                </div>
-              </section>
+                    <h2 className="autocare-protect-creds-title" style={{ margin: 0 }}>
+                      Preview credential
+                    </h2>
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        backgroundColor: isConfigChanged ? '#fffbeb' : '#dcfce7',
+                        color: isConfigChanged ? '#b45309' : '#15803d',
+                        border: `1px solid ${isConfigChanged ? '#fde68a' : '#86efac'}`,
+                        fontSize: '11px',
+                        fontWeight: 800,
+                        padding: '3px 10px',
+                        borderRadius: '9999px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.4px'
+                      }}
+                    >
+                      {isConfigChanged ? <AlertCircle size={12} /> : <CheckCircle2 size={12} />}
+                      <span>{isConfigChanged ? 'Configuration changed' : 'Preview ready'}</span>
+                    </span>
+                  </div>
+
+                  {isConfigChanged && (
+                    <div
+                      style={{
+                        backgroundColor: '#fffbeb',
+                        border: '1px solid #fde68a',
+                        borderRadius: '8px',
+                        padding: '10px 12px',
+                        marginBottom: '14px',
+                        fontSize: '12.5px',
+                        color: '#92400e',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '8px',
+                        flexWrap: 'wrap'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <AlertCircle size={15} style={{ color: '#d97706', flexShrink: 0 }} />
+                        <span>Parameters modified since generation.</span>
+                      </div>
+                      <strong style={{ color: '#b45309', fontSize: '12px' }}>
+                        Regenerate preview credential
+                      </strong>
+                    </div>
+                  )}
+
+                  {/* Summary Details */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '10px',
+                      fontSize: '13px',
+                      backgroundColor: '#f8fafc',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '10px',
+                      padding: '14px 16px',
+                      marginBottom: '16px'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', alignItems: 'center' }}>
+                      <span style={{ color: '#64748b', fontWeight: 600 }}>Status</span>
+                      <strong style={{ color: isConfigChanged ? '#d97706' : '#16a34a' }}>
+                        {isConfigChanged ? 'Configuration changed' : 'Preview ready'}
+                      </strong>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', alignItems: 'center' }}>
+                      <span style={{ color: '#64748b', fontWeight: 600 }}>Recipient</span>
+                      <span style={{ color: '#0f172a', fontWeight: 700, textAlign: 'right' }}>
+                        {recipientEntity || 'Lanka Premium Cars (Pvt) Ltd'}
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', alignItems: 'center' }}>
+                      <span style={{ color: '#64748b', fontWeight: 600 }}>Vehicle</span>
+                      <span style={{ color: '#0f172a', fontWeight: 600, textAlign: 'right' }}>
+                        WP ABC-1234 · Toyota Aqua
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', alignItems: 'center' }}>
+                      <span style={{ color: '#64748b', fontWeight: 600 }}>Scope</span>
+                      <span style={{ color: '#0056A2', fontWeight: 700, textAlign: 'right' }}>
+                        {visibilityScope}
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', alignItems: 'center' }}>
+                      <span style={{ color: '#64748b', fontWeight: 600 }}>Expiry</span>
+                      <span style={{ color: '#0f172a', fontWeight: 600, textAlign: 'right' }}>
+                        {formatExpiryDisplay(expiryDateTime)}
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', alignItems: 'center' }}>
+                      <span style={{ color: '#64748b', fontWeight: 600 }}>Credential</span>
+                      {isConfigChanged ? (
+                        <span style={{ color: '#d97706', fontWeight: 700, fontStyle: 'italic', fontSize: '12.5px' }}>
+                          Regenerate preview credential
+                        </span>
+                      ) : (
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                          <span
+                            style={{
+                              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                              color: '#0f172a',
+                              fontWeight: 700,
+                              backgroundColor: '#ffffff',
+                              border: '1px solid #cbd5e1',
+                              padding: '2px 8px',
+                              borderRadius: '5px'
+                            }}
+                          >
+                            {credentialCode}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleCopy(credentialCode)}
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              color: '#0056A2',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              padding: '2px'
+                            }}
+                            title="Copy preview credential"
+                          >
+                            <Copy size={13} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Preview URL row with copy button */}
+                  <div style={{ marginBottom: '14px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                      <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#334155' }}>
+                        Preview URL
+                      </label>
+                      {isConfigChanged && (
+                        <span style={{ fontSize: '11px', color: '#d97706', fontWeight: 700 }}>
+                          Regenerate preview credential
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="autocare-protect-creds-row">
+                      <input
+                        type="text"
+                        readOnly
+                        className="autocare-protect-creds-input"
+                        value={isConfigChanged ? 'Configuration changed — click Regenerate Preview Link' : previewUrl}
+                        style={{
+                          color: isConfigChanged ? '#d97706' : '#0056A2',
+                          backgroundColor: isConfigChanged ? '#fffbeb' : '#f0f7ff',
+                          borderColor: isConfigChanged ? '#fde68a' : '#bfdbfe'
+                        }}
+                        aria-label="Preview verification link"
+                      />
+                      <button
+                        type="button"
+                        className="autocare-protect-btn-copy"
+                        onClick={() => handleCopy(previewUrl)}
+                        disabled={isConfigChanged}
+                        style={{
+                          opacity: isConfigChanged ? 0.6 : 1,
+                          cursor: isConfigChanged ? 'not-allowed' : 'pointer'
+                        }}
+                        title={isConfigChanged ? 'Regenerate preview credential before copying' : 'Copy preview URL'}
+                      >
+                        <Copy size={15} />
+                        <span>Copy</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Helper notice */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '8px',
+                      color: '#64748b',
+                      fontSize: '12px',
+                      lineHeight: 1.45,
+                      marginTop: '12px'
+                    }}
+                  >
+                    <ShieldCheck size={16} style={{ color: '#0056A2', flexShrink: 0, marginTop: '1px' }} />
+                    <span>
+                      Frontend preview only — live token-secured access is created through Secure Link Sharing.
+                    </span>
+                  </div>
+                </section>
+              )}
             </div>
           </div>
         </div>
