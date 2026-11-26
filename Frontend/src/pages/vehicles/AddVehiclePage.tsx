@@ -812,7 +812,7 @@ export const AddVehiclePage: React.FC = () => {
                   <div>
                     <h2 className="autocare-section-heading">Odometer Mileage &amp; Service Calibration</h2>
                     <p className="autocare-section-subtext">
-                      Establishes The Anti-Rollback Cryptographic Baseline For Vehicle Health Indexing.
+                      Establishes The Verified Anti-Rollback Baseline For Vehicle Health Indexing.
                     </p>
                   </div>
                 </div>

@@ -119,7 +119,7 @@ const mapBackendRecordToItem = (record: BackendServiceRecord): ServiceRecordItem
         ? 'certified-invoice.pdf'
         : 'service-log-entry.pdf',
       fileSize: 'Digital Record',
-      fileType: isVerified ? 'Cryptographic PDF' : 'Owner Log Entry',
+      fileType: isVerified ? 'Verified PDF' : 'Owner Log Entry',
     },
   };
 };
@@ -929,7 +929,7 @@ export const ServiceHistoryPage: React.FC = () => {
                     {selectedRecord.isVerified ? (
                       <span className="autocare-badge-certified">
                         <CheckCircle2 size={14} />
-                        <span>Cryptographically Certified</span>
+                        <span>Verified Platform Record</span>
                       </span>
                     ) : (
                       <span className="autocare-badge-self-detail">

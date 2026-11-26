@@ -411,7 +411,7 @@ export const ServiceRecordDetailsModal: React.FC<ServiceRecordDetailsModalProps>
           >
             <ShieldCheck size={20} style={{ color: '#15803D', flexShrink: 0 }} />
             <div style={{ fontSize: '12px', color: '#166534', lineHeight: '17px' }}>
-              <strong>Cryptographically Signed Ledger Entry.</strong> Published by accredited partner <strong>Perera Auto Works (BR-03)</strong>. Tamper-evident and permanently recorded to the vehicle digital passport.
+              <strong>Verified Digital Service Record.</strong> Published by accredited partner <strong>Perera Auto Works (BR-03)</strong>. Tamper-evident and permanently recorded to the vehicle digital passport.
             </div>
           </div>
         </div>

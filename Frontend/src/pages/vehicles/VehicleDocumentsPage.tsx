@@ -479,7 +479,7 @@ const VehicleDocumentsPage: React.FC = () => {
       setNewExpiryDate('');
       setUploadFileName('');
       setSelectedFile(null);
-      showToast(`Document "${mappedDoc.title}" successfully uploaded and verified on ledger.`);
+      showToast(`Document "${mappedDoc.title}" successfully uploaded and verified.`);
     } catch (err: unknown) {
       const msg =
         err instanceof Error
@@ -546,7 +546,7 @@ const VehicleDocumentsPage: React.FC = () => {
               </div>
               <div className="autocare-docs-metric-val">{documents.length} Records</div>
               <span className="autocare-docs-metric-sub">
-                ✓ All verified on ledger
+                ✓ All verified on platform
               </span>
             </div>
 
@@ -583,12 +583,12 @@ const VehicleDocumentsPage: React.FC = () => {
             {/* Metric 4 */}
             <div className="autocare-docs-metric-card">
               <div className="autocare-docs-metric-header">
-                <span className="autocare-docs-metric-label">Ledger Integrity</span>
+                <span className="autocare-docs-metric-label">Document Integrity</span>
                 <ShieldCheck size={18} className="autocare-docs-metric-icon" />
               </div>
               <div className="autocare-docs-metric-val">100% Valid</div>
               <span className="autocare-docs-metric-sub">
-                SHA-256 Multi-sig secured
+                Verified platform record
               </span>
             </div>
           </section>
@@ -740,7 +740,7 @@ const VehicleDocumentsPage: React.FC = () => {
                       </div>
 
                       <div className="autocare-doc-info-row">
-                        <span className="autocare-doc-info-label">Ledger Root Hash</span>
+                        <span className="autocare-doc-info-label">Verification ID</span>
                         <span
                           className="autocare-doc-hash-val"
                           style={{ cursor: 'pointer' }}
@@ -925,7 +925,7 @@ const VehicleDocumentsPage: React.FC = () => {
                   className="autocare-docs-btn-submit"
                   disabled={isUploading}
                 >
-                  {isUploading ? 'Uploading to ledger...' : 'Upload to ledger'}
+                  {isUploading ? 'Uploading document...' : 'Upload document'}
                 </button>
               </div>
             </form>

@@ -41,7 +41,7 @@ export const MOCK_RECURRING_UPCOMING: RecurringUpcomingItem[] = [
   {
     id: 'rec-02',
     title: 'Tyre replacement reserve',
-    subtitle: 'AI estimate · due near 86,000 km',
+    subtitle: 'Estimated upcoming cost · due near 86,000 km',
     amount: 35500,
     type: 'ai-estimate',
   },

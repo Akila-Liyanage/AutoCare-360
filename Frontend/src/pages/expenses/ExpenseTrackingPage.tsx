@@ -614,7 +614,7 @@ export const ExpenseTrackingPage: React.FC = () => {
                 LKR {(38500).toLocaleString()}
               </div>
               <p className="autocare-expense-metric-subtext is-amber">
-                AI estimate · 2 expected costs
+                Estimated upcoming cost · 2 expected costs
               </p>
             </div>
           </section>

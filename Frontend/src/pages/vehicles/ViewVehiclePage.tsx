@@ -45,6 +45,25 @@ import {
   type BackendVehicleDocument
 } from '../../services/documentService';
 
+interface VehicleQuotationItem {
+  _id?: string;
+  quotationNumber?: string;
+  garageId?: {
+    displayName?: string;
+    fullName?: string;
+  };
+  status?: string;
+  totalAmount?: number;
+  validUntil?: string;
+  items?: Array<{
+    description?: string;
+    quantity?: number;
+    unitPrice?: number;
+    total?: number;
+  }>;
+  notes?: string;
+}
+
 export const ViewVehiclePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
@@ -62,6 +81,7 @@ export const ViewVehiclePage: React.FC = () => {
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentTimestamp] = useState<number>(() => Date.now());
 
   // User feedback toast banner for placeholder actions
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -97,15 +117,15 @@ export const ViewVehiclePage: React.FC = () => {
   const [healthScoreData, setHealthScoreData] = useState<HealthScoreData | null>(null);
 
   // Official Garage Quotations (BR-03, BR-04)
-  const [quotations, setQuotations] = useState<any[]>([]);
-  const [selectedQuotation, setSelectedQuotation] = useState<any | null>(null);
+  const [quotations, setQuotations] = useState<VehicleQuotationItem[]>([]);
+  const [selectedQuotation, setSelectedQuotation] = useState<VehicleQuotationItem | null>(null);
   const [isQuotationActionLoading, setIsQuotationActionLoading] = useState<boolean>(false);
 
   const handleAcceptQuotation = async (quotationId: string) => {
     setIsQuotationActionLoading(true);
     try {
       await api.patch(`/vehicles/quotations/${quotationId}/status`, { status: 'accepted' });
-      setSelectedQuotation((prev: any) => prev ? { ...prev, status: 'accepted' } : null);
+      setSelectedQuotation((prev) => prev ? { ...prev, status: 'accepted' } : null);
       setQuotations((prev) => prev.map((q) => q._id === quotationId ? { ...q, status: 'accepted' } : q));
     } catch {
       alert('Failed to accept quotation. Please try again.');
@@ -119,7 +139,7 @@ export const ViewVehiclePage: React.FC = () => {
     setIsQuotationActionLoading(true);
     try {
       await api.patch(`/vehicles/quotations/${quotationId}/status`, { status: 'declined' });
-      setSelectedQuotation((prev: any) => prev ? { ...prev, status: 'declined' } : null);
+      setSelectedQuotation((prev) => prev ? { ...prev, status: 'declined' } : null);
       setQuotations((prev) => prev.map((q) => q._id === quotationId ? { ...q, status: 'declined' } : q));
     } catch {
       alert('Failed to decline quotation.');
@@ -368,7 +388,7 @@ export const ViewVehiclePage: React.FC = () => {
       maintenance += Math.min(10, verifiedCount * 3);
       const latest = sorted[sorted.length - 1];
       const kmDiff = (vehicle.currentMileage || 0) - (latest?.mileage || 0);
-      const daysDiff = latest?.serviceDate ? Math.floor((Date.now() - new Date(latest.serviceDate).getTime()) / (1000 * 60 * 60 * 24)) : 999;
+      const daysDiff = latest?.serviceDate ? Math.floor((currentTimestamp - new Date(latest.serviceDate).getTime()) / (1000 * 60 * 60 * 24)) : 999;
       if (kmDiff <= 10000 && daysDiff <= 365) {
         maintenance += 5;
       }
@@ -379,14 +399,14 @@ export const ViewVehiclePage: React.FC = () => {
     // 4. Regulatory Compliance & Documents (Max 25 pts)
     let compliance = 0;
     compliance += Math.min(10, documents.length * 5);
-    const now = Date.now();
+    const now = currentTimestamp;
     if (vehicle.insuranceExpiryDate && new Date(vehicle.insuranceExpiryDate).getTime() > now) compliance += 5;
     if (vehicle.revenueLicenseExpiryDate && new Date(vehicle.revenueLicenseExpiryDate).getTime() > now) compliance += 5;
     if (vehicle.emissionTestExpiryDate && new Date(vehicle.emissionTestExpiryDate).getTime() > now) compliance += 5;
 
     const computedScore = Math.max(20, Math.min(100, identity + odometer + maintenance + compliance));
 
-    let computedStatus = 'Profile Complete';
+    let computedStatus: string;
     if (anomaly) computedStatus = 'Discrepancy Flagged';
     else if (computedScore >= 90) computedStatus = 'High Trust Verified';
     else if (computedScore >= 75) computedStatus = 'Profile Complete';
@@ -514,12 +534,12 @@ export const ViewVehiclePage: React.FC = () => {
 
   <div class="score-card">
     <div>
-      <div class="score-title">AI Vehicle Health &amp; Trust Assessment (BR-09)</div>
+      <div class="score-title">Vehicle Health &amp; Record Assessment (BR-09)</div>
       <div class="score-desc">Monotonic odometer verified &bull; ${allServices.length} verified inspection events recorded</div>
     </div>
     <div style="text-align:right;">
       <div class="score-val">95/100</div>
-      <div style="font-size:11px;color:rgba(255,255,255,0.7);text-transform:uppercase;">Trust Score</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.7);text-transform:uppercase;">Vehicle Record Score</div>
     </div>
   </div>
 
@@ -543,7 +563,7 @@ export const ViewVehiclePage: React.FC = () => {
   ` : '<p style="color:#64748b;font-size:13px;padding:16px 0;">No service history records logged yet.</p>'}
 
   <div class="footer">
-    <div>AutoCare 360 Ecosystem &bull; Universal Cryptographic Vehicle Ledger</div>
+    <div>AutoCare 360 Ecosystem &bull; Universal Vehicle Service Record</div>
     <div>Digital Security Hash: ${getLedgerHash(vehicle)} &bull; Verified Offline Document</div>
   </div>
 </body>
@@ -944,8 +964,8 @@ export const ViewVehiclePage: React.FC = () => {
                     {/* Summary Description */}
                     <p className="autocare-view-hero-desc">
                       {vehicle.fuelType === 'Electric'
-                        ? 'Battery electric performance sedan with a cryptographically verified ownership and maintenance ledger.'
-                        : `${vehicle.manufacturer} ${vehicle.model} ${vehicle.vehicleType.toLowerCase()} with a cryptographically verified ownership and maintenance ledger.`}
+                        ? 'Battery electric performance sedan with verified ownership and maintenance records.'
+                        : `${vehicle.manufacturer} ${vehicle.model} ${vehicle.vehicleType.toLowerCase()} with verified ownership and maintenance records.`}
                     </p>
 
                     {/* 3-Column Spec Strip */}
@@ -985,7 +1005,7 @@ export const ViewVehiclePage: React.FC = () => {
                       to={`/expenses?vehicleId=${vehicle?._id || id || ''}`}
                       state={{ vehicleId: vehicle?._id || id, vehicle }}
                       className="autocare-btn-expense-tracking"
-                      title="View Expense Tracking and Financial Ledger"
+                      title="View Expense Tracking"
                     >
                       <Receipt size={15} />
                       <span>Expense Tracking</span>
@@ -1666,7 +1686,7 @@ export const ViewVehiclePage: React.FC = () => {
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '14px', marginTop: '12px' }}>
-                    {quotations.map((q: any) => (
+                    {quotations.map((q) => (
                       <div
                         key={q._id}
                         style={{
@@ -1705,7 +1725,7 @@ export const ViewVehiclePage: React.FC = () => {
                         </div>
 
                         <p style={{ margin: '0 0 10px 0', fontSize: '12px', color: '#475569' }}>
-                          Valid until {new Date(q.validUntil).toLocaleDateString('en-GB')} · Includes {q.items?.length || 0} line items.
+                          Valid until {q.validUntil ? new Date(q.validUntil).toLocaleDateString('en-GB') : 'N/A'} · Includes {q.items?.length || 0} line items.
                         </p>
 
                         <button
@@ -2126,7 +2146,7 @@ export const ViewVehiclePage: React.FC = () => {
                 <div style={{ background: '#F8FAFC', padding: '10px 14px', borderRadius: '8px' }}>
                   <span style={{ fontSize: '11px', color: '#64748B', textTransform: 'uppercase' }}>Valid Until</span>
                   <div style={{ fontWeight: 700, fontSize: '13.5px', color: '#0A1128' }}>
-                    {new Date(selectedQuotation.validUntil).toLocaleDateString('en-GB')}
+                    {selectedQuotation.validUntil ? new Date(selectedQuotation.validUntil).toLocaleDateString('en-GB') : 'N/A'}
                   </div>
                 </div>
                 <div style={{ background: '#F8FAFC', padding: '10px 14px', borderRadius: '8px' }}>
@@ -2151,12 +2171,12 @@ export const ViewVehiclePage: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {selectedQuotation.items?.map((it: any, i: number) => (
+                    {selectedQuotation.items?.map((it, i: number) => (
                       <tr key={i} style={{ borderBottom: '1px solid #E2E8F0' }}>
                         <td style={{ padding: '8px 10px' }}>{it.description}</td>
                         <td style={{ padding: '8px 10px', textAlign: 'center' }}>{it.quantity}</td>
                         <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 600 }}>
-                          {(it.total || it.unitPrice * it.quantity || 0).toLocaleString()}
+                          {(it.total || ((it.unitPrice ?? 0) * (it.quantity ?? 1)) || 0).toLocaleString()}
                         </td>
                       </tr>
                     ))}
@@ -2207,7 +2227,7 @@ export const ViewVehiclePage: React.FC = () => {
                   <>
                     <button
                       type="button"
-                      onClick={() => handleDeclineQuotation(selectedQuotation._id)}
+                      onClick={() => selectedQuotation._id && handleDeclineQuotation(selectedQuotation._id)}
                       disabled={isQuotationActionLoading}
                       style={{
                         background: '#FEF2F2',
@@ -2224,7 +2244,7 @@ export const ViewVehiclePage: React.FC = () => {
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleAcceptQuotation(selectedQuotation._id)}
+                      onClick={() => selectedQuotation._id && handleAcceptQuotation(selectedQuotation._id)}
                       disabled={isQuotationActionLoading}
                       style={{
                         background: '#059669',

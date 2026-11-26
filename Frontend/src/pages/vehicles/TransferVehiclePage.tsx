@@ -809,13 +809,13 @@ export const TransferVehiclePage: React.FC = () => {
                 </div>
               </section>
 
-              {/* 2. Ownership & Cryptographic Integrity Ledger Card */}
+              {/* 2. Ownership & Verification Record Card */}
               <section
                 className="autocare-transfer-ownership-card"
-                aria-label="Ownership and Cryptographic Ledger"
+                aria-label="Ownership and Verification Record"
               >
                 <h2 className="autocare-transfer-card-heading">
-                  Ownership &amp; Cryptographic Integrity Ledger
+                  Ownership &amp; Verification Record
                 </h2>
 
                 <div className="autocare-transfer-ownership-grid">
@@ -977,7 +977,7 @@ export const TransferVehiclePage: React.FC = () => {
                     </div>
 
                     <p className="autocare-transfer-score-subtext">
-                      Data sources verified on decentralised cluster ledger. No discrepancy found.
+                      Data sources verified on platform audit logs. No discrepancy found.
                     </p>
                   </div>
 
@@ -999,13 +999,13 @@ export const TransferVehiclePage: React.FC = () => {
                 </div>
               </section>
 
-              {/* 4. Bottom Dark Navy Card: Verified Ledger Records & Transfer History */}
+              {/* 4. Bottom Dark Navy Card: Verified Transfer Records & History */}
               <section
                 className="autocare-transfer-records-card"
-                aria-label="Verified Ledger Records Authorized For Viewer"
+                aria-label="Verified Transfer Records Authorized For Viewer"
               >
                 <h2 className="autocare-transfer-records-heading">
-                  Verified Ledger Records (Authorized For Viewer)
+                  Verified Transfer Records (Authorized For Viewer)
                 </h2>
 
                 <div className="autocare-transfer-records-list">
@@ -1645,7 +1645,7 @@ export const TransferVehiclePage: React.FC = () => {
                     />
                     <span>
                       I verify that I am authorized to transfer this vehicle passport and agree to hand over
-                      cryptographic records to the designated recipient.
+                      verified digital records to the designated recipient.
                     </span>
                   </label>
                   {formErrors.acknowledged && (
