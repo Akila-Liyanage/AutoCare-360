@@ -621,7 +621,7 @@ export const AdminGarageVerificationPage: React.FC = () => {
                 <div><strong>Location:</strong> {approvingGarage.city || 'Sri Lanka'}</div>
               </div>
               <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>
-                Upon approval, this workshop will immediately gain access to the official garage dashboard, quotation management, and authorized service ledger writing.
+                Upon approval, this workshop will immediately gain access to the official garage dashboard, quotation management, and authorized service record management.
               </p>
             </div>
 

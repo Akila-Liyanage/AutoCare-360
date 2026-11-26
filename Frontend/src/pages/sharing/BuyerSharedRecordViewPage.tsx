@@ -408,7 +408,7 @@ export const BuyerSharedRecordViewPage: React.FC = () => {
             <div style={{ textAlign: 'center', padding: '64px 20px', color: '#64748b' }}>
               <div className="autocare-spinner" style={{ margin: '0 auto 16px' }} />
               <p style={{ fontSize: '15px', fontWeight: 600 }}>Loading verified vehicle records...</p>
-              <span style={{ fontSize: '13px' }}>Validating cryptographic token against AutoCare 360 ledger</span>
+              <span style={{ fontSize: '13px' }}>Validating access token against AutoCare 360 platform</span>
             </div>
           ) : scopeMode === 'Expired' ? (
             /* ========================================================
@@ -604,7 +604,7 @@ export const BuyerSharedRecordViewPage: React.FC = () => {
                 </div>
 
                 <div className="autocare-shared-metric-card">
-                  <span className="autocare-shared-metric-label">Ledger Consensus</span>
+                  <span className="autocare-shared-metric-label">Platform Verification</span>
                   <div className="autocare-shared-metric-val">Fully Compliant</div>
                   <span className="autocare-shared-metric-sub">
                     Hash: 0x{watermark.accessId.replace(/[^a-f0-9]/gi, '')}9b...4a1
@@ -915,7 +915,7 @@ export const BuyerSharedRecordViewPage: React.FC = () => {
                 <div className="autocare-shared-audit-info">
                   <ShieldCheck size={18} style={{ color: '#16a34a' }} />
                   <span>
-                    Cryptographically recorded on AutoCare 360 audit ledger (BR-08). Access ID:
+                    Verified and recorded on AutoCare 360 audit log (BR-08). Access ID:
                   </span>
                   <span className="autocare-shared-audit-hash">
                     {watermark.accessId} &bull; {new Date(watermark.timestamp).toLocaleString()}

@@ -52,7 +52,7 @@ export const OwnerProtectedRoute: React.FC<OwnerProtectedRouteProps> = ({ childr
 
   // Admin user -> redirect to admin workspace
   if (user.role === 'admin') {
-    return <Navigate to="/admin/garages" replace />;
+    return <Navigate to="/admin/dashboard" replace />;
   }
 
   // Any other non-owner role -> redirect to login

@@ -16,6 +16,7 @@ export interface UserProfile {
   country?: string;
   profileImage?: string;
   avatar?: string;
+  accreditationNumber?: string;
   createdAt?: string;
   updatedAt?: string;
 }

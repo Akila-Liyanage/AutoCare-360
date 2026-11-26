@@ -82,7 +82,7 @@ export const AdminUserManagementPage: React.FC = () => {
   // Data states
   const [users, setUsers] = useState<AdminUser[]>(MOCK_ADMIN_USERS);
   const [analytics, setAnalytics] = useState<UserAnalyticsData>(MOCK_USER_ANALYTICS);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [feedbackToast, setFeedbackToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
   // Modal states
@@ -156,8 +156,50 @@ export const AdminUserManagementPage: React.FC = () => {
   }, [roleFilter, statusFilter, searchQuery, sortBy]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    let isMounted = true;
+    const loadData = async () => {
+      try {
+        const [userRes, analyticsRes] = await Promise.allSettled([
+          adminService.getUsers({
+            role: roleFilter !== 'all' ? roleFilter : undefined,
+            status: statusFilter !== 'all' ? statusFilter : undefined,
+            search: searchQuery.trim() || undefined,
+            sort: sortBy === 'vehicles_desc' ? undefined : (sortBy as 'newest' | 'oldest' | 'name_asc'),
+          }),
+          adminService.getUserAnalytics(),
+        ]);
+
+        if (!isMounted) return;
+
+        if (userRes.status === 'fulfilled' && userRes.value?.users?.length) {
+          setUsers(userRes.value.users);
+        } else {
+          setUsers(MOCK_ADMIN_USERS);
+        }
+
+        if (analyticsRes.status === 'fulfilled' && analyticsRes.value?.overview) {
+          setAnalytics(analyticsRes.value);
+        } else {
+          setAnalytics(MOCK_USER_ANALYTICS);
+        }
+      } catch {
+        if (isMounted) {
+          setUsers(MOCK_ADMIN_USERS);
+          setAnalytics(MOCK_USER_ANALYTICS);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [roleFilter, statusFilter, searchQuery, sortBy]);
 
   // Client-side filtering & sorting for smooth instant interactions
   const filteredUsers = useMemo(() => {
@@ -220,11 +262,6 @@ export const AdminUserManagementPage: React.FC = () => {
     const start = (currentPage - 1) * itemsPerPage;
     return filteredUsers.slice(start, start + itemsPerPage);
   }, [filteredUsers, currentPage, itemsPerPage]);
-
-  // Reset to page 1 when filter changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [roleFilter, statusFilter, searchQuery, itemsPerPage]);
 
   // Handle seed dummy users button
   const handleSeedDummyUsers = async () => {
@@ -311,7 +348,7 @@ export const AdminUserManagementPage: React.FC = () => {
         country: 'Sri Lanka',
         displayName: '',
       });
-    } catch (err: unknown) {
+    } catch {
       // Local optimistic fallback
       const mockCreated: AdminUser = {
         _id: `usr-${Date.now().toString().slice(-4)}`,
@@ -610,14 +647,20 @@ export const AdminUserManagementPage: React.FC = () => {
                     type="text"
                     placeholder="Search by name, email, phone, city, or workshop..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setCurrentPage(1);
+                    }}
                     className="autocare-admin-search-input"
                     aria-label="Search users"
                   />
                   {searchQuery && (
                     <button
                       type="button"
-                      onClick={() => setSearchQuery('')}
+                      onClick={() => {
+                        setSearchQuery('');
+                        setCurrentPage(1);
+                      }}
                       className="autocare-admin-search-clear"
                       aria-label="Clear search query"
                     >
@@ -633,7 +676,10 @@ export const AdminUserManagementPage: React.FC = () => {
                     role="tab"
                     aria-selected={roleFilter === 'all'}
                     className={`autocare-filter-pill ${roleFilter === 'all' ? 'is-active' : ''}`}
-                    onClick={() => setRoleFilter('all')}
+                    onClick={() => {
+                      setRoleFilter('all');
+                      setCurrentPage(1);
+                    }}
                   >
                     All Roles ({users.length})
                   </button>
@@ -642,7 +688,10 @@ export const AdminUserManagementPage: React.FC = () => {
                     role="tab"
                     aria-selected={roleFilter === 'owner'}
                     className={`autocare-filter-pill ${roleFilter === 'owner' ? 'is-active' : ''}`}
-                    onClick={() => setRoleFilter('owner')}
+                    onClick={() => {
+                      setRoleFilter('owner');
+                      setCurrentPage(1);
+                    }}
                   >
                     <Users size={13} /> Owners ({users.filter((u) => u.role === 'owner').length})
                   </button>
@@ -651,7 +700,10 @@ export const AdminUserManagementPage: React.FC = () => {
                     role="tab"
                     aria-selected={roleFilter === 'garage'}
                     className={`autocare-filter-pill ${roleFilter === 'garage' ? 'is-active' : ''}`}
-                    onClick={() => setRoleFilter('garage')}
+                    onClick={() => {
+                      setRoleFilter('garage');
+                      setCurrentPage(1);
+                    }}
                   >
                     <Building2 size={13} /> Garages ({users.filter((u) => u.role === 'garage').length})
                   </button>
@@ -660,7 +712,10 @@ export const AdminUserManagementPage: React.FC = () => {
                     role="tab"
                     aria-selected={roleFilter === 'admin'}
                     className={`autocare-filter-pill ${roleFilter === 'admin' ? 'is-active' : ''}`}
-                    onClick={() => setRoleFilter('admin')}
+                    onClick={() => {
+                      setRoleFilter('admin');
+                      setCurrentPage(1);
+                    }}
                   >
                     <Shield size={13} /> Admins ({users.filter((u) => u.role === 'admin').length})
                   </button>
@@ -670,7 +725,10 @@ export const AdminUserManagementPage: React.FC = () => {
                 <div className="autocare-filter-dropdowns">
                   <select
                     value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value as UserStatus | 'all')}
+                    onChange={(e) => {
+                      setStatusFilter(e.target.value as UserStatus | 'all');
+                      setCurrentPage(1);
+                    }}
                     className="autocare-select-input"
                     aria-label="Filter by account status"
                   >
@@ -727,6 +785,7 @@ export const AdminUserManagementPage: React.FC = () => {
                       setSearchQuery('');
                       setRoleFilter('all');
                       setStatusFilter('all');
+                      setCurrentPage(1);
                     }}
                     className="autocare-admin-btn autocare-admin-btn-secondary"
                   >
@@ -744,7 +803,10 @@ export const AdminUserManagementPage: React.FC = () => {
                       <select
                         id="per-page-select"
                         value={itemsPerPage}
-                        onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                        onChange={(e) => {
+                          setItemsPerPage(Number(e.target.value));
+                          setCurrentPage(1);
+                        }}
                         className="autocare-select-input-sm"
                       >
                         <option value={5}>5</option>

@@ -51,7 +51,7 @@ export const GarageProtectedRoute: React.FC<GarageProtectedRouteProps> = ({ chil
   }
 
   if (user.role === 'admin') {
-    return <Navigate to="/admin/garages" replace />;
+    return <Navigate to="/admin/dashboard" replace />;
   }
 
   if (user.role !== 'garage') {

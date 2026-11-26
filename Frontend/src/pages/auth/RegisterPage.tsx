@@ -305,7 +305,7 @@ export const RegisterPage: React.FC = () => {
           </div>
           <h1 className="autocare-auth-card-title">Create Your AutoCare 360 Account</h1>
           <p className="autocare-auth-card-subtitle">
-            Join the universal digital vehicle maintenance network with verified records and cryptographic sharing.
+            Join the universal digital vehicle maintenance network with verified records and secure digital sharing.
           </p>
         </header>
 
@@ -696,7 +696,7 @@ export const RegisterPage: React.FC = () => {
                 <label htmlFor="reg-terms" className="autocare-terms-text">
                   I agree to the{' '}
                   <span className="autocare-terms-link">AutoCare 360 Universal Maintenance Terms</span>. 
-                  I understand all records are cryptographic, tamper-proof, and subject to audit logs.
+                  I understand all records are verified, tamper-evident, and subject to audit logs.
                 </label>
               </div>
               {errors.agreeTerms && (
