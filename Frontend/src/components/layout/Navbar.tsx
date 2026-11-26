@@ -166,7 +166,7 @@ export const Navbar: React.FC = () => {
             <>
               {/* Notification Bell */}
               <Link
-                to="/notifications"
+                to={user?.role === 'garage' ? '/garage/notifications' : '/notifications'}
                 className="autocare-nav-icon-btn"
                 aria-label="System Notifications"
                 title="Notifications"

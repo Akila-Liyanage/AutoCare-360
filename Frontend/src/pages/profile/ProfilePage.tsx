@@ -277,7 +277,7 @@ export const ProfilePage: React.FC = () => {
                   <div>
                     <h3 className="autocare-profile-card-title">Account & security</h3>
                     <p className="autocare-profile-card-subtitle">
-                      Your owner identity is protected and cryptographically bound to each vehicle passport.
+                      Your owner identity is protected and securely linked to each vehicle passport.
                     </p>
                   </div>
                   <button
@@ -356,7 +356,7 @@ export const ProfilePage: React.FC = () => {
               <div className="autocare-profile-empty-vehicles">
                 <Car size={36} className="autocare-profile-empty-icon" />
                 <h4>No vehicles linked to this account yet</h4>
-                <p>Register your first vehicle to generate its cryptographic digital passport.</p>
+                <p>Register your first vehicle to generate its digital passport.</p>
                 <button
                   type="button"
                   className="autocare-profile-add-vehicle-btn"
@@ -403,7 +403,7 @@ export const ProfilePage: React.FC = () => {
                           {v.manufacturer} {v.model} {v.manufacturingYear}
                         </h4>
                         <span className="autocare-profile-trust-pending">
-                          Trust score pending
+                          Record score pending
                         </span>
                       </div>
                       <p className="autocare-profile-vehicle-meta">
